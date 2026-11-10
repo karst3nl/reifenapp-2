@@ -236,3 +236,16 @@ Texthinweis markiert. Beim Speicherversuch werden alle fehlenden/ungültigen Fel
 markiert und das erste fokussiert. Korrigierte Felder verlieren ihre Markierung.
 Serverseitige Validierung bleibt zusätzlich aktiv. Ein Speicherfehler erhält die
 Eingaben nur solange das Formular geöffnet bleibt.
+
+### Namensauswahl und belegte Plätze
+
+Die Vorschläge erscheinen in einer eigenen Liste im App-Design, ohne natives
+Browser-Datalist. Der erste Treffer ist markiert; Pfeil hoch/runter ändert die
+Auswahl. Tab übernimmt den markierten Namen und wechselt ins nächste Feld;
+Enter oder Mausklick übernimmt ebenfalls. Escape schließt zuerst die Vorschläge.
+Freie Namen bleiben möglich; Shift+Tab übernimmt keinen Vorschlag.
+
+HTTP 409 bei belegtem oder reserviertem Platz zeigt einen auffälligen roten
+Fehlerkasten und einen roten Rahmen mit direktem Hinweis am Nummernfeld.
+Das Nummernfeld erhält den Fokus. Der Konflikthinweis bleibt auch nach Verlassen
+des Feldes bestehen und wird bei Änderung von Lagerbereich oder Nummer entfernt.

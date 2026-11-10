@@ -42,3 +42,14 @@ komplettes Leeren nach X/Zurück/Schließen/Escape einschließlich Zubehör und
 Vorschlägen, freie Namenseingabe bei ausgefallener Vorschlags-API.
 Keine Migration und keine neue Abhängigkeit. Hardware-/LAN- und weitere
 Browserprüfungen weiterhin nicht ausgeführt.
+
+## Eigene Vorschlagsliste und Platzkonflikte
+
+Erfolgreich: `go test ./...`, Build, JavaScript-Syntaxprüfung, `git diff --check`.
+Browserprüfung mit Chromium: Tab übernimmt und bewegt Fokus weiter, Pfeiltasten/
+Enter, Mausklick, Escape schließt nur die Liste, Zurücksetzen beim Schließen,
+Mobilbreite 390px. Tatsächlich belegter fiktiver Platz C1.25 liefert HTTP 409:
+Nummernfeld erhält roten 2px-Rahmen und Fokus, Konflikt bleibt nach Fokuswechsel
+bestehen und verschwindet nach Änderung der Nummer. Keine neue Migration oder
+Backendänderung. Race-/Hardware-/LAN-Tests und weitere Browser für diesen reinen
+Frontend-Schritt nicht erneut ausgeführt.
