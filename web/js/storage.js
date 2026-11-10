@@ -23,7 +23,7 @@
   }
   window.openStorage=async()=>{
     dialog.showModal();
-    if(ready)return;
+    if(ready){status.textContent='';return;}
     save.disabled=true;status.textContent='Auswahllisten werden geladen …';
     try {
       const response=await fetch('/api/storage/options');
@@ -76,12 +76,14 @@
       form.reset();numberRange();
       for(const key of ['hubcaps','bolts','lock']){field(key+'.location').required=false;}
       status.textContent=`Neueinlagerung auf ${data.place} gespeichert. Über die Schnellsuche auffindbar.`;
-      const search=document.getElementById('search');search.value=input.plate;search.dispatchEvent(new Event('input'));
+      const confirmation=document.getElementById('storage-confirmation');
+      confirmation.textContent=status.textContent;confirmation.hidden=false;
+      dialog.close();
     }catch{status.textContent='Keine Speicherbestätigung erhalten. Bitte zuerst in der Schnellsuche prüfen, ob die Einlagerung gespeichert wurde. Ihre Eingaben bleiben erhalten.';}
     finally{
       enabled.forEach(el=>el.disabled=false);saving=false;save.disabled=false;close.disabled=false;nav.forEach(button=>button.disabled=false);
       for(const key of ['hubcaps','bolts','lock'])field(key+'.location').disabled=!field(key+'.present').checked;
-      status.focus();
+      if(dialog.open)status.focus();
     }
   });
 })();

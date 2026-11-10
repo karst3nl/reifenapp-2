@@ -205,3 +205,14 @@ Geschwindigkeitsindex und ihre eigene Profiltiefe (0–10 mm, 0,5-mm-Schritte).
 eine schon eingetragene Hinterachs-Profiltiefe bleibt unverändert.
 Zurückpfeil und X schließen das Formular ohne Speichern und erhalten die Eingaben
 für ein erneutes Öffnen. Während des Speicherns sind beide gesperrt.
+
+### Vollbild und Abschluss der Neueinlagerung
+
+Das Formular nutzt die gesamte Bildschirmfläche und ordnet die Abschnitte auf
+breiten Bildschirmen nebeneinander an. Bei 1440×900 und 1366×768 ist der normale
+Formularinhalt ohne Scrollen sichtbar. Kleinere Fenster, Vergrößerung und zusätzliche
+Fehlermeldungen können Scrollen erfordern; alle Felder bleiben erreichbar.
+Nach bestätigter Speicherung schließt das Formular und zeigt eine Bestätigung
+auf der Startseite. Der vorhandene Suchtext bleibt unverändert; der neue Eintrag
+wird nicht automatisch in die Suche eingesetzt. Bei Fehlern bleibt das Formular
+offen und behält die Eingaben.

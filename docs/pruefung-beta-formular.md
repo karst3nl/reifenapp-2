@@ -18,3 +18,13 @@ Arbeitsverzeichnissen. Keine vorhandene Datenbank geändert; keine Migration nö
 Nicht geprüft: echte CachyOS-/Pi-Hardware, LAN, weitere Browser und behördliche
 Zuteilbarkeit jeder einzelnen Kennung. Die Kürzelliste ist ein lokaler Stand;
 Quelle und Umfang stehen in kennzeichen.md.
+
+## Vollbild und Speichern
+
+Ergänzende Browserprüfung: erfolgreicher POST schließt den Dialog und erhält einen
+vorher eingetragenen Suchtext. Bestätigung außerhalb des Dialogs sichtbar.
+Normales Formular bei 1440×900 und 1366×768 ohne vertikales Scrollen; bei 390px
+kein horizontaler Überlauf. Simulierter HTTP-409-Fehler lässt den Dialog offen.
+`go test ./...`, Build und `git diff --check` erfolgreich. Keine Backendänderung;
+Race-Tests wurden für diese reinen HTML-/CSS-/JavaScript-Änderungen nicht erneut
+ ausgeführt. Hardware-/LAN- und weitere Browserprüfungen weiterhin nicht ausgeführt.
