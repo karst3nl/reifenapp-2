@@ -10,3 +10,5 @@
 - Bestehende lokale Datenbanken nicht ungefragt löschen, neu anlegen oder mit Testdaten überschreiben. Vor Migration bestehender Datenbanken Sicherheitsprüfung und Backup durchführen.
 - Architekturentscheidungen und Startanleitung kurz dokumentieren.
 - Projektübersicht: docs/projektuebersicht.md. Sie beschreibt auch spätere Meilensteine; nicht alles vorweg implementieren.
+
+- Laufende Entwicklung auf `beta` sammeln. `main` nur nach gesondertem Auftrag aktualisieren.

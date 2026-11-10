@@ -11,7 +11,7 @@ Voraussetzungen: Git, Go ab 1.23 und C-Compiler (SQLite-Treiber benötigt CGO).
 sudo pacman -S --needed git go base-devel
 git clone https://github.com/karst3nl/reifenapp-2.git
 cd reifenapp-2
-git switch feat/neueinlagerung
+git switch beta
 go mod download
 go run .
 ```
@@ -101,8 +101,8 @@ Im bestehenden Repository (lokale Änderungen vorher mit `git status` prüfen):
 
 ```sh
 git fetch origin
-git switch feat/neueinlagerung
-git pull --ff-only origin feat/neueinlagerung
+git switch beta
+git pull --ff-only origin beta
 go run . -dev -migrate
 ```
 
@@ -122,8 +122,8 @@ Keinen älteren App-Stand auf einer bereits aktualisierten Datenbank starten.
 
 1. http://127.0.0.1:8080 öffnen und „Neueinlagerung“ anklicken.
 2. Einen freien Platz wählen, etwa C1.2, und „Fiktiver Testkunde“ mit
-   Kennzeichen „TEST-NE 123“, Marke/Modell, Reifen- und Felgenart erfassen.
-3. Optional Achsdaten, Zubehör, Monteur und Bemerkungen ergänzen; speichern.
+   Kennzeichen „MZ-NE 123“, Marke/Modell, Reifen- und Felgenart erfassen.
+3. Beide Achsen und Profiltiefen ausfüllen; optional Zubehör, Monteur und Bemerkungen ergänzen; speichern.
 4. Bestätigung mit Lagerplatz prüfen, Dialog schließen und nach Name oder
    Kennzeichen suchen. Nach einem Serverneustart bleibt die Einlagerung vorhanden.
 5. Derselbe Platz wird beim erneuten Speichern als belegt abgewiesen. Auch eine
@@ -136,8 +136,8 @@ Dropdownwerte fest. Für diesen Meilenstein gelten ausdrücklich diese Annahmen:
 
 - Pflicht: Lagerbereich/-nummer, Kundenname, Kennzeichen, Marke, Modell,
   Reifenart und Felgenart. Sie sind im Formular mit * gekennzeichnet.
-- Optional: einzelne Größenangaben VA/HA, Profiltiefen, Zubehör, Monteur,
-  Bemerkungen. Teilweise bekannte Reifengrößen sind erlaubt.
+- Optional: Zubehör, Monteur,
+  Bemerkungen. Die fünf Reifengrößenangaben und die Profiltiefe sind für beide Achsen Pflicht.
 - Falls Zubehör als vorhanden markiert ist, wird dessen Aufbewahrungsort Pflicht.
   Bei nicht vorhandenem Zubehör wird kein Aufbewahrungsort gespeichert.
 - Die anfänglichen Dropdownlisten sind in `internal/models/storage.go` zentral
@@ -147,7 +147,7 @@ Dropdownwerte fest. Für diesen Meilenstein gelten ausdrücklich diese Annahmen:
   Zoll 10–24, Traglastindex 50–130; gängige Geschwindigkeitsindizes einschließlich
   `(Y)`. Diese Auswahl ist eine erste Eingabehilfe, keine technische
   Zulassungs-/Kompatibilitätsprüfung und kein vollständiger Reifenkatalog.
-- Profiltiefe optional 0–20 mm in 0,5-mm-Schritten, ohne Verschleißbewertung.
+- Profiltiefe verpflichtend 0–10 mm in 0,5-mm-Schritten, ohne Verschleißbewertung.
 - Jede Neueinlagerung erstellt vorerst einen eigenen Kunden, ein Fahrzeug und
   einen Radsatz. Vorhandene Kunden werden nicht automatisch anhand ihres Namens
   zusammengeführt. Kundenauswahl/-zusammenführung folgt später.
@@ -162,10 +162,10 @@ Dropdownwerte fest. Für diesen Meilenstein gelten ausdrücklich diese Annahmen:
 ```json
 {
   "area": "C1", "number": 2,
-  "name": "Fiktiver Testkunde", "plate": "TEST-NE 123",
+  "name": "Fiktiver Testkunde", "plate": "MZ-NE 123",
   "brand": "VW", "model": "Golf", "tire_type": "Winter", "rim_type": "Stahl",
   "front": {"width":"205","ratio":"55","inches":"16","load":"91","speed":"H"},
-  "rear": {}, "front_depth":"6.5", "rear_depth":"",
+  "rear": {"width":"205","ratio":"55","inches":"16","load":"91","speed":"H"}, "front_depth":"6.5", "rear_depth":"6.0",
   "hubcaps":{"present":true,"location":"Am Radsatz"},
   "bolts":{"present":false,"location":""},
   "lock":{"present":false,"location":""},
@@ -188,3 +188,20 @@ Kunde, Fahrzeug, Radsatz, Platzanspruch und Details werden in **einer Transaktio
 gespeichert. Der vorhandene UNIQUE-Index ist die verbindliche Konfliktprüfung.
 Fehler rollen alle Teilschritte zurück. JSON-Schreibzugriffe aus fremden
 Browserursprüngen werden abgelehnt; LAN-Authentifizierung bleibt ein späteres Thema.
+
+## Beta-Entwicklung und Formularänderungen
+
+Weitere Entwicklung wird auf `beta` gesammelt. `main` wird nicht automatisch
+aktualisiert; ein späterer Merge erfolgt gesondert. Zum Wechseln den Server stoppen,
+`git fetch origin`, `git switch beta`, `git pull --ff-only origin beta` ausführen.
+Start weiterhin `go run . -dev` (ein Schema-1-Upgrade benötigt einmalig zusätzlich
+`-migrate`, siehe oben). Für diese Formularänderungen ist keine Migration nötig.
+
+Kennzeichen: Landkreiskürzel per Dropdown, Buchstaben und Nummer separat;
+Mainz und Umgebung stehen zuerst. Quelle und Umfang: `docs/kennzeichen.md`.
+Beide Achsen benötigen Breite, Querschnitt, Zoll, Traglastindex,
+Geschwindigkeitsindex und ihre eigene Profiltiefe (0–10 mm, 0,5-mm-Schritte).
+„Reifendaten der Vorderachse übernehmen“ kopiert nur die fünf Größenangaben;
+eine schon eingetragene Hinterachs-Profiltiefe bleibt unverändert.
+Zurückpfeil und X schließen das Formular ohne Speichern und erhalten die Eingaben
+für ein erneutes Öffnen. Während des Speicherns sind beide gesperrt.
