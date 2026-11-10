@@ -31,11 +31,11 @@
 <dialog id="storage-dialog" aria-labelledby="storage-title">
 <div class="storage-heading"><button type="button" id="storage-back" class="storage-nav" aria-label="Zurück zur Startseite">←</button><h3 id="storage-title">Neueinlagerung</h3><button type="button" id="storage-x" class="storage-nav" aria-label="Formular schließen">×</button></div>
 <p>Pflichtfelder sind mit * markiert. Testdaten bitte ausdrücklich als fiktiv kennzeichnen.</p>
-<form id="storage-form">
+<form id="storage-form" autocomplete="off" novalidate>
 <fieldset><legend>Lagerplatz und Kunde</legend><div class="fields">
 <label>Lagerbereich *<select name="area" required></select></label>
 <label>Lagerplatznummer *<input name="number" type="number" required step="1"></label>
-<label>Kundenname *<input name="name" required maxlength="200"></label>
+<label>Kundenname *<input name="name" required maxlength="200" list="customer-names" aria-describedby="customer-hint"><datalist id="customer-names"></datalist><span id="customer-hint" class="hint" role="status">Vorhandenen Namen auswählen oder neuen eingeben.</span></label>
 <div class="plate-fields"><label>Landkreiskürzel *<select name="plate_district" required></select></label><label>Kennzeichen-Buchstaben *<input name="plate_letters" required maxlength="2" pattern="[A-Za-z]{1,2}" placeholder="AB" autocapitalize="characters"></label><label>Kennzeichen-Nummer *<input name="plate_number" required maxlength="5" pattern="[1-9][0-9]{0,3}[EeHh]?" placeholder="123 (ggf. E/H)" autocapitalize="characters"></label></div>
 <label>Fahrzeugmarke *<select name="brand" required></select></label>
 <label>Modell *<input name="model" required maxlength="100"></label>

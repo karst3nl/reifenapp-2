@@ -203,8 +203,7 @@ Beide Achsen benötigen Breite, Querschnitt, Zoll, Traglastindex,
 Geschwindigkeitsindex und ihre eigene Profiltiefe (0–10 mm, 0,5-mm-Schritte).
 „Reifendaten der Vorderachse übernehmen“ kopiert nur die fünf Größenangaben;
 eine schon eingetragene Hinterachs-Profiltiefe bleibt unverändert.
-Zurückpfeil und X schließen das Formular ohne Speichern und erhalten die Eingaben
-für ein erneutes Öffnen. Während des Speicherns sind beide gesperrt.
+Zurückpfeil und X schließen das Formular ohne Speichern und verwerfen die Eingaben. Während des Speicherns sind beide gesperrt.
 
 ### Vollbild und Abschluss der Neueinlagerung
 
@@ -216,3 +215,24 @@ Nach bestätigter Speicherung schließt das Formular und zeigt eine Bestätigung
 auf der Startseite. Der vorhandene Suchtext bleibt unverändert; der neue Eintrag
 wird nicht automatisch in die Suche eingesetzt. Bei Fehlern bleibt das Formular
 offen und behält die Eingaben.
+
+### Namensvorschläge, leeres Formular und Pflichtfeldmarkierung
+
+`GET /api/customers?q=Ma` liefert bis zu 20 unterschiedliche vorhandene Namen
+mit passendem Anfang, ohne Beachtung der Groß-/Kleinschreibung (auch Umlaute).
+Leerer Suchtext liefert `[]`; maximal 200 Zeichen. Antworten werden mit
+`Cache-Control: no-store` ausgeliefert. Der Vorschlag ergänzt nur den Namen;
+Kunden werden weiterhin nicht automatisch zusammengeführt. Neue Namen sind frei
+möglich, auch wenn die Vorschlagsabfrage fehlschlägt.
+
+Beim Schließen über X, Zurück, Schließen oder Escape werden alle Formularwerte,
+Zubehörzustände, Vorschläge und Fehlermarkierungen geleert. Auch das erneute Öffnen
+startet leer. Keine Speicherung von Entwürfen in Browser-Storage; Browser-Autofill
+ist für das Formular deaktiviert. Bereits dauerhaft gespeicherte Einlagerungen
+und die unabhängige Suchleiste werden dabei nicht verändert.
+
+Verlassene ungültige Pflichtfelder werden mit rotem Rahmen, Hintergrund und
+Texthinweis markiert. Beim Speicherversuch werden alle fehlenden/ungültigen Felder
+markiert und das erste fokussiert. Korrigierte Felder verlieren ihre Markierung.
+Serverseitige Validierung bleibt zusätzlich aktiv. Ein Speicherfehler erhält die
+Eingaben nur solange das Formular geöffnet bleibt.

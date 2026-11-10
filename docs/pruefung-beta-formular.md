@@ -28,3 +28,17 @@ kein horizontaler Überlauf. Simulierter HTTP-409-Fehler lässt den Dialog offen
 `go test ./...`, Build und `git diff --check` erfolgreich. Keine Backendänderung;
 Race-Tests wurden für diese reinen HTML-/CSS-/JavaScript-Änderungen nicht erneut
  ausgeführt. Hardware-/LAN- und weitere Browserprüfungen weiterhin nicht ausgeführt.
+
+## Namensvorschläge und Formularzustand
+
+Erfolgreich: `go test ./...`, `go test -race ./...`, `go vet ./...`, Build,
+JavaScript-Syntaxprüfung und `git diff --check`.
+Zusätzliche API-Tests für Unicode, unterschiedliche Groß-/Kleinschreibung,
+Duplikatvermeidung, maximal 20 Vorschläge, keine Treffer, leere Anfrage,
+Sonderzeichen, Überlänge, Datenbankfehler und No-Store-Header.
+Browserprüfung mit System-Chromium: vorhandener fiktiver Namensvorschlag,
+Pflichtfeldmarkierung bei Verlassen und Speicherversuch, Entfernen nach Korrektur,
+komplettes Leeren nach X/Zurück/Schließen/Escape einschließlich Zubehör und
+Vorschlägen, freie Namenseingabe bei ausgefallener Vorschlags-API.
+Keine Migration und keine neue Abhängigkeit. Hardware-/LAN- und weitere
+Browserprüfungen weiterhin nicht ausgeführt.
