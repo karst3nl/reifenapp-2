@@ -42,6 +42,7 @@ func main() {
 	mux.HandleFunc("GET /api/search", handlers.Search(db))
 	mux.HandleFunc("GET /api/customers", handlers.Customers(db))
 	mux.HandleFunc("POST /api/storage", handlers.Storage(db))
+	mux.HandleFunc("POST /api/storage/check", handlers.CheckStorage(db))
 	mux.HandleFunc("GET /api/storage/options", handlers.StorageOptions)
 	mux.Handle("GET /", http.FileServer(http.FS(web)))
 	server := &http.Server{Addr: *addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second}

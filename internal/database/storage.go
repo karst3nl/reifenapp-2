@@ -30,17 +30,36 @@ func CreateStorage(ctx context.Context, db *sql.DB, input models.StorageInput) (
 		}
 		return r.LastInsertId()
 	}
-	customer, err := insertID("INSERT INTO customers(name) VALUES(?)", input.Name)
+	checked, err := checkPlace(ctx, tx, input.Area, input.Number, input.Name, input.Plate)
 	if err != nil {
 		return 0, err
 	}
-	vehicle, err := insertID("INSERT INTO vehicles(customer_id,plate,car,brand,model) VALUES(?,?,?,?,?)", customer, input.Plate, input.Brand+" "+input.Model, input.Brand, input.Model)
-	if err != nil {
-		return 0, err
+	if !checked.Allowed {
+		return 0, ErrPlaceUnavailable
 	}
-	tire, err := insertID("INSERT INTO tire_sets(vehicle_id) VALUES(?)", vehicle)
-	if err != nil {
-		return 0, err
+	var tire int64
+	if checked.Status == "reserved" {
+		// The immediate transaction serializes the identity check, conversion and insert.
+		if _, err = tx.ExecContext(ctx, "UPDATE storage_claims SET status='converted',updated_at=? WHERE id=? AND status='active'", time.Now().UTC().Format(time.RFC3339Nano), checked.claimID); err != nil {
+			return 0, err
+		}
+		tire = checked.tireID.Int64
+		if _, err = tx.ExecContext(ctx, "UPDATE vehicles SET car=?,brand=?,model=? WHERE id=?", input.Brand+" "+input.Model, input.Brand, input.Model, checked.vehicleID.Int64); err != nil {
+			return 0, err
+		}
+	} else {
+		customer, err := insertID("INSERT INTO customers(name) VALUES(?)", input.Name)
+		if err != nil {
+			return 0, err
+		}
+		vehicle, err := insertID("INSERT INTO vehicles(customer_id,plate,car,brand,model) VALUES(?,?,?,?,?)", customer, input.Plate, input.Brand+" "+input.Model, input.Brand, input.Model)
+		if err != nil {
+			return 0, err
+		}
+		tire, err = insertID("INSERT INTO tire_sets(vehicle_id) VALUES(?)", vehicle)
+		if err != nil {
+			return 0, err
+		}
 	}
 	claim, err := insertID("INSERT INTO storage_claims(place_id,tire_set_id,kind,status,updated_at) VALUES(?,?,'occupancy','active',?)", input.Place(), tire, time.Now().UTC().Format(time.RFC3339Nano))
 	if err != nil {

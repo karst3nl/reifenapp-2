@@ -24,32 +24,8 @@ func StorageOptions(w http.ResponseWriter, r *http.Request) {
 }
 func Storage(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Reject browser cross-origin writes; no CORS access is granted.
-		if origin := r.Header.Get("Origin"); origin != "" {
-			u, err := url.Parse(origin)
-			if err != nil || u.Host != r.Host || (u.Scheme != "http" && u.Scheme != "https") {
-				writeJSON(w, 403, map[string]string{"error": "Fremder Ursprung nicht erlaubt."})
-				return
-			}
-		}
-		media, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
-		if media != "application/json" {
-			writeJSON(w, 415, map[string]string{"error": "JSON wird erwartet."})
-			return
-		}
-		r.Body = http.MaxBytesReader(w, r.Body, 32768)
-		decoder := json.NewDecoder(r.Body)
-		decoder.DisallowUnknownFields()
 		var input models.StorageInput
-		err := decoder.Decode(&input)
-		if err == nil {
-			var extra any
-			if decoder.Decode(&extra) != io.EOF {
-				err = errors.New("additional JSON")
-			}
-		}
-		if err != nil {
-			writeJSON(w, 400, map[string]string{"error": "Ungültiges JSON oder Anfrage zu groß."})
+		if !readStorageJSON(w, r, &input) {
 			return
 		}
 		if fields := input.Validate(); len(fields) > 0 {
@@ -67,4 +43,36 @@ func Storage(db *sql.DB) http.HandlerFunc {
 		}
 		writeJSON(w, 201, map[string]any{"id": id, "place": input.Place(), "message": "Neueinlagerung gespeichert."})
 	}
+}
+
+func readStorageJSON(w http.ResponseWriter, r *http.Request, input any) bool {
+	// Reject browser cross-origin writes; no CORS access is granted.
+	if origin := r.Header.Get("Origin"); origin != "" {
+		u, err := url.Parse(origin)
+		if err != nil || u.Host != r.Host || (u.Scheme != "http" && u.Scheme != "https") {
+			writeJSON(w, 403, map[string]string{"error": "Fremder Ursprung nicht erlaubt."})
+			return false
+		}
+	}
+	media, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if media != "application/json" {
+		writeJSON(w, 415, map[string]string{"error": "JSON wird erwartet."})
+		return false
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 32768)
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(input)
+	if err == nil {
+		var extra any
+		if decoder.Decode(&extra) != io.EOF {
+			err = errors.New("additional JSON")
+		}
+	}
+	if err != nil {
+		writeJSON(w, 400, map[string]string{"error": "Ungültiges JSON oder Anfrage zu groß."})
+		return false
+	}
+
+	return true
 }
