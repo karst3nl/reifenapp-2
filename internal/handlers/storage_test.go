@@ -42,7 +42,7 @@ func TestStorageHTTP(t *testing.T) {
 			t.Fatalf("%d expected %d: %s", w.Code, tc.code, w.Body)
 		}
 	}
-	input := models.StorageInput{Area: "C1", Number: 2, Name: "Fiktiver API Test", Plate: "TEST-API 1", Brand: "VW", Model: "Golf", TireType: "Winter", RimType: "Stahl"}
+	input := models.StorageInput{Area: "C1", Number: 2, Name: "Fiktiver API Test", Plate: "MZ-AP 1", Brand: "VW", Model: "Golf", TireType: "Winter", RimType: "Stahl", Front: models.TireSize{Width: "205", Ratio: "55", Inches: "16", Load: "91", Speed: "H"}, Rear: models.TireSize{Width: "205", Ratio: "55", Inches: "16", Load: "91", Speed: "H"}, FrontDepth: "6.5", RearDepth: "6.0"}
 	body, _ := json.Marshal(input)
 	if w := call(string(body), "application/json", ""); w.Code != 201 {
 		t.Fatal(w.Body)
@@ -51,7 +51,7 @@ func TestStorageHTTP(t *testing.T) {
 		t.Fatal(w.Body)
 	}
 	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, httptest.NewRequest("GET", "/api/search?q=TESTAPI1", nil))
+	mux.ServeHTTP(w, httptest.NewRequest("GET", "/api/search?q=MZAP1", nil))
 	if w.Code != 200 || !bytes.Contains(w.Body.Bytes(), []byte("C1.2")) {
 		t.Fatal(w.Body)
 	}

@@ -13,7 +13,7 @@ import (
 )
 
 func storageExample() models.StorageInput {
-	return models.StorageInput{Area: "C1", Number: 2, Name: "Fiktiv Neueinlagerung", Plate: "TEST-NE 987", Brand: "VW", Model: "Golf", TireType: "Winter", RimType: "Stahl", Front: models.TireSize{Width: "205", Ratio: "55", Inches: "16", Load: "91", Speed: "H"}, FrontDepth: "6.5", RearDepth: "7.0", Hubcaps: models.Accessory{Present: true, Location: "Am Radsatz"}, Mechanic: "Testmonteur", Notes: "Ausschließlich fiktiv"}
+	return models.StorageInput{Area: "C1", Number: 2, Name: "Fiktiv Neueinlagerung", Plate: "MZ-NE 987", Brand: "VW", Model: "Golf", TireType: "Winter", RimType: "Stahl", Front: models.TireSize{Width: "205", Ratio: "55", Inches: "16", Load: "91", Speed: "H"}, Rear: models.TireSize{Width: "205", Ratio: "55", Inches: "16", Load: "91", Speed: "H"}, FrontDepth: "6.5", RearDepth: "7.0", Hubcaps: models.Accessory{Present: true, Location: "Am Radsatz"}, Mechanic: "Testmonteur", Notes: "Ausschließlich fiktiv"}
 }
 func TestCreateStoragePersistsAndSearches(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "test.sqlite")

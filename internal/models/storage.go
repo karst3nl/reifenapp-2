@@ -48,13 +48,14 @@ func StorageOptions() map[string][]string {
 		return r
 	}
 	depths := []string{}
-	for n := 0; n <= 40; n++ {
+	for n := 0; n <= 20; n++ {
 		depths = append(depths, strconv.FormatFloat(float64(n)/2, 'f', 1, 64))
 	}
 	return map[string][]string{
-		"area":      {"C1", "C2", "C3", "C4", "OL", "OR"},
-		"brand":     {"Audi", "BMW", "Citroën", "Dacia", "Fiat", "Ford", "Honda", "Hyundai", "Kia", "Mazda", "Mercedes-Benz", "MINI", "Nissan", "Opel", "Peugeot", "Renault", "Seat", "Škoda", "Tesla", "Toyota", "Volvo", "VW", "Sonstige"},
-		"tire_type": {"Sommer", "Winter", "Ganzjahr"}, "rim_type": {"Aluminium", "Stahl", "Sonstige"},
+		"plate_district": strings.Fields(plateDistricts),
+		"area":           {"C1", "C2", "C3", "C4", "OL", "OR"},
+		"brand":          {"Audi", "BMW", "Citroën", "Dacia", "Fiat", "Ford", "Honda", "Hyundai", "Kia", "Mazda", "Mercedes-Benz", "MINI", "Nissan", "Opel", "Peugeot", "Renault", "Seat", "Škoda", "Tesla", "Toyota", "Volvo", "VW", "Sonstige"},
+		"tire_type":      {"Sommer", "Winter", "Ganzjahr"}, "rim_type": {"Aluminium", "Stahl", "Sonstige"},
 		"width": ranges(125, 355, 10), "ratio": ranges(20, 85, 5), "inches": ranges(10, 24, 1), "load": ranges(50, 130, 1),
 		"speed": {"A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "B", "C", "D", "E", "F", "G", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "H", "V", "W", "Y", "(Y)"}, "depth": depths,
 	}
@@ -84,6 +85,10 @@ func (s *StorageInput) Validate() map[string]string {
 	}
 	text("name", &s.Name, true, 200)
 	text("plate", &s.Plate, true, 30)
+	s.Plate = strings.ToUpper(s.Plate)
+	if !validPlate(s.Plate) {
+		e["plate"] = "Bitte gültiges Landkreiskürzel, 1–2 Buchstaben und 1–4 Ziffern eingeben (optional E/H)."
+	}
 	text("model", &s.Model, true, 100)
 	text("mechanic", &s.Mechanic, false, 100)
 	text("notes", &s.Notes, false, 2000)
@@ -109,11 +114,11 @@ func (s *StorageInput) Validate() map[string]string {
 		size TireSize
 	}{{"front", s.Front}, {"rear", s.Rear}} {
 		for key, v := range map[string]string{"width": axle.size.Width, "ratio": axle.size.Ratio, "inches": axle.size.Inches, "load": axle.size.Load, "speed": axle.size.Speed} {
-			choice(axle.key+"."+key, v, key, false)
+			choice(axle.key+"."+key, v, key, true)
 		}
 	}
-	choice("front_depth", s.FrontDepth, "depth", false)
-	choice("rear_depth", s.RearDepth, "depth", false)
+	choice("front_depth", s.FrontDepth, "depth", true)
+	choice("rear_depth", s.RearDepth, "depth", true)
 	for _, a := range []struct {
 		key string
 		v   *Accessory
