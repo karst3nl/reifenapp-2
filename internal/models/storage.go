@@ -60,8 +60,9 @@ func StorageOptions() map[string][]string {
 		"speed": {"A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "B", "C", "D", "E", "F", "G", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "H", "V", "W", "Y", "(Y)"}, "depth": depths,
 	}
 }
-func (s StorageInput) Place() string { return fmt.Sprintf("%s.%d", s.Area, s.Number) }
-func (s *StorageInput) Validate() map[string]string {
+func (s StorageInput) Place() string                { return fmt.Sprintf("%s.%d", s.Area, s.Number) }
+func (s *StorageInput) Validate() map[string]string { return s.validate(true) }
+func (s *StorageInput) validate(details bool) map[string]string {
 	e := map[string]string{}
 	opts := StorageOptions()
 	text := func(key string, p *string, required bool, max int) {
@@ -108,6 +109,9 @@ func (s *StorageInput) Validate() map[string]string {
 	}
 	if s.Number < lo || s.Number > hi {
 		e["number"] = fmt.Sprintf("Für diesen Bereich sind Nummern %d bis %d erlaubt.", lo, hi)
+	}
+	if !details {
+		return e
 	}
 	for _, axle := range []struct {
 		key  string

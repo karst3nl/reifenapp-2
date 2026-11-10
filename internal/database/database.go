@@ -117,7 +117,7 @@ func Search(ctx context.Context, db *sql.DB, q string) ([]models.SearchResult, e
 	if q == "" {
 		return result, nil
 	}
-	rows, err := db.QueryContext(ctx, `SELECT p.id,c.name,v.plate,v.car,s.updated_at
+	rows, err := db.QueryContext(ctx, `SELECT p.id,c.name,v.plate,v.car,s.updated_at,s.kind
  FROM storage_claims s JOIN storage_places p ON p.id=s.place_id
  JOIN tire_sets t ON t.id=s.tire_set_id JOIN vehicles v ON v.id=t.vehicle_id
  JOIN customers c ON c.id=v.customer_id WHERE s.status='active'
@@ -128,7 +128,7 @@ func Search(ctx context.Context, db *sql.DB, q string) ([]models.SearchResult, e
 	defer rows.Close()
 	for rows.Next() {
 		var r models.SearchResult
-		if err = rows.Scan(&r.Place, &r.Name, &r.Plate, &r.Car, &r.Date); err != nil {
+		if err = rows.Scan(&r.Place, &r.Name, &r.Plate, &r.Car, &r.Date, &r.Kind); err != nil {
 			return nil, err
 		}
 		if strings.Contains(normalize(r.Name), q) || strings.Contains(normalize(r.Plate), q) || strings.Contains(normalize(r.Place), q) {
