@@ -64,8 +64,8 @@ Upgrade mit Integritätsprüfung und konsistentem SQLite-Backup.
 Belegung und Reservierung nutzen eine gemeinsame Tabelle `storage_claims`.
 Ein partieller UNIQUE-Index schützt jeden Platz vor mehreren aktiven Ansprüchen,
 auch bei konkurrierenden Schreibzugriffen und Statusänderungen. Ein aktiver
-Radsatz darf ebenfalls nur einen Platz beanspruchen. Reservierungsformulare und
-atomare Umwandlung sind noch nicht implementiert. Die Suche liest derzeit aktive
+Radsatz darf ebenfalls nur einen Platz beanspruchen. Reservierungsformulare sind noch nicht implementiert. Die atomare Umwandlung einer
+eindeutig zugeordneten, passenden Reservierung ist im Neueinlagerungsablauf möglich. Die Suche liest derzeit aktive
 Ansprüche mit zugeordnetem Radsatz; keine vollständige Kunden- oder Historienansicht.
 Die Suche filtert lokal in Go nach SQL-Abfrage, um Unicode ohne zusätzliche
 SQLite-Erweiterungen korrekt zu behandeln; für größere Bestände später messen.
@@ -127,7 +127,7 @@ Keinen älteren App-Stand auf einer bereits aktualisierten Datenbank starten.
 4. Bestätigung mit Lagerplatz prüfen, Dialog schließen und nach Name oder
    Kennzeichen suchen. Nach einem Serverneustart bleibt die Einlagerung vorhanden.
 5. Derselbe Platz wird beim erneuten Speichern als belegt abgewiesen. Auch eine
-   aktive Reservierung sperrt den Platz; keine automatische Reservierungsumwandlung.
+   aktive Reservierung sperrt den Platz, solange Name und Kennzeichen nicht beide passen.
 
 ### Annahmen und Pflichtfelder
 
@@ -249,3 +249,33 @@ HTTP 409 bei belegtem oder reserviertem Platz zeigt einen auffälligen roten
 Fehlerkasten und einen roten Rahmen mit direktem Hinweis am Nummernfeld.
 Das Nummernfeld erhält den Fokus. Der Konflikthinweis bleibt auch nach Verlassen
 des Feldes bestehen und wird bei Änderung von Lagerbereich oder Nummer entfernt.
+
+### Direkte Platzprüfung und passende Reservierungen
+
+Beim Ändern von Bereich, Nummer, Name oder Kennzeichen wird der Platz nach kurzer
+Eingabepause direkt geprüft. Frei erscheint grün; belegt oder nicht passend
+reserviert erscheint rot am Nummernfeld. Während einer laufenden oder gescheiterten
+Prüfung sowie bei einem Konflikt ist Speichern gesperrt. „Erneut prüfen“ wiederholt
+die Abfrage, etwa nach einem Verbindungsfehler oder einer zwischenzeitlichen Änderung.
+Die Vorschau ist keine Platzsperre: Beim Speichern wird stets erneut transaktional
+geprüft; ein inzwischen belegter Platz wird weiterhin zuverlässig abgewiesen.
+
+`POST /api/storage/check` erwartet JSON mit `area`, `number`, `name`, `plate` und
+liefert `place`, `status` (`free`, `occupied`, `reserved`), `allowed`, `matches`,
+`message`. HTTP 200 beschreibt auch regulär belegte/reservierte Plätze;
+422 ungültige Prüfeingaben, 400 ungültiges JSON, 500 Prüfungsfehler.
+Kein Cache und keine Offenlegung des Namens/Kennzeichens des Reservierenden.
+
+Für reservierte Plätze müssen Kundenname **und** Kennzeichen übereinstimmen:
+Name ohne Beachtung der Groß-/Kleinschreibung, mit vereinheitlichten Leerzeichen;
+Kennzeichen zusätzlich ohne Leerzeichen/Bindestriche. Keine unscharfe Namenssuche
+für die Freigabe. Der Zusammenhang ergibt sich aus der bestehenden Verknüpfung
+Reservierung → Radsatz → Fahrzeug → Kunde. Reservierungen ohne zugeordneten
+Kunden und Fahrzeug bleiben gesperrt. Ein Reservierungsformular folgt später;
+für reale Daten keine manuellen SQL-Eingriffe als Teil dieses Ablaufs nötig.
+
+Bei passender Reservierung markiert dieselbe SQLite-Transaktion diese als
+`converted`, verwendet den zugeordneten Radsatz/Kunden/das Fahrzeug weiter,
+aktualisiert Marke/Modell und speichert Belegung und erfasste Details. Ein Fehler
+rollt auch die Reservierungsumwandlung zurück. Der alte Reservierungsdatensatz
+bleibt erhalten. Keine neue Migration oder Abhängigkeit erforderlich.

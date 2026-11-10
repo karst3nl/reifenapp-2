@@ -53,3 +53,22 @@ Nummernfeld erhält roten 2px-Rahmen und Fokus, Konflikt bleibt nach Fokuswechse
 bestehen und verschwindet nach Änderung der Nummer. Keine neue Migration oder
 Backendänderung. Race-/Hardware-/LAN-Tests und weitere Browser für diesen reinen
 Frontend-Schritt nicht erneut ausgeführt.
+
+## Direkte Platzprüfung und Reservierungsabgleich
+
+Erfolgreich: `go test ./...`, `go test -race ./...`, `go vet ./...`, Build,
+JavaScript-Syntaxprüfung und `git diff --check`.
+Neue Datenbanktests: frei, belegt, reserviert, unbekannter Platz, fehlende
+Zuordnung, falscher Name, falsches Kennzeichen, normalisierter exakter Abgleich,
+passende Umwandlung ohne doppelte Kunden/Radsätze, Suchintegration,
+Rollback bei absichtlich ausgelöstem Detailfehler, genau eine erfolgreiche
+Umwandlung bei parallelem Zugriff über unabhängige Verbindungen.
+API-Tests: Statusantworten, ungültige Felder/JSON, Datenbankfehler, No-Store,
+keine Offenlegung des Kunden am belegten Platz.
+Browserprüfung: unmittelbare Anzeige belegt/frei/reserviert, falsches Kennzeichen
+sperrt, beide passenden Identitätsangaben erlauben Speicherung, tatsächliche
+Reservierungsumwandlung mit anschließender Suche, erneute Prüfung zeigt Belegung,
+Netzwerkfehler sperrt und erneute Prüfung funktioniert, Schließen leert Anzeige.
+Nur fiktive Reservierungen in einer separaten temporären Testdatenbank eingesetzt.
+Keine vorhandenen lokalen Repository-Datenbanken verändert. Keine Migration.
+CachyOS-/Pi-Hardware, LAN und andere Browser weiterhin nicht getestet.

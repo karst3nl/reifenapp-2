@@ -13,6 +13,8 @@
   let ready=false, saving=false;
   let nameTimer, nameRequest, nameGeneration=0;
   let activeName=-1, conflictPlace='';
+  let placeTimer, placeRequest, placeGeneration=0, placePending=false, placeAllowed=null;
+  const placeHint=document.getElementById('place-check');
   const suggestions=document.getElementById('customer-names');
   const nameHint=document.getElementById('customer-hint');
   const field=name=>form.elements.namedItem(name);
@@ -26,12 +28,13 @@
     document.getElementById(id)?.remove();
     el.removeAttribute('aria-invalid');
     if(el.name==='name')el.setAttribute('aria-describedby','customer-hint');
+    else if(el.name==='number')el.setAttribute('aria-describedby','place-check');
     else el.removeAttribute('aria-describedby');
   }
   function markError(el,message){
     clearFieldError(el);
     const error=document.createElement('span');error.className='field-error';error.id='error-'+el.name.replaceAll('.','-');error.textContent=message;
-    el.setAttribute('aria-invalid','true');el.setAttribute('aria-describedby',(el.name==='name'?'customer-hint ':'')+error.id);el.parentElement.append(error);
+    el.setAttribute('aria-invalid','true');el.setAttribute('aria-describedby',(el.name==='name'?'customer-hint ':el.name==='number'?'place-check ':'')+error.id);el.parentElement.append(error);
   }
   function validateField(el){
     if(!el.matches('input,select,textarea'))return true;
@@ -67,7 +70,7 @@
     const item=suggestions.children[activeName];if(!item)return;
     field('name').value=item.textContent;clearTimeout(nameTimer);nameRequest?.abort();nameGeneration++;
     hideNames();validateField(field('name'));
-    nameHint.textContent='Kundenname übernommen.';
+    nameHint.textContent='Kundenname übernommen.';schedulePlaceCheck();
   }
   suggestions.addEventListener('pointerdown',event=>event.preventDefault());
   suggestions.addEventListener('click',event=>{
@@ -107,6 +110,7 @@
     },180);
   });
   function resetForm(){
+    clearTimeout(placeTimer);placeRequest?.abort();placeGeneration++;placePending=false;placeAllowed=null;placeHint.textContent='';placeHint.className='place-check';
     form.reset();conflictPlace='';clearErrors();status.textContent='';status.classList.remove('is-error');hideNames();numberRange();
     for(const key of ['hubcaps','bolts','lock']){field(key+'.location').required=false;field(key+'.location').disabled=true;}
     clearTimeout(nameTimer);nameRequest?.abort();nameGeneration++;suggestions.replaceChildren();
@@ -115,7 +119,7 @@
   dialog.addEventListener('close',resetForm);
   window.openStorage=async()=>{
     resetForm();dialog.showModal();
-    if(ready){status.textContent='';return;}
+    if(ready){status.textContent='';updateSaveState();return;}
     save.disabled=true;status.textContent='Auswahllisten werden geladen …';
     try {
       const response=await fetch('/api/storage/options');
@@ -129,11 +133,37 @@
       ready=true;numberRange();status.textContent='';save.disabled=false;
     }catch{status.textContent='Auswahllisten konnten nicht geladen werden. Bitte schließen und erneut öffnen.';}
   };
-  function clearPlaceConflict(){
+  function updateSaveState(){save.disabled=!ready||saving||placePending||placeAllowed===false;}
+  function plateValue(){return field('plate_district').value+'-'+field('plate_letters').value.trim().toUpperCase()+' '+field('plate_number').value.trim().toUpperCase();}
+  function schedulePlaceCheck(){
+    clearTimeout(placeTimer);placeRequest?.abort();const generation=++placeGeneration;
     if(conflictPlace){conflictPlace='';clearFieldError(field('number'));status.textContent='';status.classList.remove('is-error');}
+    placeAllowed=null;placePending=false;placeHint.textContent='';placeHint.className='place-check';
+    const area=field('area').value, number=Number(field('number').value);
+    if(!dialog.open||!area||!field('number').value||!field('number').validity.valid){updateSaveState();return;}
+    placePending=true;placeHint.textContent='Lagerplatz wird geprüft …';updateSaveState();
+    const body={area,number,name:field('name').value.trim(),plate:plateValue()};
+    placeTimer=setTimeout(async()=>{
+      placeRequest=new AbortController();
+      try{
+        const response=await fetch('/api/storage/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:placeRequest.signal,cache:'no-store'});
+        const result=await response.json();
+        if(generation!==placeGeneration||!dialog.open)return;
+        if(!response.ok)throw Error(result.error||'Lagerplatzprüfung fehlgeschlagen.');
+        placeAllowed=result.allowed;placeHint.textContent=result.message;
+        placeHint.className='place-check '+(result.allowed?'is-available':'is-unavailable');
+        if(!result.allowed){conflictPlace=area+'.'+number;markError(field('number'),result.message);}
+      }catch(error){
+        if(error.name==='AbortError'||generation!==placeGeneration)return;
+        placeAllowed=false;placeHint.className='place-check is-unavailable';
+        placeHint.textContent='Lagerplatzprüfung nicht möglich. Bitte Verbindung prüfen und „Erneut prüfen“ wählen.';
+      }finally{if(generation===placeGeneration){placePending=false;updateSaveState();}}
+    },180);
   }
-  field('area').addEventListener('change',()=>{numberRange();clearPlaceConflict();});
-  field('number').addEventListener('input',clearPlaceConflict);
+  field('area').addEventListener('change',()=>{numberRange();schedulePlaceCheck();});
+  for(const name of ['number','name','plate_letters','plate_number'])field(name).addEventListener('input',schedulePlaceCheck);
+  field('plate_district').addEventListener('change',schedulePlaceCheck);
+  document.getElementById('place-recheck').addEventListener('click',schedulePlaceCheck);
   for(const key of ['hubcaps','bolts','lock']){
     field(key+'.present').addEventListener('change',()=>{
       const present=field(key+'.present').checked;
@@ -144,7 +174,7 @@
   close.addEventListener('click',()=>{if(!saving)dialog.close();});
   dialog.addEventListener('cancel',event=>{if(saving)event.preventDefault();});
   form.addEventListener('submit',async event=>{
-    event.preventDefault();if(saving||!ready)return;clearErrors();
+    event.preventDefault();if(saving||!ready||placePending||placeAllowed===false)return;clearErrors();
     let valid=true;
     form.querySelectorAll('input,select,textarea').forEach(el=>{if(!validateField(el))valid=false;});
     if(!valid){status.classList.add('is-error');status.textContent='Bitte die rot markierten Pflichtfelder prüfen.';form.querySelector('[aria-invalid=true]')?.focus();return;}
@@ -152,12 +182,12 @@
     const input={};
     for(const key of ['area','name','brand','model','tire_type','rim_type','front_depth','rear_depth','mechanic','notes'])input[key]=value(key);
     input.number=Number(value('number'));
-    input.plate=value('plate_district')+'-'+value('plate_letters').trim().toUpperCase()+' '+value('plate_number').trim().toUpperCase();
+    input.plate=plateValue();
     for(const axle of ['front','rear']){
       input[axle]={};for(const key of ['width','ratio','inches','load','speed'])input[axle][key]=value(axle+'.'+key);
     }
     for(const key of ['hubcaps','bolts','lock'])input[key]={present:field(key+'.present').checked,location:value(key+'.location')};
-    hideNames();status.classList.remove('is-error');saving=true;save.disabled=true;close.disabled=true;nav.forEach(button=>button.disabled=true);status.textContent='Wird gespeichert …';
+    clearTimeout(placeTimer);placeRequest?.abort();placeGeneration++;hideNames();status.classList.remove('is-error');saving=true;save.disabled=true;close.disabled=true;nav.forEach(button=>button.disabled=true);status.textContent='Wird gespeichert …';
     // Freeze the submitted snapshot until the response arrives.
     const enabled=[...form.elements].filter(el=>!el.disabled);enabled.forEach(el=>el.disabled=true);
     try {
@@ -165,7 +195,7 @@
       const data=await response.json();
       if(!response.ok){
         status.classList.add('is-error');
-        if(response.status===409){conflictPlace=input.area+'.'+input.number;markError(field('number'),'Lagerplatz '+conflictPlace+' ist belegt oder reserviert. Bitte einen anderen wählen.');}
+        if(response.status===409){placeAllowed=false;placeHint.textContent='Belegung oder Reservierung hat sich geändert. Bitte Eingaben prüfen und erneut prüfen.';placeHint.className='place-check is-unavailable';conflictPlace=input.area+'.'+input.number;markError(field('number'),'Lagerplatz '+conflictPlace+' ist belegt oder reserviert. Bitte einen anderen wählen.');}
         status.textContent=data.error||'Speichern fehlgeschlagen.';
         for(const [name,message] of Object.entries(data.fields||{})){
           const el=field(name==='plate'?'plate_district':name);if(!el)continue;
@@ -181,7 +211,7 @@
       dialog.close();
     }catch{status.classList.add('is-error');status.textContent='Keine Speicherbestätigung erhalten. Bitte zuerst in der Schnellsuche prüfen, ob die Einlagerung gespeichert wurde. Ihre Eingaben bleiben erhalten.';}
     finally{
-      enabled.forEach(el=>el.disabled=false);saving=false;save.disabled=false;close.disabled=false;nav.forEach(button=>button.disabled=false);
+      enabled.forEach(el=>el.disabled=false);saving=false;updateSaveState();close.disabled=false;nav.forEach(button=>button.disabled=false);
       for(const key of ['hubcaps','bolts','lock'])field(key+'.location').disabled=!field(key+'.present').checked;
       if(dialog.open){if(conflictPlace)field('number').focus();else status.focus();}
     }

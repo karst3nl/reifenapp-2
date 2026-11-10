@@ -34,7 +34,7 @@
 <form id="storage-form" autocomplete="off" novalidate>
 <fieldset><legend>Lagerplatz und Kunde</legend><div class="fields">
 <label>Lagerbereich *<select name="area" required></select></label>
-<label>Lagerplatznummer *<input name="number" type="number" required step="1"></label>
+<label>Lagerplatznummer *<input name="number" type="number" required step="1" aria-describedby="place-check"><span id="place-check" class="place-check" role="status"></span><button type="button" id="place-recheck" class="secondary">Erneut prüfen</button></label>
 <div class="customer-picker"><label>Kundenname *<input name="name" required maxlength="200" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="customer-names" aria-describedby="customer-hint" autocomplete="off"></label><div id="customer-names" role="listbox" aria-label="Vorhandene Kunden" hidden></div><span id="customer-hint" class="hint" role="status">Vorhandenen Namen auswählen oder neuen eingeben.</span></div>
 <div class="plate-fields"><label>Landkreiskürzel *<select name="plate_district" required></select></label><label>Kennzeichen-Buchstaben *<input name="plate_letters" required maxlength="2" pattern="[A-Za-z]{1,2}" placeholder="AB" autocapitalize="characters"></label><label>Kennzeichen-Nummer *<input name="plate_number" required maxlength="5" pattern="[1-9][0-9]{0,3}[EeHh]?" placeholder="123 (ggf. E/H)" autocapitalize="characters"></label></div>
 <label>Fahrzeugmarke *<select name="brand" required></select></label>
