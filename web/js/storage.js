@@ -10,7 +10,7 @@
   document.getElementById('copy-front').addEventListener('click',()=>{
     for(const key of ['width','ratio','inches','load','speed']){const el=field('rear.'+key);el.value=field('front.'+key).value;if(el.hasAttribute('aria-invalid'))validateField(el);}
   });
-  let ready=false, saving=false;
+  let ready=false, saving=false, reservationMode=false;
   let nameTimer, nameRequest, nameGeneration=0;
   let activeName=-1, conflictPlace='';
   let placeTimer, placeRequest, placeGeneration=0, placePending=false, placeAllowed=null;
@@ -113,11 +113,25 @@
     clearTimeout(placeTimer);placeRequest?.abort();placeGeneration++;placePending=false;placeAllowed=null;placeHint.textContent='';placeHint.className='place-check';
     form.reset();conflictPlace='';clearErrors();status.textContent='';status.classList.remove('is-error');hideNames();numberRange();
     for(const key of ['hubcaps','bolts','lock']){field(key+'.location').required=false;field(key+'.location').disabled=true;}
+    setFormMode();
     clearTimeout(nameTimer);nameRequest?.abort();nameGeneration++;suggestions.replaceChildren();
     nameHint.textContent='Vorhandenen Namen auswählen oder neuen eingeben.';
   }
   dialog.addEventListener('close',resetForm);
-  window.openStorage=async()=>{
+  function setFormMode(){
+    document.getElementById('storage-title').textContent=reservationMode?'Reservierung':'Neueinlagerung';
+    save.textContent=reservationMode?'Reservierung speichern':'Einlagerung speichern';
+    dialog.classList.toggle('reservation-mode',reservationMode);
+    form.querySelectorAll('fieldset').forEach((section,index)=>{
+      if(index===0)return;
+      section.hidden=reservationMode;
+      section.querySelectorAll('input,select,textarea,button').forEach(el=>{el.disabled=reservationMode;});
+    });
+    for(const key of ['hubcaps','bolts','lock'])field(key+'.location').disabled=reservationMode||!field(key+'.present').checked;
+  }
+  window.openReservation=()=>window.openStorage(true);
+  window.openStorage=async(reservation=false)=>{
+    reservationMode=reservation;
     resetForm();dialog.showModal();
     if(ready){status.textContent='';updateSaveState();return;}
     save.disabled=true;status.textContent='Auswahllisten werden geladen …';
@@ -142,7 +156,7 @@
     const area=field('area').value, number=Number(field('number').value);
     if(!dialog.open||!area||!field('number').value||!field('number').validity.valid){updateSaveState();return;}
     placePending=true;placeHint.textContent='Lagerplatz wird geprüft …';updateSaveState();
-    const body={area,number,name:field('name').value.trim(),plate:plateValue()};
+    const body={area,number,name:field('name').value.trim(),plate:plateValue(),purpose:reservationMode?'reservation':'storage'};
     placeTimer=setTimeout(async()=>{
       placeRequest=new AbortController();
       try{
@@ -180,18 +194,21 @@
     if(!valid){status.classList.add('is-error');status.textContent='Bitte die rot markierten Pflichtfelder prüfen.';form.querySelector('[aria-invalid=true]')?.focus();return;}
     const value=name=>field(name).value;
     const input={};
-    for(const key of ['area','name','brand','model','tire_type','rim_type','front_depth','rear_depth','mechanic','notes'])input[key]=value(key);
+    for(const key of ['area','name','brand','model','tire_type','rim_type'])input[key]=value(key);
+    if(!reservationMode)for(const key of ['front_depth','rear_depth','mechanic','notes'])input[key]=value(key);
     input.number=Number(value('number'));
     input.plate=plateValue();
+    if(!reservationMode){
     for(const axle of ['front','rear']){
       input[axle]={};for(const key of ['width','ratio','inches','load','speed'])input[axle][key]=value(axle+'.'+key);
     }
     for(const key of ['hubcaps','bolts','lock'])input[key]={present:field(key+'.present').checked,location:value(key+'.location')};
+    }
     clearTimeout(placeTimer);placeRequest?.abort();placeGeneration++;hideNames();status.classList.remove('is-error');saving=true;save.disabled=true;close.disabled=true;nav.forEach(button=>button.disabled=true);status.textContent='Wird gespeichert …';
     // Freeze the submitted snapshot until the response arrives.
     const enabled=[...form.elements].filter(el=>!el.disabled);enabled.forEach(el=>el.disabled=true);
     try {
-      const response=await fetch('/api/storage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
+      const response=await fetch(reservationMode?'/api/reservations':'/api/storage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
       const data=await response.json();
       if(!response.ok){
         status.classList.add('is-error');
@@ -205,7 +222,7 @@
       }
       form.reset();numberRange();
       for(const key of ['hubcaps','bolts','lock']){field(key+'.location').required=false;}
-      status.textContent=`Neueinlagerung auf ${data.place} gespeichert. Über die Schnellsuche auffindbar.`;
+      status.textContent=`${reservationMode?'Reservierung':'Neueinlagerung'} auf ${data.place} gespeichert. Über die Schnellsuche auffindbar.`;
       const confirmation=document.getElementById('storage-confirmation');
       confirmation.textContent=status.textContent;confirmation.hidden=false;
       dialog.close();

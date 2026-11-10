@@ -72,3 +72,22 @@ Netzwerkfehler sperrt und erneute Prüfung funktioniert, Schließen leert Anzeig
 Nur fiktive Reservierungen in einer separaten temporären Testdatenbank eingesetzt.
 Keine vorhandenen lokalen Repository-Datenbanken verändert. Keine Migration.
 CachyOS-/Pi-Hardware, LAN und andere Browser weiterhin nicht getestet.
+
+## Reservierungsformular
+
+Erfolgreich: `go test ./...`, `go test -race ./...`, `go vet ./...`, Build,
+JavaScript-Syntaxprüfung und `git diff --check`.
+Neue Datenbank-/API-Tests: Reservierung ohne Größen/Zubehör anlegen, Wiederöffnung
+mit erhaltenen Daten, Suche mit Typkennzeichnung, Doppelreservierung einschließlich
+gleicher Identität ablehnen, belegten Platz ablehnen, gemeinsame Pflichtfeldprüfung,
+unzulässige Zusatzfelder ablehnen, Rollback aller Teilschritte bei Speicherfehler,
+genau eine erfolgreiche Reservierung bei parallelen unabhängigen Verbindungen,
+Unterschied zwischen Reservierungsprüfung und Einlagerungsabgleich, anschließende
+Umwandlung mit Wiederverwendung des Kunden und Radsatzes.
+Chromium-Browserprüfung: reduzierte sichtbare Felder, Pflichtfeldmarkierungen,
+Namensvorschlag mit Tab, direkte Platzprüfung, Speichern/automatisches Schließen,
+Suchtreffer mit „Reserviert“, gleiche Identität ermöglicht keine Doppelreservierung,
+Mobilbreite 390px, Leeren beim Öffnen, Wechsel zur vollständigen Neueinlagerung
+mit allen Pflichtfeldern und tatsächliche Umwandlung bis zum Suchtreffer.
+Nur fiktive Testdaten in separaten temporären Datenbanken. Keine Migration.
+Echte CachyOS-/Pi-Hardware, LAN und weitere Browser nicht geprüft.

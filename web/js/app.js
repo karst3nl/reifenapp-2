@@ -23,7 +23,7 @@ async function search(id){
     for(const item of matches){
       const card=document.createElement('div');card.className='result';
       const info=document.createElement('div');const title=document.createElement('strong');title.textContent=item.name;
-      const meta=document.createElement('small');meta.textContent=`${item.plate} · ${item.car}`;info.append(title,meta);
+      const meta=document.createElement('small');meta.textContent=`${item.plate} · ${item.car}${item.kind==='reservation'?' · Reserviert':''}`;info.append(title,meta);
       const place=document.createElement('span');place.className='place';place.textContent=item.place;
       card.append(info,place);list.append(card);
     }
@@ -38,5 +38,5 @@ input.addEventListener('input',()=>{
   timer=setTimeout(()=>search(id),180);
 });
   const dialog=document.getElementById('placeholder');
-  document.querySelectorAll('[data-title]').forEach(button=>button.addEventListener('click',()=>{if(button.dataset.title==='Neueinlagerung'){window.openStorage();return;}document.getElementById('modal-title').textContent=button.dataset.title;dialog.showModal();}));
+  document.querySelectorAll('[data-title]').forEach(button=>button.addEventListener('click',()=>{if(button.dataset.title==='Reservierung'){window.openReservation();return;}if(button.dataset.title==='Neueinlagerung'){window.openStorage();return;}document.getElementById('modal-title').textContent=button.dataset.title;dialog.showModal();}));
   document.getElementById('close-modal').addEventListener('click',()=>dialog.close());

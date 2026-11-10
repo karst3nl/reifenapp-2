@@ -33,7 +33,7 @@ produktive Datenbank importieren. Laufzeitdaten bleiben durch `.gitignore` lokal
 - Leerzeichen und Bindestriche werden ignoriert, Groß-/Kleinschreibung ebenfalls
   (einschließlich deutscher Umlaute). Leerer Suchtext liefert `[]`.
 - Maximal 200 Zeichen; HTTP 400 bei Überschreitung, HTTP 500 bei Datenbankfehler.
-- Ladezustand, keine Treffer und Fehleranzeige; Neueinlagerung ist nutzbar, die übrigen fünf Vorgänge bleiben Platzhalter.
+- Ladezustand, keine Treffer und Fehleranzeige; Neueinlagerung und Reservierung sind nutzbar, die übrigen vier Vorgänge bleiben Platzhalter.
 - 640 gültige Plätze: C1.1–200, C2.201–400, C3/C4/OL/OR jeweils 1–60.
 
 ## Struktur und Entscheidungen
@@ -64,7 +64,7 @@ Upgrade mit Integritätsprüfung und konsistentem SQLite-Backup.
 Belegung und Reservierung nutzen eine gemeinsame Tabelle `storage_claims`.
 Ein partieller UNIQUE-Index schützt jeden Platz vor mehreren aktiven Ansprüchen,
 auch bei konkurrierenden Schreibzugriffen und Statusänderungen. Ein aktiver
-Radsatz darf ebenfalls nur einen Platz beanspruchen. Reservierungsformulare sind noch nicht implementiert. Die atomare Umwandlung einer
+Radsatz darf ebenfalls nur einen Platz beanspruchen. Das Reservierungsformular ist implementiert. Die atomare Umwandlung einer
 eindeutig zugeordneten, passenden Reservierung ist im Neueinlagerungsablauf möglich. Die Suche liest derzeit aktive
 Ansprüche mit zugeordnetem Radsatz; keine vollständige Kunden- oder Historienansicht.
 Die Suche filtert lokal in Go nach SQL-Abfrage, um Unicode ohne zusätzliche
@@ -271,7 +271,7 @@ Name ohne Beachtung der Groß-/Kleinschreibung, mit vereinheitlichten Leerzeiche
 Kennzeichen zusätzlich ohne Leerzeichen/Bindestriche. Keine unscharfe Namenssuche
 für die Freigabe. Der Zusammenhang ergibt sich aus der bestehenden Verknüpfung
 Reservierung → Radsatz → Fahrzeug → Kunde. Reservierungen ohne zugeordneten
-Kunden und Fahrzeug bleiben gesperrt. Ein Reservierungsformular folgt später;
+Kunden und Fahrzeug bleiben gesperrt. Das Reservierungsformular legt diese Zuordnung beim Speichern an;
 für reale Daten keine manuellen SQL-Eingriffe als Teil dieses Ablaufs nötig.
 
 Bei passender Reservierung markiert dieselbe SQLite-Transaktion diese als
@@ -279,3 +279,43 @@ Bei passender Reservierung markiert dieselbe SQLite-Transaktion diese als
 aktualisiert Marke/Modell und speichert Belegung und erfasste Details. Ein Fehler
 rollt auch die Reservierungsumwandlung zurück. Der alte Reservierungsdatensatz
 bleibt erhalten. Keine neue Migration oder Abhängigkeit erforderlich.
+
+## Reservierungsformular
+
+„Reservierung“ öffnet dieselbe Formularoberfläche im reduzierten Modus.
+Pflichtangaben: Bereich/Nummer, Kundenname, Kennzeichen, Fahrzeugmarke/Modell,
+Reifenart und Felgenart. Keine Größen, Profiltiefen, Zubehörangaben, Monteure oder
+Bemerkungen. Dieselben Namensvorschläge mit Tab, regionales Kennzeichen-Dropdown,
+roten Pflichtfeldhinweise, Vollbild, X/Zurück und Zurücksetzen beim Schließen.
+Nach Erfolg schließt das Formular; der Suchtext bleibt unverändert.
+
+Die Liveprüfung ist im Reservierungsmodus strenger: Nur **freie** Plätze sind
+reservierbar. Belegte oder bereits reservierte Plätze bleiben gesperrt, auch bei
+identischem Namen und Kennzeichen. Neue Reservierungen sind in der Suche mit
+„Reserviert“ gekennzeichnet. Später „Neueinlagerung“ öffnen, denselben Platz,
+Namen und dasselbe Kennzeichen sowie die vollständigen Reifendaten erfassen.
+Der bestehende atomare Umwandlungsablauf verwendet die Zuordnung weiter.
+
+`POST /api/reservations` erwartet JSON mit ausschließlich:
+
+```json
+{
+  "area":"C1", "number":9, "name":"Reservierung Fiktiv", "plate":"MZ-RF 987",
+  "brand":"VW", "model":"Golf", "tire_type":"Winter", "rim_type":"Stahl"
+}
+```
+
+201 liefert `id`, `place`, `message`; 422 Feldfehler, 409 belegter/reservierter
+Platz, 400 ungültiges JSON/unerwartete Zusatzfelder, 415 falscher Medientyp,
+403 fremder Ursprung und 500 Speicherfehler. Kunde, Fahrzeug, Radsatz und aktive
+Reservierung werden transaktional mit serverseitigem Zeitstempel gespeichert.
+Die bestehende Detailtabelle enthält hierfür Reifen-/Felgenart; unbekannte Achs-
+und Zubehördaten bleiben leere JSON-Objekte und optionale Textwerte leer.
+Keine erfundenen Reifendaten, keine neue Migration, keine neue Abhängigkeit.
+
+`POST /api/storage/check` akzeptiert jetzt optional `purpose: "reservation"`.
+Damit bleibt auch eine passende bestehende Reservierung für eine weitere
+Reservierung gesperrt. Ohne Angabe bzw. mit `purpose: "storage"` gilt der
+bestehende Einlagerungsabgleich. Die Suchantwort enthält zusätzlich `kind`
+(`reservation` oder `occupancy`). Kein Ablaufdatum, automatische Freigabe oder
+Stornierungsformular in diesem Schritt.

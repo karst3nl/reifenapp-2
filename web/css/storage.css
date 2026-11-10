@@ -54,3 +54,10 @@
 #storage-form .place-check.is-available{color:var(--accent2)}
 #storage-form .place-check.is-unavailable{color:#ffc0c7;font-weight:700}
 #storage-form #place-recheck{align-self:flex-start;padding:4px 8px;font-size:12px}
+#storage-form fieldset[hidden]{display:none}
+#storage-dialog.reservation-mode #storage-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+#storage-dialog.reservation-mode #storage-form fieldset:first-of-type{grid-column:1/-1}
+#storage-dialog.reservation-mode #storage-form fieldset:first-of-type .fields{grid-template-columns:repeat(4,minmax(0,1fr))}
+#storage-dialog.reservation-mode #storage-form .plate-fields{grid-column:span 2}
+@media(max-width:800px){#storage-dialog.reservation-mode #storage-form fieldset:first-of-type .fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){#storage-dialog.reservation-mode #storage-form fieldset:first-of-type .fields{grid-template-columns:1fr}#storage-dialog.reservation-mode #storage-form .plate-fields{grid-column:1/-1}}
