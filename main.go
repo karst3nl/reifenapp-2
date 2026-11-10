@@ -1,0 +1,46 @@
+package main
+
+import (
+	"embed"
+	"flag"
+	"io/fs"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/karst3nl/reifenapp-2/internal/database"
+	"github.com/karst3nl/reifenapp-2/internal/handlers"
+)
+
+//go:embed web
+var assets embed.FS
+
+func main() {
+	addr := flag.String("addr", "127.0.0.1:8080", "Listen address")
+	dev := flag.Bool("dev", false, "Use separate fictional development database")
+	flag.Parse()
+	path := "data/reifenapp.sqlite"
+	if *dev {
+		path = "data/development.sqlite"
+	}
+	_, statErr := os.Stat(path)
+	fresh := os.IsNotExist(statErr)
+	db, err := database.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	if *dev && fresh {
+		if err = database.SeedDevelopment(db); err != nil {
+			log.Fatal(err)
+		}
+	}
+	web, _ := fs.Sub(assets, "web")
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/search", handlers.Search(db))
+	mux.Handle("GET /", http.FileServer(http.FS(web)))
+	server := &http.Server{Addr: *addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second}
+	log.Printf("Reifenapp: http://%s (development=%t)", *addr, *dev)
+	log.Fatal(server.ListenAndServe())
+}
