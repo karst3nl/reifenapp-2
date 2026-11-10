@@ -8,15 +8,19 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/karst3nl/reifenapp-2/internal/models"
 	"github.com/karst3nl/reifenapp-2/migrations"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// Open initializes only new databases. Existing databases must already have
-// the current schema; future upgrades require an explicit backup workflow.
-func Open(path string) (*sql.DB, error) {
+// Open opens the current schema without upgrading an existing database.
+func Open(path string) (*sql.DB, error) { return OpenWithMigration(path, false) }
+
+// OpenWithMigration requires explicit authorization for upgrades and creates
+// a consistent SQLite backup before changing an existing schema.
+func OpenWithMigration(path string, upgrade bool) (*sql.DB, error) {
 	_, err := os.Stat(path)
 	fresh := os.IsNotExist(err)
 	if err != nil && !fresh {
@@ -35,44 +39,70 @@ func Open(path string) (*sql.DB, error) {
 		return nil, err
 	}
 	db.SetMaxOpenConns(1)
+	fail := func(err error) (*sql.DB, error) { db.Close(); return nil, err }
 	if err = db.Ping(); err != nil {
-		db.Close()
-		return nil, err
+		return fail(err)
 	}
-	if fresh {
-		err = migrate(db)
-	} else {
-		var version int
-		err = db.QueryRow("SELECT COALESCE(MAX(version),0) FROM schema_migrations").Scan(&version)
-		if err == nil && version != 1 {
-			err = fmt.Errorf("unsupported schema version %d; backup and explicit migration required", version)
+	version := 0
+	if !fresh {
+		if err = db.QueryRow("SELECT COALESCE(MAX(version),0) FROM schema_migrations").Scan(&version); err != nil {
+			return fail(err)
+		}
+		if version < 1 || version > 2 {
+			return fail(fmt.Errorf("unbekannte Schemaversion %d", version))
+		}
+		if version < 2 {
+			if !upgrade {
+				return fail(fmt.Errorf("Schemaversion %d: Server stoppen, dann mit -migrate starten; vorher wird automatisch ein Backup erzeugt", version))
+			}
+			var integrity string
+			if err = db.QueryRow("PRAGMA integrity_check").Scan(&integrity); err != nil {
+				return fail(err)
+			}
+			if integrity != "ok" {
+				return fail(fmt.Errorf("Integritätsprüfung fehlgeschlagen; kein Upgrade"))
+			}
+			backup := absolute + ".backup-" + time.Now().UTC().Format("20060102T150405.000000000Z")
+			if _, err = db.Exec("VACUUM INTO ?", backup); err != nil {
+				return fail(fmt.Errorf("Backup fehlgeschlagen: %w", err))
+			}
+			if err = os.Chmod(backup, 0600); err != nil {
+				return fail(err)
+			}
 		}
 	}
-	if err != nil {
-		db.Close()
-		return nil, err
+	if err = migrate(db, version); err != nil {
+		return fail(err)
 	}
 	return db, nil
 }
 
-func migrate(db *sql.DB) error {
+func migrate(db *sql.DB, version int) error {
+	if version == 2 {
+		return nil
+	}
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	if _, err = tx.Exec("CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY)"); err != nil {
-		return err
+	if version == 0 {
+		if _, err = tx.Exec("CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY)"); err != nil {
+			return err
+		}
 	}
-	script, err := migrations.Files.ReadFile("001_initial.sql")
-	if err != nil {
-		return err
-	}
-	if _, err = tx.Exec(string(script)); err != nil {
-		return err
-	}
-	if _, err = tx.Exec("INSERT INTO schema_migrations VALUES(1)"); err != nil {
-		return err
+	files := []string{"001_initial.sql", "002_storage_details.sql"}
+	for i := version; i < len(files); i++ {
+		script, err := migrations.Files.ReadFile(files[i])
+		if err != nil {
+			return err
+		}
+		if _, err = tx.Exec(string(script)); err != nil {
+			return err
+		}
+		if _, err = tx.Exec("INSERT INTO schema_migrations VALUES(?)", i+1); err != nil {
+			return err
+		}
 	}
 	return tx.Commit()
 }
@@ -117,7 +147,7 @@ func SeedDevelopment(db *sql.DB) error {
 	defer tx.Rollback()
 	for _, s := range []string{
 		`INSERT INTO customers VALUES(1,'Max Mustermann (fiktiv)'),(2,'Erika Beispiel (fiktiv)')`,
-		`INSERT INTO vehicles VALUES(1,1,'TEST-MM 123','VW Golf'),(2,2,'TEST-EB 456','Audi A3')`,
+		`INSERT INTO vehicles(id,customer_id,plate,car) VALUES(1,1,'TEST-MM 123','VW Golf'),(2,2,'TEST-EB 456','Audi A3')`,
 		`INSERT INTO tire_sets VALUES(1,1),(2,2)`,
 		`INSERT INTO storage_claims VALUES(1,'C1.25',1,'occupancy','active','2026-11-09T14:40:00Z'),(2,'C2.215',2,'occupancy','active','2026-11-08T10:30:00Z')`,
 	} {

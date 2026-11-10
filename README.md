@@ -11,7 +11,7 @@ Voraussetzungen: Git, Go ab 1.23 und C-Compiler (SQLite-Treiber benötigt CGO).
 sudo pacman -S --needed git go base-devel
 git clone https://github.com/karst3nl/reifenapp-2.git
 cd reifenapp-2
-git switch feat/milestone-1
+git switch feat/neueinlagerung
 go mod download
 go run .
 ```
@@ -33,7 +33,7 @@ produktive Datenbank importieren. Laufzeitdaten bleiben durch `.gitignore` lokal
 - Leerzeichen und Bindestriche werden ignoriert, Groß-/Kleinschreibung ebenfalls
   (einschließlich deutscher Umlaute). Leerer Suchtext liefert `[]`.
 - Maximal 200 Zeichen; HTTP 400 bei Überschreitung, HTTP 500 bei Datenbankfehler.
-- Ladezustand, keine Treffer und Fehleranzeige; sechs Vorgänge bleiben Platzhalter.
+- Ladezustand, keine Treffer und Fehleranzeige; Neueinlagerung ist nutzbar, die übrigen fünf Vorgänge bleiben Platzhalter.
 - 640 gültige Plätze: C1.1–200, C2.201–400, C3/C4/OL/OR jeweils 1–60.
 
 ## Struktur und Entscheidungen
@@ -44,7 +44,9 @@ internal/database/         SQLite, Initialisierung, Suche, Entwicklungsdaten
 internal/handlers/         HTTP-API
 internal/models/           Suchergebnis
 web/index.html             Verbindliches Originaldesign
-web/js/app.js              API-Anbindung und Platzhalterdialoge
+web/js/app.js              Suchanbindung und übrige Platzhalterdialoge
+web/js/storage.js          Neueinlagerungsformular
+web/css/storage.css        Ausschließlich auf das neue Formular begrenztes CSS
 migrations/                Versionierte SQL-Migrationen und Einbettung
 docs/projektuebersicht.md   Bereitgestellte fachliche Grundlage
 AGENTS.md                  Regeln für weitere Arbeiten
@@ -56,8 +58,8 @@ Einziger direkter externer Go-Baustein ist der bewährte SQLite-Treiber
 `github.com/mattn/go-sqlite3`. SQLite verwendet WAL, Fremdschlüssel und einen
 Busy-Timeout. SQL-Migrationen laufen transaktional bei der Erstinitialisierung.
 Bestehende Datenbanken werden auf die bekannte Schemaversion geprüft; unbekannte
-Versionen werden abgelehnt. Vor späteren Migrationen bestehender Datenbanken
-muss ein ausdrücklicher Backup-/Upgradeablauf ergänzt werden.
+Versionen werden abgelehnt. Schema 1 benötigt das unten beschriebene explizite
+Upgrade mit Integritätsprüfung und konsistentem SQLite-Backup.
 
 Belegung und Reservierung nutzen eine gemeinsame Tabelle `storage_claims`.
 Ein partieller UNIQUE-Index schützt jeden Platz vor mehreren aktiven Ansprüchen,
@@ -88,4 +90,101 @@ Standardmäßig lauscht der Server ausschließlich auf Loopback. LAN-Zugriff ist
 perspektivisch über `-addr 0.0.0.0:8080` möglich; vorher Werkstattnetz, Firewall und
 Zugriffsschutz festlegen. Es gibt noch keine Authentifizierung oder TLS.
 Keine Cloud für den laufenden Betrieb nötig. CSV, PDF, Administration, vollständige
-Historie und Vorgangsformulare folgen später.
+Historie und weitere Vorgangsformulare folgen später.
+
+## Neueinlagerung (zweiter Meilenstein)
+
+### Vorhandene Installation aktualisieren
+
+Alle laufenden Reifenapp-Server zuerst im jeweiligen Terminal mit Strg+C beenden.
+Im bestehenden Repository (lokale Änderungen vorher mit `git status` prüfen):
+
+```sh
+git fetch origin
+git switch feat/neueinlagerung
+git pull --ff-only origin feat/neueinlagerung
+go run . -dev -migrate
+```
+
+Diese Variante arbeitet weiterhin mit den fiktiven Entwicklungsdaten.
+Für die normale Datenbank stattdessen `go run . -migrate` verwenden.
+Einmalig nötig bei Schema 1: Integritätsprüfung, dann `VACUUM INTO` für eine
+konsistente Sicherung inklusive noch im WAL befindlicher Änderungen, danach
+transaktionale Migration 002. Das Backup liegt neben der ursprünglichen Datei
+als `*.sqlite.backup-<UTC-Zeitstempel>` und ist ebenfalls ignoriert.
+Bei einem Backupfehler findet keine Migration statt. Vorhandene Datensätze werden
+nicht neu angelegt, gelöscht oder mit Beispielen überschrieben. Alle anderen
+Prozesse mit Zugriff auf diese Datenbank müssen während des Upgrades beendet sein.
+Anschließend genügt wieder `go run . -dev` bzw. `go run .`.
+Keinen älteren App-Stand auf einer bereits aktualisierten Datenbank starten.
+
+### Im Browser testen
+
+1. http://127.0.0.1:8080 öffnen und „Neueinlagerung“ anklicken.
+2. Einen freien Platz wählen, etwa C1.2, und „Fiktiver Testkunde“ mit
+   Kennzeichen „TEST-NE 123“, Marke/Modell, Reifen- und Felgenart erfassen.
+3. Optional Achsdaten, Zubehör, Monteur und Bemerkungen ergänzen; speichern.
+4. Bestätigung mit Lagerplatz prüfen, Dialog schließen und nach Name oder
+   Kennzeichen suchen. Nach einem Serverneustart bleibt die Einlagerung vorhanden.
+5. Derselbe Platz wird beim erneuten Speichern als belegt abgewiesen. Auch eine
+   aktive Reservierung sperrt den Platz; keine automatische Reservierungsumwandlung.
+
+### Annahmen und Pflichtfelder
+
+Die Projektübersicht legt keine abschließende Pflichtfeldliste und keine konkreten
+Dropdownwerte fest. Für diesen Meilenstein gelten ausdrücklich diese Annahmen:
+
+- Pflicht: Lagerbereich/-nummer, Kundenname, Kennzeichen, Marke, Modell,
+  Reifenart und Felgenart. Sie sind im Formular mit * gekennzeichnet.
+- Optional: einzelne Größenangaben VA/HA, Profiltiefen, Zubehör, Monteur,
+  Bemerkungen. Teilweise bekannte Reifengrößen sind erlaubt.
+- Falls Zubehör als vorhanden markiert ist, wird dessen Aufbewahrungsort Pflicht.
+  Bei nicht vorhandenem Zubehör wird kein Aufbewahrungsort gespeichert.
+- Die anfänglichen Dropdownlisten sind in `internal/models/storage.go` zentral
+  hinterlegt und über die Optionen-API verfügbar. Noch keine Adminpflege.
+  Marke „Sonstige“ ist für nicht gelistete Hersteller verfügbar.
+- Größenlisten: Breite 125–355 mm (10er-Schritte), Querschnitt 20–85 (5er-Schritte),
+  Zoll 10–24, Traglastindex 50–130; gängige Geschwindigkeitsindizes einschließlich
+  `(Y)`. Diese Auswahl ist eine erste Eingabehilfe, keine technische
+  Zulassungs-/Kompatibilitätsprüfung und kein vollständiger Reifenkatalog.
+- Profiltiefe optional 0–20 mm in 0,5-mm-Schritten, ohne Verschleißbewertung.
+- Jede Neueinlagerung erstellt vorerst einen eigenen Kunden, ein Fahrzeug und
+  einen Radsatz. Vorhandene Kunden werden nicht automatisch anhand ihres Namens
+  zusammengeführt. Kundenauswahl/-zusammenführung folgt später.
+- Neue Einlagerungen erhalten serverseitig UTC-Zeitstempel. Bestehende fiktive
+  Beispiele behalten ihre Kennzeichnung; neue Testnamen bitte mit „fiktiv“ versehen.
+
+### API und Datenmodell
+
+`GET /api/storage/options` liefert JSON-Listen für die Dropdowns.
+`POST /api/storage` erwartet `Content-Type: application/json` mit:
+
+```json
+{
+  "area": "C1", "number": 2,
+  "name": "Fiktiver Testkunde", "plate": "TEST-NE 123",
+  "brand": "VW", "model": "Golf", "tire_type": "Winter", "rim_type": "Stahl",
+  "front": {"width":"205","ratio":"55","inches":"16","load":"91","speed":"H"},
+  "rear": {}, "front_depth":"6.5", "rear_depth":"",
+  "hubcaps":{"present":true,"location":"Am Radsatz"},
+  "bolts":{"present":false,"location":""},
+  "lock":{"present":false,"location":""},
+  "mechanic":"Fiktiver Monteur", "notes":"Nur Testdaten"
+}
+```
+
+HTTP 201: `{ "id": 3, "place": "C1.2", "message": "Neueinlagerung gespeichert." }`.
+Fehler enthalten `error`, bei HTTP 422 zusätzlich eine `fields`-Zuordnung.
+Weitere Statuscodes: 400 ungültiges JSON/unbekannte Felder/zu große Anfrage,
+403 fremder Browserursprung, 409 Platz belegt oder aktiv reserviert,
+415 falscher Content-Type, 500 interner Speicherfehler ohne Datenbankdetails.
+Maximale Anfragegröße: 32 KiB. Die bestehende Such-API bleibt unverändert.
+
+Migration `002_storage_details.sql` ergänzt Marke/Modell am Fahrzeug und
+`storage_details` am Einlagerungsanspruch. Achsdaten und die drei festen
+Zubehörangaben werden als JSON in dieser Detailtabelle gespeichert. Die kleine,
+zusammengehörige Struktur benötigt vorerst keine weiteren Untertabellen.
+Kunde, Fahrzeug, Radsatz, Platzanspruch und Details werden in **einer Transaktion**
+gespeichert. Der vorhandene UNIQUE-Index ist die verbindliche Konfliktprüfung.
+Fehler rollen alle Teilschritte zurück. JSON-Schreibzugriffe aus fremden
+Browserursprüngen werden abgelehnt; LAN-Authentifizierung bleibt ein späteres Thema.

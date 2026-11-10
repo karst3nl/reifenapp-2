@@ -38,5 +38,5 @@ input.addEventListener('input',()=>{
   timer=setTimeout(()=>search(id),180);
 });
   const dialog=document.getElementById('placeholder');
-  document.querySelectorAll('[data-title]').forEach(button=>button.addEventListener('click',()=>{document.getElementById('modal-title').textContent=button.dataset.title;dialog.showModal();}));
+  document.querySelectorAll('[data-title]').forEach(button=>button.addEventListener('click',()=>{if(button.dataset.title==='Neueinlagerung'){window.openStorage();return;}document.getElementById('modal-title').textContent=button.dataset.title;dialog.showModal();}));
   document.getElementById('close-modal').addEventListener('click',()=>dialog.close());
