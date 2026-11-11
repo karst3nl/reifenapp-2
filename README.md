@@ -1,7 +1,9 @@
 # Reifenapp 2.0
 
-Lokale Reifenlagerverwaltung mit Go, SQLite und HTML/CSS/Vanilla JavaScript.
-Die Original-README enthielt ausschließlich den Repository-Namen `reifenapp-2`.
+Open-Source-Reifenlagerverwaltung für Kfz-Werkstätten mit Go, SQLite und
+HTML/CSS/Vanilla JavaScript. Lokal betreibbar, ohne Cloudpflicht.
+
+**Lizenz:** [MIT](LICENSE) · **Entwicklung:** [beta](https://github.com/karst3nl/reifenapp-2/tree/beta)
 
 ![Aktuelle Startseite der Reifenapp](docs/images/startseite.png)
 
@@ -20,8 +22,7 @@ go mod download
 go run .
 ```
 
-Bei öffentlichem Zugriff ist keine GitHub-Anmeldung zum Herunterladen nötig.
-Falls GitHub eine Anmeldung verlangt, Git-Credential-Manager oder SSH verwenden.
+Das Repository ist öffentlich. Zum Herunterladen ist keine GitHub-Anmeldung nötig.
 Im Browser http://127.0.0.1:8080 öffnen.
 
 `go run .` erzeugt eine leere lokale Datenbank `data/reifenapp.sqlite`.
@@ -193,3 +194,22 @@ Kunde, Fahrzeug, Radsatz, Platzanspruch und Details werden in **einer Transaktio
 gespeichert. Der vorhandene UNIQUE-Index ist die verbindliche Konfliktprüfung.
 Fehler rollen alle Teilschritte zurück. JSON-Schreibzugriffe aus fremden
 Browserursprüngen werden abgelehnt; LAN-Authentifizierung bleibt ein späteres Thema.
+
+## Lizenz und Mitarbeit
+
+Reifenapp ist unter der [MIT-Lizenz](LICENSE) verfügbar. Du darfst den eigenen
+Projektcode verwenden, verändern und weitergeben, auch kommerziell. Dabei müssen
+der Urhebervermerk und Lizenztext erhalten bleiben. Die Software wird ohne
+Gewährleistung bereitgestellt.
+
+Bibliotheken und Schriftdateien behalten ihre eigenen Lizenzen; siehe
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Die Projektlizenz bezieht sich
+auf den veröffentlichten Projektinhalt. Lokale Kunden- und Fahrzeugdaten,
+Datenbanken, Backups und Zugangsdaten bleiben ausschließlich lokal.
+
+Fehlerberichte und Verbesserungsvorschläge sind über
+[GitHub Issues](https://github.com/karst3nl/reifenapp-2/issues) willkommen.
+Beiträge bitte gegen `beta` richten, den bestehenden Code und `AGENTS.md` beachten
+und passende Tests ausführen. Für Beispiele, Tests, Screenshots und Fehlerberichte
+nur fiktive Daten verwenden. Keine echten Kundendaten, Datenbankdateien, Backups
+oder Zugangsdaten in Issues, Pull Requests oder Commits veröffentlichen.
