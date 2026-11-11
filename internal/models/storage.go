@@ -94,8 +94,10 @@ func (s *StorageInput) validate(details bool) map[string]string {
 	text("mechanic", &s.Mechanic, false, 100)
 	text("notes", &s.Notes, false, 2000)
 	choice("brand", s.Brand, "brand", true)
-	choice("tire_type", s.TireType, "tire_type", true)
-	choice("rim_type", s.RimType, "rim_type", true)
+	if details {
+		choice("tire_type", s.TireType, "tire_type", true)
+		choice("rim_type", s.RimType, "rim_type", true)
+	}
 	lo, hi := 1, 60
 	switch s.Area {
 	case "C1":

@@ -122,6 +122,7 @@
     document.getElementById('storage-title').textContent=reservationMode?'Reservierung':'Neueinlagerung';
     save.textContent=reservationMode?'Reservierung speichern':'Einlagerung speichern';
     dialog.classList.toggle('reservation-mode',reservationMode);
+    for(const key of ['tire_type','rim_type']){field(key).disabled=reservationMode;field(key).closest('label').hidden=reservationMode;}
     form.querySelectorAll('fieldset').forEach((section,index)=>{
       if(index===0)return;
       section.hidden=reservationMode;
@@ -194,8 +195,8 @@
     if(!valid){status.classList.add('is-error');status.textContent='Bitte die rot markierten Pflichtfelder prüfen.';form.querySelector('[aria-invalid=true]')?.focus();return;}
     const value=name=>field(name).value;
     const input={};
-    for(const key of ['area','name','brand','model','tire_type','rim_type'])input[key]=value(key);
-    if(!reservationMode)for(const key of ['front_depth','rear_depth','mechanic','notes'])input[key]=value(key);
+    for(const key of ['area','name','brand','model'])input[key]=value(key);
+    if(!reservationMode)for(const key of ['tire_type','rim_type','front_depth','rear_depth','mechanic','notes'])input[key]=value(key);
     input.number=Number(value('number'));
     input.plate=plateValue();
     if(!reservationMode){

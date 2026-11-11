@@ -12,7 +12,7 @@ import (
 )
 
 func reservationInput() models.ReservationInput {
-	return models.ReservationInput{Area: "C1", Number: 2, Name: "Reservierung Fiktiv", Plate: "MZ-RF 123", Brand: "VW", Model: "Golf", TireType: "Winter", RimType: "Stahl"}
+	return models.ReservationInput{Area: "C1", Number: 2, Name: "Reservierung Fiktiv", Plate: "MZ-RF 123", Brand: "VW", Model: "Golf"}
 }
 func TestReservationLifecycle(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "test.sqlite")
@@ -31,12 +31,16 @@ func TestReservationLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	var kind, status, tireType, rimType, front string
-	if err = db.QueryRow(`SELECT s.kind,s.status,d.tire_type,d.rim_type,d.front_size FROM storage_claims s JOIN storage_details d ON d.claim_id=s.id WHERE s.id=?`, id).Scan(&kind, &status, &tireType, &rimType, &front); err != nil {
+	var kind, status string
+	if err = db.QueryRow("SELECT kind,status FROM storage_claims WHERE id=?", id).Scan(&kind, &status); err != nil {
 		t.Fatal(err)
 	}
-	if kind != "reservation" || status != "active" || tireType != "Winter" || rimType != "Stahl" || front != "{}" {
-		t.Fatal(kind, status, tireType, rimType, front)
+	if kind != "reservation" || status != "active" {
+		t.Fatal(kind, status)
+	}
+	var details int
+	if err = db.QueryRow("SELECT count(*) FROM storage_details WHERE claim_id=?", id).Scan(&details); err != nil || details != 0 {
+		t.Fatal("unexpected reservation details", details, err)
 	}
 	for _, q := range []string{input.Name, input.Plate} {
 		rows, err := Search(context.Background(), db, q)
@@ -83,7 +87,7 @@ func TestReservationRollbackAndValidation(t *testing.T) {
 	if _, err := CreateReservation(context.Background(), db, input); !errors.Is(err, ErrInvalidStorage) {
 		t.Fatal(err)
 	}
-	if _, err := db.Exec(`CREATE TRIGGER reject_reservation BEFORE INSERT ON storage_details BEGIN SELECT RAISE(ABORT,'test failure'); END`); err != nil {
+	if _, err := db.Exec(`CREATE TRIGGER reject_reservation BEFORE INSERT ON storage_claims BEGIN SELECT RAISE(ABORT,'test failure'); END`); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := CreateReservation(context.Background(), db, reservationInput()); err == nil {

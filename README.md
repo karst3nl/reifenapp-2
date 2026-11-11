@@ -283,8 +283,8 @@ bleibt erhalten. Keine neue Migration oder Abhängigkeit erforderlich.
 ## Reservierungsformular
 
 „Reservierung“ öffnet dieselbe Formularoberfläche im reduzierten Modus.
-Pflichtangaben: Bereich/Nummer, Kundenname, Kennzeichen, Fahrzeugmarke/Modell,
-Reifenart und Felgenart. Keine Größen, Profiltiefen, Zubehörangaben, Monteure oder
+Pflichtangaben: Bereich/Nummer, Kundenname, Kennzeichen und Fahrzeugmarke/Modell;
+ohne Reifenart und Felgenart. Keine Größen, Profiltiefen, Zubehörangaben, Monteure oder
 Bemerkungen. Dieselben Namensvorschläge mit Tab, regionales Kennzeichen-Dropdown,
 roten Pflichtfeldhinweise, Vollbild, X/Zurück und Zurücksetzen beim Schließen.
 Nach Erfolg schließt das Formular; der Suchtext bleibt unverändert.
@@ -301,7 +301,7 @@ Der bestehende atomare Umwandlungsablauf verwendet die Zuordnung weiter.
 ```json
 {
   "area":"C1", "number":9, "name":"Reservierung Fiktiv", "plate":"MZ-RF 987",
-  "brand":"VW", "model":"Golf", "tire_type":"Winter", "rim_type":"Stahl"
+  "brand":"VW", "model":"Golf"
 }
 ```
 
@@ -309,8 +309,8 @@ Der bestehende atomare Umwandlungsablauf verwendet die Zuordnung weiter.
 Platz, 400 ungültiges JSON/unerwartete Zusatzfelder, 415 falscher Medientyp,
 403 fremder Ursprung und 500 Speicherfehler. Kunde, Fahrzeug, Radsatz und aktive
 Reservierung werden transaktional mit serverseitigem Zeitstempel gespeichert.
-Die bestehende Detailtabelle enthält hierfür Reifen-/Felgenart; unbekannte Achs-
-und Zubehördaten bleiben leere JSON-Objekte und optionale Textwerte leer.
+Reservierungen benötigen keine Einträge in der Einlagerungs-Detailtabelle.
+Bereits gespeicherte Angaben älterer Reservierungen bleiben unangetastet.
 Keine erfundenen Reifendaten, keine neue Migration, keine neue Abhängigkeit.
 
 `POST /api/storage/check` akzeptiert jetzt optional `purpose: "reservation"`.

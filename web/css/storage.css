@@ -61,3 +61,5 @@
 #storage-dialog.reservation-mode #storage-form .plate-fields{grid-column:span 2}
 @media(max-width:800px){#storage-dialog.reservation-mode #storage-form fieldset:first-of-type .fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){#storage-dialog.reservation-mode #storage-form fieldset:first-of-type .fields{grid-template-columns:1fr}#storage-dialog.reservation-mode #storage-form .plate-fields{grid-column:1/-1}}
+#storage-form label[hidden]{display:none}
+#storage-form #place-recheck{margin-top:6px}

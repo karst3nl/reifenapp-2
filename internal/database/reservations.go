@@ -48,11 +48,6 @@ func CreateReservation(ctx context.Context, db *sql.DB, input models.Reservation
 	if err != nil {
 		return 0, err
 	}
-	// Empty JSON objects mean not captured; no invented axle/accessory values.
-	_, err = tx.ExecContext(ctx, `INSERT INTO storage_details(claim_id,tire_type,rim_type,front_size,rear_size,front_depth,rear_depth,accessories,mechanic,notes) VALUES(?,?,?,'{}','{}','','','{}','','')`, claim, input.TireType, input.RimType)
-	if err != nil {
-		return 0, err
-	}
 	if err = tx.Commit(); err != nil {
 		return 0, err
 	}

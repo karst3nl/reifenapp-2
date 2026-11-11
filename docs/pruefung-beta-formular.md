@@ -91,3 +91,18 @@ Mobilbreite 390px, Leeren beim Öffnen, Wechsel zur vollständigen Neueinlagerun
 mit allen Pflichtfeldern und tatsächliche Umwandlung bis zum Suchtreffer.
 Nur fiktive Testdaten in separaten temporären Datenbanken. Keine Migration.
 Echte CachyOS-/Pi-Hardware, LAN und weitere Browser nicht geprüft.
+
+## Reservierung ohne Reifen-/Felgenart – 11. November 2026
+
+Reifenart/Felgenart sind im Reservierungsmodus ausgeblendet und deaktiviert;
+Reservierungs-API und Validierung benötigen beide nicht mehr. Die Neueinlagerung
+benötigt sie weiterhin. Neue Reservierungen erzeugen keine leeren Detaildatensätze.
+Bestehende Reservierungsdaten werden nicht verändert. Keine Migration.
+„Erneut prüfen“ hat 6px zusätzlichen oberen Abstand.
+
+Erfolgreich: Go-Tests, Race-Tests, go vet, Build, JavaScript-Syntax und diff-check.
+Chromium: Formular ohne die entfernten Felder speichern, Treffer als reserviert,
+Doppelreservierung blockieren, Mobilbreite, danach in vollständige Neueinlagerung
+wechseln und konvertieren. Abstand zwischen Nummerneingabe und Prüfbutton anhand
+der Elementpositionen geprüft. CachyOS-/Pi-Hardware, LAN und weitere Browser
+nicht getestet.

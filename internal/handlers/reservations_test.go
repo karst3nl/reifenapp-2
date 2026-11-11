@@ -23,7 +23,7 @@ func TestReservationsHTTP(t *testing.T) {
 		Reservations(db)(w, r)
 		return w
 	}
-	valid := `{"area":"C1","number":2,"name":"API Reservierung Fiktiv","plate":"MZ-AR 123","brand":"VW","model":"Golf","tire_type":"Winter","rim_type":"Stahl"}`
+	valid := `{"area":"C1","number":2,"name":"API Reservierung Fiktiv","plate":"MZ-AR 123","brand":"VW","model":"Golf"}`
 	for _, tc := range []struct {
 		body   string
 		status int
