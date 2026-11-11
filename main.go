@@ -40,6 +40,7 @@ func main() {
 	web, _ := fs.Sub(assets, "web")
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/search", handlers.Search(db))
+	mux.HandleFunc("GET /api/receipts/{claim}/{operation}", handlers.Receipts(db))
 	mux.HandleFunc("GET /api/customers", handlers.Customers(db))
 	mux.HandleFunc("POST /api/storage", handlers.Storage(db))
 	mux.HandleFunc("POST /api/releases/check", handlers.CheckRelease(db))

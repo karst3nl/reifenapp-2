@@ -28,6 +28,6 @@ func Reservations(db *sql.DB) http.HandlerFunc {
 			writeJSON(w, 500, map[string]string{"error": "Reservierung derzeit nicht möglich. Bitte erneut versuchen."})
 			return
 		}
-		writeJSON(w, 201, map[string]any{"id": id, "place": input.Place(), "message": "Reservierung gespeichert."})
+		writeJSON(w, 201, map[string]any{"id": id, "place": input.Place(), "message": "Reservierung gespeichert.", "pdf_url": models.ReceiptPath(id, "reservation")})
 	}
 }

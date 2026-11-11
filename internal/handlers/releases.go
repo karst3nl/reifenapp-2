@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/karst3nl/reifenapp-2/internal/database"
+	"github.com/karst3nl/reifenapp-2/internal/models"
 )
 
 func CheckRelease(db *sql.DB) http.HandlerFunc {
@@ -58,6 +59,6 @@ func Releases(db *sql.DB) http.HandlerFunc {
 			writeJSON(w, 500, map[string]string{"error": "Auslagerung konnte nicht bestätigt werden. Bitte Belegung erneut prüfen."})
 			return
 		}
-		writeJSON(w, 200, map[string]any{"place": fmt.Sprintf("%s.%d", input.Area, input.Number), "message": "Auslagerung gespeichert. Lagerplatz ist wieder frei."})
+		writeJSON(w, 200, map[string]any{"place": fmt.Sprintf("%s.%d", input.Area, input.Number), "message": "Auslagerung gespeichert. Lagerplatz ist wieder frei.", "pdf_url": models.ReceiptPath(input.ClaimID, "release")})
 	}
 }

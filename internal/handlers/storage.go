@@ -50,7 +50,7 @@ func storageHandler(db *sql.DB, wheelChange bool) http.HandlerFunc {
 			writeJSON(w, 500, map[string]string{"error": "Speichern derzeit nicht möglich. Bitte Eingaben behalten und erneut versuchen."})
 			return
 		}
-		writeJSON(w, 201, map[string]any{"id": id, "place": input.Place(), "message": message, "operation": operation})
+		writeJSON(w, 201, map[string]any{"id": id, "place": input.Place(), "message": message, "operation": operation, "pdf_url": models.ReceiptPath(id, operation)})
 	}
 }
 

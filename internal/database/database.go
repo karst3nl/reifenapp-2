@@ -119,7 +119,7 @@ func Search(ctx context.Context, db *sql.DB, q string) ([]models.SearchResult, e
 	if q == "" {
 		return result, nil
 	}
-	rows, err := db.QueryContext(ctx, `SELECT h.id,h.place,h.name,h.plate,h.car,h.occurred_at,h.operation,
+	rows, err := db.QueryContext(ctx, `SELECT h.id,h.claim_id,h.place,h.name,h.plate,h.car,h.occurred_at,h.operation,
  CASE h.operation WHEN 'reservation' THEN 'reservation' WHEN 'release' THEN 'release' ELSE 'occupancy' END,
  s.status,(s.status='active' AND h.operation!='release'),h.source
  FROM history_events h JOIN storage_claims s ON s.id=h.claim_id
@@ -130,9 +130,11 @@ func Search(ctx context.Context, db *sql.DB, q string) ([]models.SearchResult, e
 	defer rows.Close()
 	for rows.Next() {
 		var r models.SearchResult
-		if err = rows.Scan(&r.EventID, &r.Place, &r.Name, &r.Plate, &r.Car, &r.Date, &r.Operation, &r.Kind, &r.Status, &r.Active, &r.Source); err != nil {
+		var claimID int64
+		if err = rows.Scan(&r.EventID, &claimID, &r.Place, &r.Name, &r.Plate, &r.Car, &r.Date, &r.Operation, &r.Kind, &r.Status, &r.Active, &r.Source); err != nil {
 			return nil, err
 		}
+		r.ReceiptURL = models.ReceiptPath(claimID, r.Operation)
 		label := map[string]string{"storage": "Neueinlagerung", "wheel_change": "Radwechsel", "reservation": "Reservierung", "release": "Auslagerung"}[r.Operation]
 		if strings.Contains(normalize(label), q) || strings.Contains(normalize(r.Name), q) || strings.Contains(normalize(r.Plate), q) || strings.Contains(normalize(r.Place), q) {
 			result = append(result, r)
