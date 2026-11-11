@@ -106,3 +106,20 @@ Doppelreservierung blockieren, Mobilbreite, danach in vollständige Neueinlageru
 wechseln und konvertieren. Abstand zwischen Nummerneingabe und Prüfbutton anhand
 der Elementpositionen geprüft. CachyOS-/Pi-Hardware, LAN und weitere Browser
 nicht getestet.
+
+## Radwechsel – 11. November 2026
+
+Erfolgreich: `go test ./...`, `go test -race ./...`, `go vet ./...`, Build,
+JavaScript-Syntaxprüfung und `git diff --check`.
+Neue Datenbanktests: Radwechselkennung persistent nach Wiederöffnung,
+Suchantwort mit operation, Neueinlagerung weiterhin storage, Pflichtfelder,
+Doppelbelegung, passende Reservierung umwandeln, Upgrade Schema 2 auf 3 mit
+lesbarem Schema-2-Backup und Erhalt alter Detaildaten, SQL-Constraint für Vorgangstyp.
+API-Tests: eigener Endpunkt, 201 mit wheel_change, 409, 422, 405, 500,
+Ablehnen eines vom Client vorgegebenen operation-Feldes.
+Chromium: Vollformular, Pflichtfeldmarkierungen, belegter Platz, Kopierbutton ohne
+Profiltiefe, tatsächlicher POST /api/wheel-changes, automatisches Schließen,
+Suchtext unverändert, Suchtreffer als Radwechsel, Reset und Mobilbreite sowie
+Wechsel zu Reservierung und Neueinlagerung mit korrekten Feldgruppen.
+Nur fiktive temporäre Daten verwendet. Keine vorhandenen Repository-Datenbanken
+migriert. Echte CachyOS-/Pi-Hardware, LAN und weitere Browser nicht geprüft.

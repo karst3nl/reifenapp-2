@@ -33,7 +33,7 @@ produktive Datenbank importieren. Laufzeitdaten bleiben durch `.gitignore` lokal
 - Leerzeichen und Bindestriche werden ignoriert, Groß-/Kleinschreibung ebenfalls
   (einschließlich deutscher Umlaute). Leerer Suchtext liefert `[]`.
 - Maximal 200 Zeichen; HTTP 400 bei Überschreitung, HTTP 500 bei Datenbankfehler.
-- Ladezustand, keine Treffer und Fehleranzeige; Neueinlagerung und Reservierung sind nutzbar, die übrigen vier Vorgänge bleiben Platzhalter.
+- Ladezustand, keine Treffer und Fehleranzeige; Radwechsel, Neueinlagerung und Reservierung sind nutzbar, die übrigen drei Vorgänge bleiben Platzhalter.
 - 640 gültige Plätze: C1.1–200, C2.201–400, C3/C4/OL/OR jeweils 1–60.
 
 ## Struktur und Entscheidungen
@@ -58,7 +58,7 @@ Einziger direkter externer Go-Baustein ist der bewährte SQLite-Treiber
 `github.com/mattn/go-sqlite3`. SQLite verwendet WAL, Fremdschlüssel und einen
 Busy-Timeout. SQL-Migrationen laufen transaktional bei der Erstinitialisierung.
 Bestehende Datenbanken werden auf die bekannte Schemaversion geprüft; unbekannte
-Versionen werden abgelehnt. Schema 1 benötigt das unten beschriebene explizite
+Versionen werden abgelehnt. Schema 1 und 2 benötigen das unten beschriebene explizite
 Upgrade mit Integritätsprüfung und konsistentem SQLite-Backup.
 
 Belegung und Reservierung nutzen eine gemeinsame Tabelle `storage_claims`.
@@ -108,9 +108,9 @@ go run . -dev -migrate
 
 Diese Variante arbeitet weiterhin mit den fiktiven Entwicklungsdaten.
 Für die normale Datenbank stattdessen `go run . -migrate` verwenden.
-Einmalig nötig bei Schema 1: Integritätsprüfung, dann `VACUUM INTO` für eine
+Einmalig nötig bei Schema 1 oder 2: Integritätsprüfung, dann `VACUUM INTO` für eine
 konsistente Sicherung inklusive noch im WAL befindlicher Änderungen, danach
-transaktionale Migration 002. Das Backup liegt neben der ursprünglichen Datei
+transaktionale Migrationen bis einschließlich 003. Das Backup liegt neben der ursprünglichen Datei
 als `*.sqlite.backup-<UTC-Zeitstempel>` und ist ebenfalls ignoriert.
 Bei einem Backupfehler findet keine Migration statt. Vorhandene Datensätze werden
 nicht neu angelegt, gelöscht oder mit Beispielen überschrieben. Alle anderen
@@ -194,7 +194,7 @@ Browserursprüngen werden abgelehnt; LAN-Authentifizierung bleibt ein späteres 
 Weitere Entwicklung wird auf `beta` gesammelt. `main` wird nicht automatisch
 aktualisiert; ein späterer Merge erfolgt gesondert. Zum Wechseln den Server stoppen,
 `git fetch origin`, `git switch beta`, `git pull --ff-only origin beta` ausführen.
-Start weiterhin `go run . -dev` (ein Schema-1-Upgrade benötigt einmalig zusätzlich
+Start weiterhin `go run . -dev` (ein Upgrade von Schema 1 oder 2 benötigt einmalig zusätzlich
 `-migrate`, siehe oben). Für diese Formularänderungen ist keine Migration nötig.
 
 Kennzeichen: Landkreiskürzel per Dropdown, Buchstaben und Nummer separat;
@@ -319,3 +319,40 @@ Reservierung gesperrt. Ohne Angabe bzw. mit `purpose: "storage"` gilt der
 bestehende Einlagerungsabgleich. Die Suchantwort enthält zusätzlich `kind`
 (`reservation` oder `occupancy`). Kein Ablaufdatum, automatische Freigabe oder
 Stornierungsformular in diesem Schritt.
+
+## Radwechsel
+
+„Radwechsel“ verwendet das vollständige Formular der Neueinlagerung mit allen
+Pflichtfeldern, Kopierbutton für die Hinterachse ohne Profiltiefe, Zubehör,
+Namensvorschlägen und direkter Platzprüfung. Die Zuordnung erfolgt serverseitig
+über den eigenen Endpunkt `POST /api/wheel-changes`; dieselben JSON-Felder,
+Validierungsregeln und Statuscodes wie `/api/storage`.
+
+Der Vorgang wird in `storage_details.operation` als `wheel_change` gespeichert.
+Die Antwort enthält `operation: "wheel_change"`. Die normale Neueinlagerung
+speichert weiterhin `storage`. Die Such-API liefert zusätzlich `operation` und
+kennzeichnet Radwechsel in der Oberfläche. Reservierungen behalten `reservation`.
+Ein frei übermitteltes `operation`-Feld ist nicht erlaubt; der Endpunkt bestimmt
+den Vorgangstyp.
+
+Der aktuelle Ablauf entspricht wie gewünscht der Neueinlagerung: freier Platz
+oder passende Reservierung mit Kunden-/Kennzeichenabgleich, atomare Speicherung,
+Schließen nach Erfolg ohne Änderung der Suchleiste, leeres Formular beim Öffnen.
+Ein bereits belegter Platz bleibt gesperrt. Der Austausch eines zuvor eingelagerten
+Radsatzes inklusive Auslagerungsbuchung ist ein zusätzlicher, noch nicht
+implementierter Vorgangsablauf.
+
+Migration `003_storage_operation.sql` ergänzt ausschließlich die Vorgangskennung.
+Bestehende Detaildatensätze erhalten `storage`. Vorhandene Daten bleiben erhalten;
+keine neue Bibliothek. Server stoppen und einmalig mit automatischem Backup upgraden:
+
+```sh
+git switch beta
+git pull --ff-only origin beta
+go run . -dev -migrate
+```
+
+Für die normale Datenbank `-dev` weglassen. Danach weiterhin `go run . -dev` bzw.
+`go run .`. Beim Test einen fiktiven Namen und freien Platz verwenden, beide
+Achsen ausfüllen und speichern; anschließend nach Kennzeichen suchen und den
+Hinweis „Radwechsel“ prüfen.

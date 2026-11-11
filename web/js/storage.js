@@ -10,7 +10,7 @@
   document.getElementById('copy-front').addEventListener('click',()=>{
     for(const key of ['width','ratio','inches','load','speed']){const el=field('rear.'+key);el.value=field('front.'+key).value;if(el.hasAttribute('aria-invalid'))validateField(el);}
   });
-  let ready=false, saving=false, reservationMode=false;
+  let ready=false, saving=false, reservationMode=false, wheelChangeMode=false;
   let nameTimer, nameRequest, nameGeneration=0;
   let activeName=-1, conflictPlace='';
   let placeTimer, placeRequest, placeGeneration=0, placePending=false, placeAllowed=null;
@@ -119,8 +119,8 @@
   }
   dialog.addEventListener('close',resetForm);
   function setFormMode(){
-    document.getElementById('storage-title').textContent=reservationMode?'Reservierung':'Neueinlagerung';
-    save.textContent=reservationMode?'Reservierung speichern':'Einlagerung speichern';
+    document.getElementById('storage-title').textContent=reservationMode?'Reservierung':wheelChangeMode?'Radwechsel':'Neueinlagerung';
+    save.textContent=reservationMode?'Reservierung speichern':wheelChangeMode?'Radwechsel speichern':'Einlagerung speichern';
     dialog.classList.toggle('reservation-mode',reservationMode);
     for(const key of ['tire_type','rim_type']){field(key).disabled=reservationMode;field(key).closest('label').hidden=reservationMode;}
     form.querySelectorAll('fieldset').forEach((section,index)=>{
@@ -131,8 +131,9 @@
     for(const key of ['hubcaps','bolts','lock'])field(key+'.location').disabled=reservationMode||!field(key+'.present').checked;
   }
   window.openReservation=()=>window.openStorage(true);
-  window.openStorage=async(reservation=false)=>{
-    reservationMode=reservation;
+  window.openWheelChange=()=>window.openStorage(false,true);
+  window.openStorage=async(reservation=false,wheelChange=false)=>{
+    reservationMode=reservation;wheelChangeMode=wheelChange;
     resetForm();dialog.showModal();
     if(ready){status.textContent='';updateSaveState();return;}
     save.disabled=true;status.textContent='Auswahllisten werden geladen …';
@@ -165,7 +166,7 @@
         const result=await response.json();
         if(generation!==placeGeneration||!dialog.open)return;
         if(!response.ok)throw Error(result.error||'Lagerplatzprüfung fehlgeschlagen.');
-        placeAllowed=result.allowed;placeHint.textContent=result.message;
+        placeAllowed=result.allowed;placeHint.textContent=wheelChangeMode?result.message.replace('Einlagerung möglich','Radwechsel möglich'):result.message;
         placeHint.className='place-check '+(result.allowed?'is-available':'is-unavailable');
         if(!result.allowed){conflictPlace=area+'.'+number;markError(field('number'),result.message);}
       }catch(error){
@@ -209,7 +210,7 @@
     // Freeze the submitted snapshot until the response arrives.
     const enabled=[...form.elements].filter(el=>!el.disabled);enabled.forEach(el=>el.disabled=true);
     try {
-      const response=await fetch(reservationMode?'/api/reservations':'/api/storage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
+      const response=await fetch(reservationMode?'/api/reservations':wheelChangeMode?'/api/wheel-changes':'/api/storage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
       const data=await response.json();
       if(!response.ok){
         status.classList.add('is-error');
@@ -223,7 +224,7 @@
       }
       form.reset();numberRange();
       for(const key of ['hubcaps','bolts','lock']){field(key+'.location').required=false;}
-      status.textContent=`${reservationMode?'Reservierung':'Neueinlagerung'} auf ${data.place} gespeichert. Über die Schnellsuche auffindbar.`;
+      status.textContent=`${reservationMode?'Reservierung':wheelChangeMode?'Radwechsel':'Neueinlagerung'} auf ${data.place} gespeichert. Über die Schnellsuche auffindbar.`;
       const confirmation=document.getElementById('storage-confirmation');
       confirmation.textContent=status.textContent;confirmation.hidden=false;
       dialog.close();
