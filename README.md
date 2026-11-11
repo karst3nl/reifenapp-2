@@ -20,7 +20,8 @@ go mod download
 go run .
 ```
 
-Das Repository ist öffentlich; zum Herunterladen ist keine GitHub-Anmeldung nötig.
+Bei öffentlichem Zugriff ist keine GitHub-Anmeldung zum Herunterladen nötig.
+Falls GitHub eine Anmeldung verlangt, Git-Credential-Manager oder SSH verwenden.
 Im Browser http://127.0.0.1:8080 öffnen.
 
 `go run .` erzeugt eine leere lokale Datenbank `data/reifenapp.sqlite`.
