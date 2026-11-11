@@ -143,3 +143,23 @@ lässt die neue Belegung unverändert, erneute Prüfung, Reservierung/freier Pla
 nicht auslagerbar, Mobilbreite 390px und Formularreset.
 Nur fiktive temporäre Testdatenbanken. Keine vorhandene Repository-Datenbank
 migriert. Echte CachyOS-/Pi-Hardware, LAN und andere Browser nicht geprüft.
+
+## Durchsuchbare Historie – 11. November 2026
+
+Erfolgreich: `go test ./...`, `go test -race ./...`, `go vet ./...`, Build,
+JavaScript-Syntaxprüfung und `git diff --check`.
+Datenbanktests: Reservierung → Radwechsel → Auslagerung mit drei getrennten
+Ereignissen, unveränderter alter Fahrzeug-Schnappschuss nach Modelländerung,
+Detailwerte im JSON, persistente Ereignisse nach Wiederöffnung, freier Platz und
+erneute Belegung bei weiterhin auffindbarer Historie, SQL-Änderungs-/Löschschutz,
+Rollback aller vier Vorgangsarten bei absichtlich gescheiterter Historienanlage.
+Schema-4-Upgrade: ältere Auslagerung wird suchbar, Platz bleibt frei, lesbares
+Schema-4-Backup, keine doppelten Übernahmen nach Wiederöffnung. API-Test findet
+Auslagerung nach Kennzeichen, Platz und Vorgangsbegriff.
+Chromium: ursprüngliches Fahrzeug bei Reservierung erhalten, Radwechsel und
+Auslagerung mit korrekten Bezeichnungen/Zuständen/Datum, Auslagerung über Formular,
+Suchtext unverändert und Ergebnisse automatisch aktualisiert, nach Neuladen weiter
+auffindbar, Platz frei und neu belegbar, alte und neue Ereignisse gemeinsam in der
+Platzsuche, Begriffssuche „Auslagerung“, 390px ohne horizontalen Überlauf.
+Nur fiktive temporäre Datenbanken. Keine bestehende Repository-Datenbank migriert.
+Echte CachyOS-/Pi-Hardware, LAN und weitere Browser nicht geprüft.

@@ -22,8 +22,15 @@ async function search(id){
     if(!matches.length){message('Keine passenden Einträge gefunden.');return;}
     for(const item of matches){
       const card=document.createElement('div');card.className='result';
-      const info=document.createElement('div');const title=document.createElement('strong');title.textContent=item.name;
-      const meta=document.createElement('small');meta.textContent=`${item.plate} · ${item.car}${item.kind==='reservation'?' · Reserviert':item.operation==='wheel_change'?' · Radwechsel':''}`;info.append(title,meta);
+      const info=document.createElement('div');const title=document.createElement('strong');title.textContent=item.name||'Ohne Kundenzuordnung';
+      const meta=document.createElement('small');meta.textContent=[item.plate,item.car].filter(Boolean).join(' · ')||'Keine Fahrzeugangaben im Altbestand';
+      const event=document.createElement('small');
+      const labels={storage:'Neueinlagerung',wheel_change:'Radwechsel',reservation:'Reservierung',release:'Auslagerung'};
+      const state=item.operation==='release'?'Ausgelagert':item.active?(item.kind==='reservation'?'Reserviert':'Eingelagert'):item.status==='converted'?'In Einlagerung umgewandelt':'Abgeschlossen';
+      const date=new Date(item.date);
+      const stamp=Number.isNaN(date.getTime())?'Zeitpunkt unbekannt':date.toLocaleString('de-DE');
+      event.textContent=`${labels[item.operation]||'Vorgang'} · ${state} · ${stamp}${item.source==='legacy'?' · Altbestand':''}`;
+      info.append(title,meta,event);
       const place=document.createElement('span');place.className='place';place.textContent=item.place;
       card.append(info,place);list.append(card);
     }

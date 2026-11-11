@@ -58,15 +58,15 @@ Einziger direkter externer Go-Baustein ist der bewährte SQLite-Treiber
 `github.com/mattn/go-sqlite3`. SQLite verwendet WAL, Fremdschlüssel und einen
 Busy-Timeout. SQL-Migrationen laufen transaktional bei der Erstinitialisierung.
 Bestehende Datenbanken werden auf die bekannte Schemaversion geprüft; unbekannte
-Versionen werden abgelehnt. Schema 1 bis 3 benötigen das unten beschriebene explizite
+Versionen werden abgelehnt. Schema 1 bis 4 benötigen das unten beschriebene explizite
 Upgrade mit Integritätsprüfung und konsistentem SQLite-Backup.
 
 Belegung und Reservierung nutzen eine gemeinsame Tabelle `storage_claims`.
 Ein partieller UNIQUE-Index schützt jeden Platz vor mehreren aktiven Ansprüchen,
 auch bei konkurrierenden Schreibzugriffen und Statusänderungen. Ein aktiver
 Radsatz darf ebenfalls nur einen Platz beanspruchen. Das Reservierungsformular ist implementiert. Die atomare Umwandlung einer
-eindeutig zugeordneten, passenden Reservierung ist im Neueinlagerungsablauf möglich. Die Suche liest derzeit aktive
-Ansprüche mit zugeordnetem Radsatz; keine vollständige Kunden- oder Historienansicht.
+eindeutig zugeordneten, passenden Reservierung ist im Neueinlagerungsablauf möglich. Die Suche liest die Vorgangshistorie mit unveränderlichen Schnappschüssen;
+eine separate vollständige Kunden-/Historienansicht folgt später.
 Die Suche filtert lokal in Go nach SQL-Abfrage, um Unicode ohne zusätzliche
 SQLite-Erweiterungen korrekt zu behandeln; für größere Bestände später messen.
 
@@ -108,9 +108,9 @@ go run . -dev -migrate
 
 Diese Variante arbeitet weiterhin mit den fiktiven Entwicklungsdaten.
 Für die normale Datenbank stattdessen `go run . -migrate` verwenden.
-Einmalig nötig bei Schema 1, 2 oder 3: Integritätsprüfung, dann `VACUUM INTO` für eine
+Einmalig nötig bei Schema 1 bis 4: Integritätsprüfung, dann `VACUUM INTO` für eine
 konsistente Sicherung inklusive noch im WAL befindlicher Änderungen, danach
-transaktionale Migrationen bis einschließlich 004. Das Backup liegt neben der ursprünglichen Datei
+transaktionale Migrationen bis einschließlich 005. Das Backup liegt neben der ursprünglichen Datei
 als `*.sqlite.backup-<UTC-Zeitstempel>` und ist ebenfalls ignoriert.
 Bei einem Backupfehler findet keine Migration statt. Vorhandene Datensätze werden
 nicht neu angelegt, gelöscht oder mit Beispielen überschrieben. Alle anderen
@@ -194,7 +194,7 @@ Browserursprüngen werden abgelehnt; LAN-Authentifizierung bleibt ein späteres 
 Weitere Entwicklung wird auf `beta` gesammelt. `main` wird nicht automatisch
 aktualisiert; ein späterer Merge erfolgt gesondert. Zum Wechseln den Server stoppen,
 `git fetch origin`, `git switch beta`, `git pull --ff-only origin beta` ausführen.
-Start weiterhin `go run . -dev` (ein Upgrade von Schema 1 bis 3 benötigt einmalig zusätzlich
+Start weiterhin `go run . -dev` (ein Upgrade von Schema 1 bis 4 benötigt einmalig zusätzlich
 `-migrate`, siehe oben). Für diese Formularänderungen ist keine Migration nötig.
 
 Kennzeichen: Landkreiskürzel per Dropdown, Buchstaben und Nummer separat;
@@ -366,8 +366,8 @@ Speicherbutton aktiv. Freie Plätze und Reservierungen können nicht ausgelagert
 werden. Beim Schließen werden alle Felder geleert.
 
 Nach Erfolg schließt das Formular. Eine vorhandene Schnellsuche wird erneut
-abgefragt, ihr Suchtext bleibt unverändert. Die ausgelagerte Belegung verschwindet
-aus der aktiven Suche, und der Platz kann neu belegt oder reserviert werden.
+abgefragt, ihr Suchtext bleibt unverändert. Die ausgelagerte Belegung bleibt als Historie auffindbar,
+und der Platz kann trotzdem neu belegt oder reserviert werden.
 Kunde, Fahrzeug, Radsatz, Detaildaten und ursprünglicher Einlagerungszeitstempel
 bleiben erhalten. Es wird nichts gelöscht.
 
@@ -403,3 +403,57 @@ Zum Test ausschließlich einen fiktiv belegten Platz wählen, angezeigte Daten
 prüfen, Checkbox setzen und bestätigen. Anschließend denselben Platz in der
 Neueinlagerung prüfen: Er muss frei sein. Eine Reservierung wird hier nicht
 storniert; vollständige Historienansicht folgt später.
+
+## Durchsuchbare Vorgangshistorie
+
+Jede erfolgreich ausgeführte Neueinlagerung, jeder Radwechsel, jede Reservierung
+und jede Auslagerung erzeugt **in derselben Transaktion** einen Historieneintrag.
+Er enthält Vorgangsart, Zeitpunkt, Lagerplatz, Kundenname, Kennzeichen, Fahrzeug
+und einen JSON-Schnappschuss der zugehörigen Detaildaten. Spätere Änderungen am
+Fahrzeug verändern frühere Einträge nicht. Schlägt das Historienprotokoll fehl,
+wird auch der eigentliche Vorgang vollständig zurückgerollt.
+
+Die Schnellsuche durchsucht jetzt alle diese Ereignisse statt nur aktive
+Belegungen. Suche nach Name, Kennzeichen oder Lagerplatz; auch die Vorgangsbegriffe
+„Neueinlagerung“, „Radwechsel“, „Reservierung“ und „Auslagerung“ werden gefunden.
+Neueste Ereignisse stehen oben. Mehrere Treffer für denselben Radsatz sind seine
+unterschiedlichen Vorgänge. In der Oberfläche stehen Vorgangsart, aktueller
+Lebenszykluszustand und Ereigniszeitpunkt. Eine Auslagerung ist als „Ausgelagert“
+markiert und belegt **keinen** Platz; die Freiplatzprüfung verwendet weiterhin
+nur aktive Belegungen/Reservierungen. Eine neue Belegung desselben Platzes kann
+neben den früheren Historieneinträgen gefunden werden.
+
+Nach jedem erfolgreichen Vorgang wird ein bereits eingegebener Suchtext erneut
+abgefragt, ohne ihn zu verändern oder das zuletzt gespeicherte Kennzeichen
+einzusetzen. Die separate Historie-Schaltfläche bleibt vorerst Platzhalter;
+die Vorgangshistorie ist über die direkte Schnellsuche zugänglich.
+
+`GET /api/search?q=...` behält das JSON-Array und die bisherigen Felder. Zusätzlich:
+`event_id`, `status` (aktueller Zustand des zugehörigen Anspruchs), `active`
+(aktuell wirksame Einlagerung/Reservierung) und `source` (`recorded`/`legacy`).
+`operation` kann jetzt auch `release` enthalten, ebenso `kind: "release"`.
+`date` ist der Zeitpunkt des **Ereignisses**. Leerzeichen-/Bindestrichnormalisierung
+und Unicode-Suche bleiben erhalten; Ergebnisse bleiben `no-store`.
+
+Migration `005_history_events.sql` ergänzt `history_events` und übernimmt
+nachweisbare alte Vorgänge aus `storage_claims`, Details und `storage_releases`.
+Diese Einträge sind als „Altbestand“ markiert. Bei früher umgewandelten
+Reservierungen kann nur der bislang gespeicherte (möglicherweise bereits
+aktualisierte) Zeitstempel übernommen werden; frühere Fahrzeugstände wurden
+bisher ebenfalls nicht getrennt gespeichert. Nicht vorhandene frühere Angaben
+werden nicht erfunden. Die Übernahme erfolgt genau einmal in der versionierten
+Migration. SQL-Trigger verhindern nachträgliches Ändern/Löschen der Ereignisse.
+
+Server stoppen und einmalig upgraden (mit Integritätsprüfung und automatischem,
+konsistentem Backup vor der Migration):
+
+```sh
+git switch beta
+git pull --ff-only origin beta
+go run . -dev -migrate
+```
+
+Danach wieder `go run . -dev`; für die normale Datenbank jeweils `-dev` weglassen.
+Zum Test einen fiktiven Radsatz einlagern und auslagern. Derselbe Suchtext muss
+beide Ereignisse liefern, während die Platzprüfung den Platz als frei anzeigt.
+Keine zusätzlichen Abhängigkeiten; Kundendaten und Datenbanken bleiben lokal.

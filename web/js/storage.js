@@ -228,6 +228,7 @@
       const confirmation=document.getElementById('storage-confirmation');
       confirmation.textContent=status.textContent;confirmation.hidden=false;
       dialog.close();
+      const search=document.getElementById('search');if(search.value.trim())search.dispatchEvent(new Event('input'));
     }catch{status.classList.add('is-error');status.textContent='Keine Speicherbestätigung erhalten. Bitte zuerst in der Schnellsuche prüfen, ob die Einlagerung gespeichert wurde. Ihre Eingaben bleiben erhalten.';}
     finally{
       enabled.forEach(el=>el.disabled=false);saving=false;updateSaveState();close.disabled=false;nav.forEach(button=>button.disabled=false);
