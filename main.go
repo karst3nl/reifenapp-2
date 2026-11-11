@@ -11,6 +11,7 @@ import (
 
 	"github.com/karst3nl/reifenapp-2/internal/database"
 	"github.com/karst3nl/reifenapp-2/internal/handlers"
+	"github.com/karst3nl/reifenapp-2/internal/receipts"
 )
 
 //go:embed web
@@ -20,7 +21,12 @@ func main() {
 	addr := flag.String("addr", "127.0.0.1:8080", "Listen address")
 	dev := flag.Bool("dev", false, "Use separate fictional development database")
 	upgrade := flag.Bool("migrate", false, "Upgrade existing database after automatic backup (stop other servers first)")
+	headerPath := flag.String("receipt-config", "local/receipt-header.json", "Optional local workshop header JSON")
 	flag.Parse()
+	header, headerErr := receipts.LoadHeader(*headerPath)
+	if headerErr != nil {
+		log.Fatal(headerErr)
+	}
 	path := "data/reifenapp.sqlite"
 	if *dev {
 		path = "data/development.sqlite"
@@ -40,7 +46,7 @@ func main() {
 	web, _ := fs.Sub(assets, "web")
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/search", handlers.Search(db))
-	mux.HandleFunc("GET /api/receipts/{claim}/{operation}", handlers.Receipts(db))
+	mux.HandleFunc("GET /api/receipts/{claim}/{operation}", handlers.Receipts(db, header))
 	mux.HandleFunc("GET /api/customers", handlers.Customers(db))
 	mux.HandleFunc("POST /api/storage", handlers.Storage(db))
 	mux.HandleFunc("POST /api/releases/check", handlers.CheckRelease(db))

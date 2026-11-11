@@ -12,7 +12,11 @@ import (
 	"github.com/karst3nl/reifenapp-2/internal/receipts"
 )
 
-func Receipts(db *sql.DB) http.HandlerFunc {
+func Receipts(db *sql.DB, headers ...receipts.Header) http.HandlerFunc {
+	header := receipts.Header{}
+	if len(headers) > 0 {
+		header = headers[0]
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "private, no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -31,7 +35,7 @@ func Receipts(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "Beleg derzeit nicht abrufbar. Bitte erneut versuchen.", 500)
 			return
 		}
-		data, err := receipts.Generate(receipt)
+		data, err := receipts.GenerateWithHeader(receipt, header)
 		if err != nil {
 			http.Error(w, "PDF konnte nicht erstellt werden. Der Vorgang bleibt gespeichert. Bitte erneut versuchen.", 500)
 			return
