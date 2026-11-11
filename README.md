@@ -3,6 +3,10 @@
 Lokale Reifenlagerverwaltung mit Go, SQLite und HTML/CSS/Vanilla JavaScript.
 Die Original-README enthielt ausschließlich den Repository-Namen `reifenapp-2`.
 
+![Aktuelle Startseite der Reifenapp](docs/images/startseite.png)
+
+Screenshot des aktuellen Entwicklungsstands auf [`beta`](https://github.com/karst3nl/reifenapp-2/tree/beta). Die laufende Entwicklung wird dort gesammelt.
+
 ## Installation und Start auf CachyOS
 
 Voraussetzungen: Git, Go ab 1.23 und C-Compiler (SQLite-Treiber benötigt CGO).
@@ -11,13 +15,13 @@ Voraussetzungen: Git, Go ab 1.23 und C-Compiler (SQLite-Treiber benötigt CGO).
 sudo pacman -S --needed git go base-devel
 git clone https://github.com/karst3nl/reifenapp-2.git
 cd reifenapp-2
-git switch feat/neueinlagerung
+git switch beta
 go mod download
 go run .
 ```
 
-Für das private Repository ist eine GitHub-Anmeldung per Git-Credential-Manager
-oder SSH nötig. Im Browser http://127.0.0.1:8080 öffnen.
+Das Repository ist öffentlich; zum Herunterladen ist keine GitHub-Anmeldung nötig.
+Im Browser http://127.0.0.1:8080 öffnen.
 
 `go run .` erzeugt eine leere lokale Datenbank `data/reifenapp.sqlite`.
 `go run . -dev` verwendet ausschließlich `data/development.sqlite` und fügt
@@ -101,7 +105,7 @@ Im bestehenden Repository (lokale Änderungen vorher mit `git status` prüfen):
 
 ```sh
 git fetch origin
-git switch feat/neueinlagerung
+git switch beta
 git pull --ff-only origin feat/neueinlagerung
 go run . -dev -migrate
 ```
