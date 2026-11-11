@@ -42,6 +42,7 @@ func main() {
 	mux.HandleFunc("GET /api/search", handlers.Search(db))
 	mux.HandleFunc("GET /api/customers", handlers.Customers(db))
 	mux.HandleFunc("POST /api/storage", handlers.Storage(db))
+	mux.HandleFunc("POST /api/wheel-changes", handlers.WheelChanges(db))
 	mux.HandleFunc("POST /api/reservations", handlers.Reservations(db))
 	mux.HandleFunc("POST /api/storage/check", handlers.CheckStorage(db))
 	mux.HandleFunc("GET /api/storage/options", handlers.StorageOptions)

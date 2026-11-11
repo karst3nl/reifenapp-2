@@ -22,7 +22,9 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 func StorageOptions(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, models.StorageOptions())
 }
-func Storage(db *sql.DB) http.HandlerFunc {
+func Storage(db *sql.DB) http.HandlerFunc      { return storageHandler(db, false) }
+func WheelChanges(db *sql.DB) http.HandlerFunc { return storageHandler(db, true) }
+func storageHandler(db *sql.DB, wheelChange bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input models.StorageInput
 		if !readStorageJSON(w, r, &input) {
@@ -32,7 +34,14 @@ func Storage(db *sql.DB) http.HandlerFunc {
 			writeJSON(w, 422, map[string]any{"error": "Bitte die markierten Felder prüfen.", "fields": fields})
 			return
 		}
-		id, err := database.CreateStorage(r.Context(), db, input)
+		create := database.CreateStorage
+		operation, message := "storage", "Neueinlagerung gespeichert."
+		if wheelChange {
+			create = database.CreateWheelChange
+			operation = "wheel_change"
+			message = "Radwechsel gespeichert."
+		}
+		id, err := create(r.Context(), db, input)
 		if errors.Is(err, database.ErrPlaceUnavailable) {
 			writeJSON(w, 409, map[string]string{"error": err.Error()})
 			return
@@ -41,7 +50,7 @@ func Storage(db *sql.DB) http.HandlerFunc {
 			writeJSON(w, 500, map[string]string{"error": "Speichern derzeit nicht möglich. Bitte Eingaben behalten und erneut versuchen."})
 			return
 		}
-		writeJSON(w, 201, map[string]any{"id": id, "place": input.Place(), "message": "Neueinlagerung gespeichert."})
+		writeJSON(w, 201, map[string]any{"id": id, "place": input.Place(), "message": message, "operation": operation})
 	}
 }
 

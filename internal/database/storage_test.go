@@ -131,7 +131,7 @@ func TestMigrationBackupPreservesV1(t *testing.T) {
 	defer db.Close()
 	var version int
 	db.QueryRow("SELECT MAX(version) FROM schema_migrations").Scan(&version)
-	if version != 2 {
+	if version != currentSchema {
 		t.Fatal(version)
 	}
 	rows, err := Search(context.Background(), db, "fiktiv")

@@ -15,6 +15,12 @@ var ErrPlaceUnavailable = errors.New("Lagerplatz ist bereits belegt oder aktiv r
 var ErrInvalidStorage = errors.New("Ungültige Einlagerungsdaten.")
 
 func CreateStorage(ctx context.Context, db *sql.DB, input models.StorageInput) (int64, error) {
+	return createStorage(ctx, db, input, "storage")
+}
+func CreateWheelChange(ctx context.Context, db *sql.DB, input models.StorageInput) (int64, error) {
+	return createStorage(ctx, db, input, "wheel_change")
+}
+func createStorage(ctx context.Context, db *sql.DB, input models.StorageInput, operation string) (int64, error) {
 	if len(input.Validate()) > 0 {
 		return 0, ErrInvalidStorage
 	}
@@ -72,7 +78,7 @@ func CreateStorage(ctx context.Context, db *sql.DB, input models.StorageInput) (
 	front, _ := json.Marshal(input.Front)
 	rear, _ := json.Marshal(input.Rear)
 	accessories, _ := json.Marshal(map[string]models.Accessory{"hubcaps": input.Hubcaps, "bolts": input.Bolts, "lock": input.Lock})
-	_, err = tx.ExecContext(ctx, `INSERT INTO storage_details(claim_id,tire_type,rim_type,front_size,rear_size,front_depth,rear_depth,accessories,mechanic,notes) VALUES(?,?,?,?,?,?,?,?,?,?)`, claim, input.TireType, input.RimType, string(front), string(rear), input.FrontDepth, input.RearDepth, string(accessories), input.Mechanic, input.Notes)
+	_, err = tx.ExecContext(ctx, `INSERT INTO storage_details(claim_id,tire_type,rim_type,front_size,rear_size,front_depth,rear_depth,accessories,mechanic,notes,operation) VALUES(?,?,?,?,?,?,?,?,?,?,?)`, claim, input.TireType, input.RimType, string(front), string(rear), input.FrontDepth, input.RearDepth, string(accessories), input.Mechanic, input.Notes, operation)
 	if err != nil {
 		return 0, err
 	}

@@ -15,6 +15,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const currentSchema = 3
+
 // Open opens the current schema without upgrading an existing database.
 func Open(path string) (*sql.DB, error) { return OpenWithMigration(path, false) }
 
@@ -48,10 +50,10 @@ func OpenWithMigration(path string, upgrade bool) (*sql.DB, error) {
 		if err = db.QueryRow("SELECT COALESCE(MAX(version),0) FROM schema_migrations").Scan(&version); err != nil {
 			return fail(err)
 		}
-		if version < 1 || version > 2 {
+		if version < 1 || version > currentSchema {
 			return fail(fmt.Errorf("unbekannte Schemaversion %d", version))
 		}
-		if version < 2 {
+		if version < currentSchema {
 			if !upgrade {
 				return fail(fmt.Errorf("Schemaversion %d: Server stoppen, dann mit -migrate starten; vorher wird automatisch ein Backup erzeugt", version))
 			}
@@ -78,7 +80,7 @@ func OpenWithMigration(path string, upgrade bool) (*sql.DB, error) {
 }
 
 func migrate(db *sql.DB, version int) error {
-	if version == 2 {
+	if version == currentSchema {
 		return nil
 	}
 	tx, err := db.Begin()
@@ -91,7 +93,7 @@ func migrate(db *sql.DB, version int) error {
 			return err
 		}
 	}
-	files := []string{"001_initial.sql", "002_storage_details.sql"}
+	files := []string{"001_initial.sql", "002_storage_details.sql", "003_storage_operation.sql"}
 	for i := version; i < len(files); i++ {
 		script, err := migrations.Files.ReadFile(files[i])
 		if err != nil {
@@ -117,10 +119,10 @@ func Search(ctx context.Context, db *sql.DB, q string) ([]models.SearchResult, e
 	if q == "" {
 		return result, nil
 	}
-	rows, err := db.QueryContext(ctx, `SELECT p.id,c.name,v.plate,v.car,s.updated_at,s.kind
+	rows, err := db.QueryContext(ctx, `SELECT p.id,c.name,v.plate,v.car,s.updated_at,s.kind,CASE WHEN s.kind='reservation' THEN 'reservation' ELSE COALESCE(d.operation,'storage') END
  FROM storage_claims s JOIN storage_places p ON p.id=s.place_id
  JOIN tire_sets t ON t.id=s.tire_set_id JOIN vehicles v ON v.id=t.vehicle_id
- JOIN customers c ON c.id=v.customer_id WHERE s.status='active'
+ JOIN customers c ON c.id=v.customer_id LEFT JOIN storage_details d ON d.claim_id=s.id WHERE s.status='active'
  ORDER BY s.updated_at DESC,s.id DESC`)
 	if err != nil {
 		return nil, err
@@ -128,7 +130,7 @@ func Search(ctx context.Context, db *sql.DB, q string) ([]models.SearchResult, e
 	defer rows.Close()
 	for rows.Next() {
 		var r models.SearchResult
-		if err = rows.Scan(&r.Place, &r.Name, &r.Plate, &r.Car, &r.Date, &r.Kind); err != nil {
+		if err = rows.Scan(&r.Place, &r.Name, &r.Plate, &r.Car, &r.Date, &r.Kind, &r.Operation); err != nil {
 			return nil, err
 		}
 		if strings.Contains(normalize(r.Name), q) || strings.Contains(normalize(r.Plate), q) || strings.Contains(normalize(r.Place), q) {
