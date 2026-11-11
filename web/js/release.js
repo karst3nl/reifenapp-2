@@ -55,6 +55,7 @@
   dialog.addEventListener('cancel',event=>{if(saving)event.preventDefault();});dialog.addEventListener('close',reset);
   form.addEventListener('submit',async event=>{
     event.preventDefault();if(saving||!target||!field('confirmed').checked)return;
+    const receipt=window.ReceiptTabs.prepare();
     const snapshot=target;saving=true;save.disabled=true;closeButtons.forEach(button=>button.disabled=true);
     const enabled=[...form.elements].filter(el=>!el.disabled);enabled.forEach(el=>el.disabled=true);message('Auslagerung wird gespeichert …');
     try{
@@ -62,9 +63,10 @@
       const data=await response.json();
       if(!response.ok)throw Error(data.error||'Auslagerung fehlgeschlagen.');
       const confirmation=document.getElementById('storage-confirmation');confirmation.textContent='Auslagerung auf '+data.place+' gespeichert. Der Lagerplatz ist wieder frei.';confirmation.hidden=false;
+      receipt.complete(data.pdf_url,confirmation);
       dialog.close();
       const search=document.getElementById('search');if(search.value.trim())search.dispatchEvent(new Event('input'));
-    }catch(error){clearTarget();message(error.message==='Failed to fetch'?'Keine Bestätigung erhalten. Bitte den Lagerplatz erneut prüfen.':error.message,true);}
+    }catch(error){receipt.cancel();clearTarget();message(error.message==='Failed to fetch'?'Keine Bestätigung erhalten. Bitte den Lagerplatz erneut prüfen.':error.message,true);}
     finally{
       enabled.forEach(el=>el.disabled=false);saving=false;closeButtons.forEach(button=>button.disabled=false);
       field('confirmed').disabled=!target;save.disabled=!target||!field('confirmed').checked;

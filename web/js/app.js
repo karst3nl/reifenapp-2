@@ -31,6 +31,7 @@ async function search(id){
       const stamp=Number.isNaN(date.getTime())?'Zeitpunkt unbekannt':date.toLocaleString('de-DE');
       event.textContent=`${labels[item.operation]||'Vorgang'} · ${state} · ${stamp}${item.source==='legacy'?' · Altbestand':''}`;
       info.append(title,meta,event);
+      if(item.pdf_url){const link=document.createElement('a');link.href=item.pdf_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Beleg als PDF';info.append(link);}
       const place=document.createElement('span');place.className='place';place.textContent=item.place;
       card.append(info,place);list.append(card);
     }

@@ -84,3 +84,5 @@
 #release-status.is-error{padding:14px;border:2px solid #f08d98;border-radius:10px;background:#321e2a;color:#ffd6dc;font-weight:700}
 #release-form [aria-invalid=true]{border:2px solid #f08d98;background:#321e2a}
 @media(max-width:520px){#release-dialog{padding:14px}#release-form .release-fields{grid-template-columns:1fr}}
+#storage-confirmation a,#result-list .result a{color:var(--accent2);font-size:13px;text-decoration:underline;text-underline-offset:3px}
+#result-list .result a{display:inline-block;margin-top:5px}

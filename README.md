@@ -54,8 +54,8 @@ data/                      Erst beim Start erzeugt; nicht versioniert
 ```
 
 CSS bleibt in der Designvorlage; ein leerer CSS-Ordner wäre unnötig.
-Einziger direkter externer Go-Baustein ist der bewährte SQLite-Treiber
-`github.com/mattn/go-sqlite3`. SQLite verwendet WAL, Fremdschlüssel und einen
+Direkte externe Go-Bausteine sind der SQLite-Treiber
+`github.com/mattn/go-sqlite3` und für lokale PDF-Belege `github.com/go-pdf/fpdf`. SQLite verwendet WAL, Fremdschlüssel und einen
 Busy-Timeout. SQL-Migrationen laufen transaktional bei der Erstinitialisierung.
 Bestehende Datenbanken werden auf die bekannte Schemaversion geprüft; unbekannte
 Versionen werden abgelehnt. Schema 1 bis 4 benötigen das unten beschriebene explizite
@@ -457,3 +457,53 @@ Danach wieder `go run . -dev`; für die normale Datenbank jeweils `-dev` weglass
 Zum Test einen fiktiven Radsatz einlagern und auslagern. Derselbe Suchtext muss
 beide Ereignisse liefern, während die Platzprüfung den Platz als frei anzeigt.
 Keine zusätzlichen Abhängigkeiten; Kundendaten und Datenbanken bleiben lokal.
+
+## Automatische PDF-Belege (DIN A4)
+
+Nach jeder erfolgreichen Neueinlagerung, jedem Radwechsel, jeder Reservierung und
+jeder Auslagerung öffnet sich der jeweilige Beleg in einem neuen Tab. Dort über die
+PDF-Werkzeugleiste oder Strg+P drucken. Bei ungültigen Eingaben oder einem
+Speicherfehler wird kein Beleg geöffnet. Das Formular schließt weiterhin erst nach
+Erfolg und der Suchtext bleibt unverändert.
+
+Der Browser erhält den Tab unmittelbar beim Speicherklick; nach bestätigtem
+Speichern lädt darin die echte PDF-Datei. Blockiert der Browser neue Tabs oder
+wird der vorbereitete Tab geschlossen, enthält die Speicherbestätigung einen
+„PDF öffnen“-Link. Bei Speicherfehlern wird der vorbereitete Tab geschlossen.
+Die historische Suche bietet zusätzlich „Beleg als PDF“ zum erneuten Öffnen.
+Eine Störung beim PDF-Abruf setzt keinen bereits gespeicherten Vorgang zurück;
+Beleg erneut über den Link öffnen, den Vorgang nicht noch einmal speichern.
+
+Die Belege enthalten die Angaben des unveränderlichen Historieneintrags:
+Vorgangsart/-nummer, Ereigniszeitpunkt (Europe/Berlin), Lagerplatz, Kunde,
+Kennzeichen und Fahrzeug. Bei Einlagerung, Radwechsel und Auslagerung außerdem
+Reifen-/Felgenart, Größen VA/HA, Profiltiefen, Zubehör samt Aufbewahrungsorten,
+Monteur und Bemerkungen, soweit erfasst. Reservierungsbelege enthalten nur die
+dort erfassten Daten. Fehlende Altbestandsangaben stehen als „Nicht erfasst“ im
+Beleg; historische Belege enthalten einen Altbestandshinweis.
+
+Genau eine Seite DIN A4 im Hochformat, weißer druckfreundlicher Hintergrund.
+Zeilen werden umgebrochen und die Schriftgröße vor der Ausgabe an den Umfang
+angepasst; keine zusätzlichen Seiten und kein Abschneiden langer Bemerkungen.
+Überflüssige Leerzeichen/Zeilenumbrüche werden für den Druck verdichtet. Die
+DejaVu-Schrift wird mitgeliefert/eingebettet, damit Umlaute ohne lokale
+Schriftinstallation funktionieren. Font-Lizenz: `internal/receipts/fonts/LICENSE.txt`.
+
+Technik: neue pure-Go-Abhängigkeit `github.com/go-pdf/fpdf`; keine Cloud, kein
+Browser/Office-Programm und keine weitere Systemabhängigkeit auf dem App-Server.
+PDFs werden beim Abruf im Speicher aus der Historie erzeugt, nicht als zusätzliche
+Kundendateien im Repository abgelegt. Kein Datenbankupgrade für dieses Feature.
+
+Alle vier Speicherantworten und die Suchtreffer enthalten `pdf_url`.
+`GET /api/receipts/{claim_id}/{operation}.pdf` liefert `application/pdf` mit
+`Content-Disposition: inline` und `Cache-Control: private, no-store`.
+Operationen: `storage`, `wheel_change`, `reservation`, `release`.
+400 bei ungültigem Pfad, 404 bei unbekanntem Historieneintrag, 500 bei Abruffehler;
+interne Datenbankdetails werden nicht ausgegeben. Der Beleg liest ausschließlich
+den damaligen Schnappschuss und ändert keine Daten.
+
+Update wie üblich mit gestopptem Server: `git pull --ff-only origin beta`,
+anschließend `go run . -dev`. Falls das vorherige Historienupgrade noch fehlt,
+einmalig zusätzlich `-migrate` wie oben beschrieben. Die tatsächliche Anzeige
+und Druckauswahl hängen vom PDF-Verhalten des Browsers ab; für das automatische
+Öffnen gegebenenfalls Popups/Tabs für die lokale App erlauben.

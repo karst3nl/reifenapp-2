@@ -206,6 +206,7 @@
     }
     for(const key of ['hubcaps','bolts','lock'])input[key]={present:field(key+'.present').checked,location:value(key+'.location')};
     }
+    const receipt=window.ReceiptTabs.prepare();
     clearTimeout(placeTimer);placeRequest?.abort();placeGeneration++;hideNames();status.classList.remove('is-error');saving=true;save.disabled=true;close.disabled=true;nav.forEach(button=>button.disabled=true);status.textContent='Wird gespeichert …';
     // Freeze the submitted snapshot until the response arrives.
     const enabled=[...form.elements].filter(el=>!el.disabled);enabled.forEach(el=>el.disabled=true);
@@ -213,7 +214,7 @@
       const response=await fetch(reservationMode?'/api/reservations':wheelChangeMode?'/api/wheel-changes':'/api/storage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
       const data=await response.json();
       if(!response.ok){
-        status.classList.add('is-error');
+        receipt.cancel();status.classList.add('is-error');
         if(response.status===409){placeAllowed=false;placeHint.textContent='Belegung oder Reservierung hat sich geändert. Bitte Eingaben prüfen und erneut prüfen.';placeHint.className='place-check is-unavailable';conflictPlace=input.area+'.'+input.number;markError(field('number'),'Lagerplatz '+conflictPlace+' ist belegt oder reserviert. Bitte einen anderen wählen.');}
         status.textContent=data.error||'Speichern fehlgeschlagen.';
         for(const [name,message] of Object.entries(data.fields||{})){
@@ -227,9 +228,10 @@
       status.textContent=`${reservationMode?'Reservierung':wheelChangeMode?'Radwechsel':'Neueinlagerung'} auf ${data.place} gespeichert. Über die Schnellsuche auffindbar.`;
       const confirmation=document.getElementById('storage-confirmation');
       confirmation.textContent=status.textContent;confirmation.hidden=false;
+      receipt.complete(data.pdf_url,confirmation);
       dialog.close();
       const search=document.getElementById('search');if(search.value.trim())search.dispatchEvent(new Event('input'));
-    }catch{status.classList.add('is-error');status.textContent='Keine Speicherbestätigung erhalten. Bitte zuerst in der Schnellsuche prüfen, ob die Einlagerung gespeichert wurde. Ihre Eingaben bleiben erhalten.';}
+    }catch{receipt.cancel();status.classList.add('is-error');status.textContent='Keine Speicherbestätigung erhalten. Bitte zuerst in der Schnellsuche prüfen, ob die Einlagerung gespeichert wurde. Ihre Eingaben bleiben erhalten.';}
     finally{
       enabled.forEach(el=>el.disabled=false);saving=false;updateSaveState();close.disabled=false;nav.forEach(button=>button.disabled=false);
       for(const key of ['hubcaps','bolts','lock'])field(key+'.location').disabled=!field(key+'.present').checked;

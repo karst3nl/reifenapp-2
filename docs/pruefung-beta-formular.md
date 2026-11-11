@@ -163,3 +163,24 @@ auffindbar, Platz frei und neu belegbar, alte und neue Ereignisse gemeinsam in d
 Platzsuche, Begriffssuche „Auslagerung“, 390px ohne horizontalen Überlauf.
 Nur fiktive temporäre Datenbanken. Keine bestehende Repository-Datenbank migriert.
 Echte CachyOS-/Pi-Hardware, LAN und weitere Browser nicht geprüft.
+
+## Automatische PDF-Belege – 11. November 2026
+
+Erfolgreich: `go test ./...`, `go test -race ./...`, `go vet ./...`, Build,
+JavaScript-Syntaxprüfung und `git diff --check`.
+Go-PDF-Tests: alle vier Vorgangsarten, eine A4-Seite samt eingebetteter Schrift,
+Maximallängen einschließlich 2000 Zeichen Bemerkungen ohne Kürzung, Reservierung
+mit ausschließlich relevanten Daten, Altbestand und ungültige Nutzdaten.
+HTTP-Tests: pdf_url aller vier Speicherantworten, echte PDF-Ausgabe, Inline-/No-Store-
+Header, ungültige IDs/Vorgänge, unbekannte Belege, Datenbankfehler.
+Chromium: echte automatische neue PDF-Tabs nach allen vier Formularen,
+keine Tabs bei Clientvalidierung, vorbereiteter Tab bei Speicherfehler geschlossen,
+PDF-Links in der Historie, manuell simulierter Popup-Blocker mit funktionierendem
+Fallback-Link. Suchtext und bestehendes Formularverhalten erhalten.
+Zusätzlich pdfinfo: normale und maximale Texte genau eine Seite A4
+(595.28×841.89 pt). pdftotext: Umlaute, Škoda, Profiltiefen, Zubehör, ENDMARKER und
+sämtliche Zeichen der Maximaltexte erhalten. Normale und maximale Beispielseiten
+als Bilder gerendert und visuell auf Überlauf/Abschneiden geprüft.
+Alle Beispiele ausschließlich fiktiv unter externem Arbeitsverzeichnis.
+Kein Schemawechsel. Echter Drucker, CachyOS-/Pi-Hardware, LAN und weitere Browser
+nicht geprüft. Browser-/Druckereinstellungen können die PDF-Anzeige beeinflussen.
