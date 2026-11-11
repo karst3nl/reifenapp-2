@@ -50,6 +50,20 @@
 <p id="storage-status" role="status" tabindex="-1"></p>
 <div class="form-actions"><button type="submit" id="storage-save">Einlagerung speichern</button><button type="button" id="storage-close" class="secondary">Schließen</button></div>
 </form></dialog>
+<dialog id="release-dialog" aria-labelledby="release-title">
+<div class="release-heading"><button type="button" id="release-back" aria-label="Zurück zur Startseite">←</button><h3 id="release-title">Auslagerung</h3><button type="button" id="release-x" aria-label="Formular schließen">×</button></div>
+<p>Lagerplatz auswählen, Kunde und Kennzeichen prüfen und Auslagerung bestätigen.</p>
+<form id="release-form" autocomplete="off" novalidate>
+<fieldset><legend>Lagerplatz</legend><div class="release-fields">
+<label>Lagerbereich *<select name="area" required></select></label>
+<label>Lagerplatznummer *<input name="number" type="number" step="1" required></label>
+</div><button id="release-check" type="button" class="secondary">Erneut prüfen</button></fieldset>
+<p id="release-status" role="status" tabindex="-1"></p>
+<div id="release-details" class="result" hidden><div><strong id="release-name"></strong><small id="release-vehicle"></small></div><span id="release-place" class="place"></span></div>
+<label class="release-confirm"><input name="confirmed" type="checkbox" disabled> Ich bestätige die Auslagerung des angezeigten Radsatzes.</label>
+<div class="release-actions"><button type="submit" id="release-save" disabled>Auslagerung bestätigen</button><button type="button" id="release-close" class="secondary">Schließen</button></div>
+</form></dialog>
+<script src="/js/release.js" defer></script>
 <script src="/js/storage.js" defer></script>
 <script src="/js/app.js" defer></script>
 </body>

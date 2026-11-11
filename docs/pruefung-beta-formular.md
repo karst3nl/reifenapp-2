@@ -123,3 +123,23 @@ Suchtext unverändert, Suchtreffer als Radwechsel, Reset und Mobilbreite sowie
 Wechsel zu Reservierung und Neueinlagerung mit korrekten Feldgruppen.
 Nur fiktive temporäre Daten verwendet. Keine vorhandenen Repository-Datenbanken
 migriert. Echte CachyOS-/Pi-Hardware, LAN und weitere Browser nicht geprüft.
+
+## Auslagerung – 11. November 2026
+
+Erfolgreich: `go test ./...`, `go test -race ./...`, `go vet ./...`, Build,
+JavaScript-Syntax und `git diff --check`.
+Datenbank-/API-Tests: Zielbelegung samt Kunden-/Fahrzeugdaten lesen, Bestätigung
+prüfen, Belegung beenden und Platz freigeben, Einlagerungsdaten und ursprünglichen
+Zeitstempel erhalten, Auslagerungszeitpunkt protokollieren, nach Wiederöffnung frei,
+erneut einlagern, veraltete Kennung ohne Freigabe der neuen Belegung abweisen,
+Reservierung und ungültigen Platz abweisen, Rollback bei Protokollfehler,
+genau ein Erfolg bei konkurrierenden unabhängigen Verbindungen, passende HTTP-
+Fehlercodes und No-Store. Schema-3-Upgrade erhält beide Alteinträge und erzeugt
+ein lesbares Backup mit Schemaversion 3; neue Auslagerung funktioniert danach.
+Chromium: aktive Belegung anzeigen, Bestätigungscheckbox, reale Auslagerung,
+aktualisierte Suche mit unverändertem Text, freier Platz erneut belegbar,
+zwischenzeitlicher Austausch durch einen anderen Zugriff erzeugt Konflikt und
+lässt die neue Belegung unverändert, erneute Prüfung, Reservierung/freier Platz
+nicht auslagerbar, Mobilbreite 390px und Formularreset.
+Nur fiktive temporäre Testdatenbanken. Keine vorhandene Repository-Datenbank
+migriert. Echte CachyOS-/Pi-Hardware, LAN und andere Browser nicht geprüft.

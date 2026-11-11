@@ -33,7 +33,7 @@ produktive Datenbank importieren. Laufzeitdaten bleiben durch `.gitignore` lokal
 - Leerzeichen und Bindestriche werden ignoriert, Groß-/Kleinschreibung ebenfalls
   (einschließlich deutscher Umlaute). Leerer Suchtext liefert `[]`.
 - Maximal 200 Zeichen; HTTP 400 bei Überschreitung, HTTP 500 bei Datenbankfehler.
-- Ladezustand, keine Treffer und Fehleranzeige; Radwechsel, Neueinlagerung und Reservierung sind nutzbar, die übrigen drei Vorgänge bleiben Platzhalter.
+- Ladezustand, keine Treffer und Fehleranzeige; Radwechsel, Neueinlagerung, Reservierung und Auslagerung sind nutzbar; Historie und Administration bleiben Platzhalter.
 - 640 gültige Plätze: C1.1–200, C2.201–400, C3/C4/OL/OR jeweils 1–60.
 
 ## Struktur und Entscheidungen
@@ -58,7 +58,7 @@ Einziger direkter externer Go-Baustein ist der bewährte SQLite-Treiber
 `github.com/mattn/go-sqlite3`. SQLite verwendet WAL, Fremdschlüssel und einen
 Busy-Timeout. SQL-Migrationen laufen transaktional bei der Erstinitialisierung.
 Bestehende Datenbanken werden auf die bekannte Schemaversion geprüft; unbekannte
-Versionen werden abgelehnt. Schema 1 und 2 benötigen das unten beschriebene explizite
+Versionen werden abgelehnt. Schema 1 bis 3 benötigen das unten beschriebene explizite
 Upgrade mit Integritätsprüfung und konsistentem SQLite-Backup.
 
 Belegung und Reservierung nutzen eine gemeinsame Tabelle `storage_claims`.
@@ -108,9 +108,9 @@ go run . -dev -migrate
 
 Diese Variante arbeitet weiterhin mit den fiktiven Entwicklungsdaten.
 Für die normale Datenbank stattdessen `go run . -migrate` verwenden.
-Einmalig nötig bei Schema 1 oder 2: Integritätsprüfung, dann `VACUUM INTO` für eine
+Einmalig nötig bei Schema 1, 2 oder 3: Integritätsprüfung, dann `VACUUM INTO` für eine
 konsistente Sicherung inklusive noch im WAL befindlicher Änderungen, danach
-transaktionale Migrationen bis einschließlich 003. Das Backup liegt neben der ursprünglichen Datei
+transaktionale Migrationen bis einschließlich 004. Das Backup liegt neben der ursprünglichen Datei
 als `*.sqlite.backup-<UTC-Zeitstempel>` und ist ebenfalls ignoriert.
 Bei einem Backupfehler findet keine Migration statt. Vorhandene Datensätze werden
 nicht neu angelegt, gelöscht oder mit Beispielen überschrieben. Alle anderen
@@ -194,7 +194,7 @@ Browserursprüngen werden abgelehnt; LAN-Authentifizierung bleibt ein späteres 
 Weitere Entwicklung wird auf `beta` gesammelt. `main` wird nicht automatisch
 aktualisiert; ein späterer Merge erfolgt gesondert. Zum Wechseln den Server stoppen,
 `git fetch origin`, `git switch beta`, `git pull --ff-only origin beta` ausführen.
-Start weiterhin `go run . -dev` (ein Upgrade von Schema 1 oder 2 benötigt einmalig zusätzlich
+Start weiterhin `go run . -dev` (ein Upgrade von Schema 1 bis 3 benötigt einmalig zusätzlich
 `-migrate`, siehe oben). Für diese Formularänderungen ist keine Migration nötig.
 
 Kennzeichen: Landkreiskürzel per Dropdown, Buchstaben und Nummer separat;
@@ -356,3 +356,50 @@ Für die normale Datenbank `-dev` weglassen. Danach weiterhin `go run . -dev` bz
 `go run .`. Beim Test einen fiktiven Namen und freien Platz verwenden, beide
 Achsen ausfüllen und speichern; anschließend nach Kennzeichen suchen und den
 Hinweis „Radwechsel“ prüfen.
+
+## Auslagerung
+
+„Auslagerung“ öffnet ein eigenes Formular mit Lagerbereich/-nummer und direkter
+Belegungsabfrage. Angezeigt werden Kunde, Kennzeichen, Fahrzeug und Lagerplatz.
+Die Checkbox bestätigt den **angezeigten** Radsatz; erst danach ist der
+Speicherbutton aktiv. Freie Plätze und Reservierungen können nicht ausgelagert
+werden. Beim Schließen werden alle Felder geleert.
+
+Nach Erfolg schließt das Formular. Eine vorhandene Schnellsuche wird erneut
+abgefragt, ihr Suchtext bleibt unverändert. Die ausgelagerte Belegung verschwindet
+aus der aktiven Suche, und der Platz kann neu belegt oder reserviert werden.
+Kunde, Fahrzeug, Radsatz, Detaildaten und ursprünglicher Einlagerungszeitstempel
+bleiben erhalten. Es wird nichts gelöscht.
+
+- `POST /api/releases/check`: JSON `{"area":"C1","number":25}`.
+  Antwort enthält `place`, `status` (`free`, `reserved`, `occupied`), `message`;
+  bei Belegung zusätzlich `claim_id`, `name`, `plate`, `car`.
+- `POST /api/releases`: JSON
+  `{"area":"C1","number":25,"claim_id":1,"confirmed":true}`.
+  200 bestätigt die Auslagerung. 422 für fehlende Bestätigung/ungültigen Platz,
+  409 für nicht mehr passende aktive Belegung, 400 für ungültiges JSON,
+  403 fremder Ursprung, 415 falscher Medientyp, 500 Speicherfehler.
+  Antworten verwenden `Cache-Control: no-store`.
+
+Die finale Transaktion prüft die Kennung der zuvor angezeigten Belegung am
+gewählten Platz. Eine inzwischen neue Belegung wird nicht freigegeben.
+`storage_claims.status` wird auf `released` gesetzt; die neue Tabelle
+`storage_releases` protokolliert Kennung und Auslagerungszeitpunkt. Beides ist
+atomar. Ein Fehler erhält die Belegung; wiederholte/parallele Bestätigungen können
+nicht eine weitere Auslagerung erzeugen. Der ursprüngliche Zeitstempel in
+`storage_claims.updated_at` bleibt erhalten.
+
+Migration `004_storage_releases.sql` ergänzt ausschließlich die Protokolltabelle.
+Server stoppen, Code aktualisieren und mit Backup upgraden:
+
+```sh
+git switch beta
+git pull --ff-only origin beta
+go run . -dev -migrate
+```
+
+Danach genügt `go run . -dev`; für die normale Datenbank `-dev` weglassen.
+Zum Test ausschließlich einen fiktiv belegten Platz wählen, angezeigte Daten
+prüfen, Checkbox setzen und bestätigen. Anschließend denselben Platz in der
+Neueinlagerung prüfen: Er muss frei sein. Eine Reservierung wird hier nicht
+storniert; vollständige Historienansicht folgt später.
