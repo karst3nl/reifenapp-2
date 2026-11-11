@@ -39,16 +39,25 @@ func TestDatabase(t *testing.T) {
 }
 func TestSearch(t *testing.T) {
 	db := testDB(t)
-	if err := SeedDevelopment(db); err != nil {
+	second := storageExample()
+	second.Area = "C2"
+	second.Number = 215
+	second.Name = "Erika Beispiel (fiktiv)"
+	second.Plate = "MZ-EB 456"
+	if _, err := CreateStorage(context.Background(), db, second); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Exec(`UPDATE customers SET name='Müller (fiktiv)' WHERE id=1`); err != nil {
+	first := storageExample()
+	first.Number = 25
+	first.Name = "Müller (fiktiv)"
+	first.Plate = "MZ-MM 123"
+	if _, err := CreateStorage(context.Background(), db, first); err != nil {
 		t.Fatal(err)
 	}
 	for _, tc := range []struct {
 		q string
 		n int
-	}{{"", 0}, {"MÜLLER", 1}, {"testmm123", 1}, {"C1.25", 1}, {"Beispiel", 1}, {"unbekannt", 0}, {"' OR 1=1 --", 0}} {
+	}{{"", 0}, {"MÜLLER", 1}, {"mzmm123", 1}, {"C1.25", 1}, {"Beispiel", 1}, {"unbekannt", 0}, {"' OR 1=1 --", 0}} {
 		rows, err := Search(context.Background(), db, tc.q)
 		if err != nil || len(rows) != tc.n {
 			t.Fatalf("%q: %v %v", tc.q, rows, err)

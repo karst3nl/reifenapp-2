@@ -15,7 +15,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const currentSchema = 4
+const currentSchema = 5
 
 // Open opens the current schema without upgrading an existing database.
 func Open(path string) (*sql.DB, error) { return OpenWithMigration(path, false) }
@@ -93,7 +93,7 @@ func migrate(db *sql.DB, version int) error {
 			return err
 		}
 	}
-	files := []string{"001_initial.sql", "002_storage_details.sql", "003_storage_operation.sql", "004_storage_releases.sql"}
+	files := []string{"001_initial.sql", "002_storage_details.sql", "003_storage_operation.sql", "004_storage_releases.sql", "005_history_events.sql"}
 	for i := version; i < len(files); i++ {
 		script, err := migrations.Files.ReadFile(files[i])
 		if err != nil {
@@ -119,21 +119,22 @@ func Search(ctx context.Context, db *sql.DB, q string) ([]models.SearchResult, e
 	if q == "" {
 		return result, nil
 	}
-	rows, err := db.QueryContext(ctx, `SELECT p.id,c.name,v.plate,v.car,s.updated_at,s.kind,CASE WHEN s.kind='reservation' THEN 'reservation' ELSE COALESCE(d.operation,'storage') END
- FROM storage_claims s JOIN storage_places p ON p.id=s.place_id
- JOIN tire_sets t ON t.id=s.tire_set_id JOIN vehicles v ON v.id=t.vehicle_id
- JOIN customers c ON c.id=v.customer_id LEFT JOIN storage_details d ON d.claim_id=s.id WHERE s.status='active'
- ORDER BY s.updated_at DESC,s.id DESC`)
+	rows, err := db.QueryContext(ctx, `SELECT h.id,h.place,h.name,h.plate,h.car,h.occurred_at,h.operation,
+ CASE h.operation WHEN 'reservation' THEN 'reservation' WHEN 'release' THEN 'release' ELSE 'occupancy' END,
+ s.status,(s.status='active' AND h.operation!='release'),h.source
+ FROM history_events h JOIN storage_claims s ON s.id=h.claim_id
+ ORDER BY julianday(h.occurred_at) DESC,h.id DESC`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var r models.SearchResult
-		if err = rows.Scan(&r.Place, &r.Name, &r.Plate, &r.Car, &r.Date, &r.Kind, &r.Operation); err != nil {
+		if err = rows.Scan(&r.EventID, &r.Place, &r.Name, &r.Plate, &r.Car, &r.Date, &r.Operation, &r.Kind, &r.Status, &r.Active, &r.Source); err != nil {
 			return nil, err
 		}
-		if strings.Contains(normalize(r.Name), q) || strings.Contains(normalize(r.Plate), q) || strings.Contains(normalize(r.Place), q) {
+		label := map[string]string{"storage": "Neueinlagerung", "wheel_change": "Radwechsel", "reservation": "Reservierung", "release": "Auslagerung"}[r.Operation]
+		if strings.Contains(normalize(label), q) || strings.Contains(normalize(r.Name), q) || strings.Contains(normalize(r.Plate), q) || strings.Contains(normalize(r.Place), q) {
 			result = append(result, r)
 		}
 	}
@@ -157,5 +158,20 @@ func SeedDevelopment(db *sql.DB) error {
 			return err
 		}
 	}
+	var hasHistory int
+	if err = tx.QueryRow("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='history_events'").Scan(&hasHistory); err != nil {
+		return err
+	}
+	if hasHistory > 0 {
+		for _, event := range []struct {
+			id    int64
+			stamp string
+		}{{1, "2026-11-09T14:40:00Z"}, {2, "2026-11-08T10:30:00Z"}} {
+			if err = recordHistory(context.Background(), tx, event.id, "storage", event.stamp); err != nil {
+				return err
+			}
+		}
+	}
+
 	return tx.Commit()
 }

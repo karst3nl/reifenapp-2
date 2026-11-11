@@ -67,7 +67,8 @@ func createStorage(ctx context.Context, db *sql.DB, input models.StorageInput, o
 			return 0, err
 		}
 	}
-	claim, err := insertID("INSERT INTO storage_claims(place_id,tire_set_id,kind,status,updated_at) VALUES(?,?,'occupancy','active',?)", input.Place(), tire, time.Now().UTC().Format(time.RFC3339Nano))
+	stamp := time.Now().UTC().Format(time.RFC3339Nano)
+	claim, err := insertID("INSERT INTO storage_claims(place_id,tire_set_id,kind,status,updated_at) VALUES(?,?,'occupancy','active',?)", input.Place(), tire, stamp)
 	if err != nil {
 		var se sqlite3.Error
 		if errors.As(err, &se) && se.ExtendedCode == sqlite3.ErrConstraintUnique {
@@ -80,6 +81,9 @@ func createStorage(ctx context.Context, db *sql.DB, input models.StorageInput, o
 	accessories, _ := json.Marshal(map[string]models.Accessory{"hubcaps": input.Hubcaps, "bolts": input.Bolts, "lock": input.Lock})
 	_, err = tx.ExecContext(ctx, `INSERT INTO storage_details(claim_id,tire_type,rim_type,front_size,rear_size,front_depth,rear_depth,accessories,mechanic,notes,operation) VALUES(?,?,?,?,?,?,?,?,?,?,?)`, claim, input.TireType, input.RimType, string(front), string(rear), input.FrontDepth, input.RearDepth, string(accessories), input.Mechanic, input.Notes, operation)
 	if err != nil {
+		return 0, err
+	}
+	if err = recordHistory(ctx, tx, claim, operation, stamp); err != nil {
 		return 0, err
 	}
 	if err = tx.Commit(); err != nil {

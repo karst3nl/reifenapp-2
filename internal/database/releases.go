@@ -79,7 +79,11 @@ func ReleaseStorage(ctx context.Context, db *sql.DB, area string, number int, cl
 	if n != 1 {
 		return ErrReleaseChanged
 	}
-	if _, err = tx.ExecContext(ctx, "INSERT INTO storage_releases(claim_id,released_at) VALUES(?,?)", claimID, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
+	stamp := time.Now().UTC().Format(time.RFC3339Nano)
+	if _, err = tx.ExecContext(ctx, "INSERT INTO storage_releases(claim_id,released_at) VALUES(?,?)", claimID, stamp); err != nil {
+		return err
+	}
+	if err = recordHistory(ctx, tx, claimID, "release", stamp); err != nil {
 		return err
 	}
 	return tx.Commit()

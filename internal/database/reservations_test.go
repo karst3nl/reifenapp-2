@@ -62,7 +62,7 @@ func TestReservationLifecycle(t *testing.T) {
 		t.Fatal(status)
 	}
 	rows, err := Search(context.Background(), db, input.Name)
-	if err != nil || len(rows) != 1 || rows[0].Kind != "occupancy" {
+	if err != nil || len(rows) != 2 || rows[0].Kind != "occupancy" || rows[1].Kind != "reservation" || rows[1].Active {
 		t.Fatalf("%v %v", rows, err)
 	}
 	var n int

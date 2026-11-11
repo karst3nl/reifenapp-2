@@ -39,7 +39,7 @@ func TestReleaseFreesPlacePreservesData(t *testing.T) {
 		t.Fatalf("%+v %v", checked, err)
 	}
 	rows, err := Search(context.Background(), db, input.Name)
-	if err != nil || len(rows) != 0 {
+	if err != nil || len(rows) != 2 || rows[0].Operation != "release" || rows[0].Active || rows[1].Active {
 		t.Fatalf("%v %v", rows, err)
 	}
 	for _, table := range []string{"customers", "vehicles", "tire_sets", "storage_details"} {

@@ -44,8 +44,12 @@ func CreateReservation(ctx context.Context, db *sql.DB, input models.Reservation
 	if err != nil {
 		return 0, err
 	}
-	claim, err := insertID("INSERT INTO storage_claims(place_id,tire_set_id,kind,status,updated_at) VALUES(?,?,'reservation','active',?)", input.Place(), tire, time.Now().UTC().Format(time.RFC3339Nano))
+	stamp := time.Now().UTC().Format(time.RFC3339Nano)
+	claim, err := insertID("INSERT INTO storage_claims(place_id,tire_set_id,kind,status,updated_at) VALUES(?,?,'reservation','active',?)", input.Place(), tire, stamp)
 	if err != nil {
+		return 0, err
+	}
+	if err = recordHistory(ctx, tx, claim, "reservation", stamp); err != nil {
 		return 0, err
 	}
 	if err = tx.Commit(); err != nil {

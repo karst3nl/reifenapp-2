@@ -46,3 +46,29 @@ func TestSearchHTTP(t *testing.T) {
 		t.Fatal(w.Body.String())
 	}
 }
+
+func TestSearchFindsReleaseHistory(t *testing.T) {
+	db, err := database.Open(filepath.Join(t.TempDir(), "history.sqlite"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err = database.SeedDevelopment(db); err != nil {
+		t.Fatal(err)
+	}
+	r := httptest.NewRequest("POST", "/api/releases", strings.NewReader(`{"area":"C1","number":25,"claim_id":1,"confirmed":true}`))
+	r.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	Releases(db)(w, r)
+	if w.Code != 200 {
+		t.Fatal(w.Body)
+	}
+	for _, query := range []string{"TESTMM123", "C1.25", "Auslagerung"} {
+		w = httptest.NewRecorder()
+		Search(db)(w, httptest.NewRequest("GET", "/api/search?q="+query, nil))
+		var rows []models.SearchResult
+		if err = json.Unmarshal(w.Body.Bytes(), &rows); err != nil || len(rows) == 0 || rows[0].Operation != "release" || rows[0].Active || rows[0].EventID <= 0 {
+			t.Fatal(w.Body, err)
+		}
+	}
+}
