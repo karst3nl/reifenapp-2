@@ -532,3 +532,40 @@ Beiträge bitte gegen `beta` richten, den bestehenden Code und `AGENTS.md` beach
 und passende Tests ausführen. Für Beispiele, Tests, Screenshots und Fehlerberichte
 nur fiktive Daten verwenden. Keine echten Kundendaten, Datenbankdateien, Backups
 oder Zugangsdaten in Issues, Pull Requests oder Commits veröffentlichen.
+
+## Drucklayout nach der bereitgestellten HTML-Vorlage
+
+Die PDFs übernehmen den Aufbau der früheren Druckansicht: großer Firmenkopf mit
+Adresse/Telefon, zweispaltige Kunden-/Fahrzeugdaten mit Trennlinien sowie
+Reifen-/Felgenart/Felgenschloss, Radkappen/Profiltiefen und Radschrauben/Hinweise
+in kompakten Spalten. Neue Angaben wie Reifengrößen VA/HA, Monteur, Vorgangsart
+und Historienreferenz bleiben enthalten. Datum und Beschriftungen passen zur
+Vorgangsart; Reservierungen enthalten weiterhin nur ihre erfassten Felder.
+
+Der Firmenkopf ist lokal konfigurierbar. Bei Bedarf die ignorierte Datei
+`local/receipt-header.json` im Editor anlegen (Beispiel vollständig fiktiv):
+
+```json
+{
+  "company": "Werkstatt Muster GmbH (fiktiv)",
+  "street": "Musterstraße 1",
+  "city": "00000 Musterstadt",
+  "phone": "0000/12345"
+}
+```
+
+Die eigenen Firmenangaben einsetzen und den Server neu starten. Ohne diese Datei
+wird der neutrale Kopf „Reifenapp 2.0“ verwendet. Leere optionale Zeilen werden
+weggelassen; maximal 100 Zeichen pro Konfigurationszeile. Abweichender Pfad:
+`go run . -dev -receipt-config /pfad/zum/firmenkopf.json`.
+Eine fehlerhafte Datei wird beim Start gemeldet; sie wird nicht überschrieben.
+Firmenkonfiguration nicht in Git committen. Die hochgeladene Originaldatei und
+ihre realen Firmendaten werden nicht ins öffentliche Repository übernommen.
+
+Automatische PDFs, neuer Tab, Strg+P, Ersatzlink bei Popup-Blockierung und
+Nachdruck aus der Historie funktionieren weiterhin. Genau eine Seite DIN A4:
+bei ungewöhnlich langen Werten reduziert sich zunächst die Schriftgröße;
+falls nötig folgt eine kompakte Tabellenanordnung mit demselben Firmenkopf,
+damit alle Daten erhalten bleiben. Keine weitere Migration oder Abhängigkeit.
+Die zusätzliche fette DejaVu-Schrift ist unter derselben bestehenden Fontlizenz
+mitgeliefert. Die Startseite und die Formulare werden nicht neu gestaltet.

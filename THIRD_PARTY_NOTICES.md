@@ -67,7 +67,7 @@ SOFTWARE.
 
 ## Eingebettete PDF-Schrift
 
-DejaVu Sans verwendet die Bitstream-Vera-Lizenz; die DejaVu-Ergänzungen sind
+DejaVu Sans und DejaVu Sans Bold verwenden die Bitstream-Vera-Lizenz; die DejaVu-Ergänzungen sind
 Public Domain. Der vollständige Lizenztext und die Urhebervermerke bleiben in
 [internal/receipts/fonts/LICENSE.txt](internal/receipts/fonts/LICENSE.txt)
 enthalten. Die Schrift wird nicht durch die Projekt-MIT-Lizenz neu lizenziert.

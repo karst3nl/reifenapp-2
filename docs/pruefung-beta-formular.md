@@ -184,3 +184,21 @@ als Bilder gerendert und visuell auf Überlauf/Abschneiden geprüft.
 Alle Beispiele ausschließlich fiktiv unter externem Arbeitsverzeichnis.
 Kein Schemawechsel. Echter Drucker, CachyOS-/Pi-Hardware, LAN und weitere Browser
 nicht geprüft. Browser-/Druckereinstellungen können die PDF-Anzeige beeinflussen.
+
+## PDF-Layout nach HTML-Druckvorlage – 11. November 2026
+
+Erfolgreich: `go test ./...`, `go test -race ./...`, `go vet ./...`, Build,
+JavaScript-Syntax und `git diff --check`.
+Neue Tests für lokalen Firmenkopf (fehlende/gültige/fehlerhafte Datei,
+Längenprüfung), alle vier PDF-Arten mit Firmenkopf und die Reihenfolge der
+zweispaltigen Stammdaten sowie dreispaltigen Reifen-/Zubehörblöcke.
+Bestehende Tests für genau eine A4-Seite und vollständige Maximaltexte bleiben grün.
+PDFs mit fiktivem vierzeiligem Firmenkopf erzeugt, mit pdfinfo als eine A4-Seite
+bestätigt, via pdftotext vollständig einschließlich Umlaute/Maximaltext-Endmarkierung
+geprüft sowie gerenderte normale und maximale Belege visuell geprüft.
+Chromium-Regressionsprüfung: alle vier automatischen PDF-Tabs, keine Tabs bei
+ungültigen Eingaben, Schließen des vorbereiteten Tabs bei Speicherfehler,
+Historien-Nachdruck und Ersatzlink bei simuliertem Popup-Blocker erfolgreich.
+Reale Firmenangaben aus dem Anhang wurden nicht versioniert. Keine Datenbanken
+verändert oder migriert. Echter Drucker, CachyOS-/Pi-Hardware und andere Browser
+nicht geprüft. Alte Reifensuch-App-Repositories wurden nicht verwendet.
