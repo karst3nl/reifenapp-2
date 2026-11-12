@@ -26,11 +26,12 @@ Historie und druckbaren DIN-A4-Belegen. Ohne Cloudpflicht.
 | Reservierung | Freie Lagerplätze für Kunden und Fahrzeuge reservieren; passende Reservierungen bei der Einlagerung übernehmen. |
 | Auslagerung | Belegung nach Bestätigung aufheben und den Platz wieder freigeben; Historie erhalten. |
 | Druckbelege | Nach jedem erfolgreichen Vorgang automatisch eine einseitige A4-PDF im neuen Tab öffnen; Nachdruck über die Suche. |
-| Administration | Passwortgeschützter PDF-Designer mit Drag-and-drop, horizontalem und vertikalem Raster und eigenen Vorlagen je Vorgangsart. |
+| Lagerplatzverwaltung | Lagerorte anlegen, Nummernbereiche ändern und freie, belegte oder reservierte Plätze überblicken. |
+| Administration | Getrennte Bereiche für Lagerplätze und passwortgeschützten PDF-Designer mit Drag-and-drop, horizontalem und vertikalem Raster und eigenen Vorlagen je Vorgangsart. |
 
 Aktive Belegungen und Reservierungen dürfen sich nicht überschneiden. Diese Regel
-wird auch in der Datenbank abgesichert. Es gibt 640 Lagerplätze in den Bereichen
-**C1, C2, C3, C4, OL und OR**.
+wird auch in der Datenbank abgesichert. Die Ausgangskonfiguration enthält 640 Lagerplätze in den Bereichen
+**C1, C2, C3, C4, OL und OR**. Weitere Lagerorte und Zahlenbereiche sind im Adminbereich verwaltbar.
 
 Noch offen sind unter anderem eine eigenständige Historienansicht, CSV-Import und
 die Pflege von Auswahllisten im Adminbereich. Die Historie ist bereits über die
@@ -75,6 +76,10 @@ gehören nicht in die produktive Datenbank.
 Benutzernamen `admin` und dem Startpasswort `Reifenapp-Start2026!` an.
 Beim ersten Login musst du ein eigenes Passwort festlegen, bevor der Adminbereich
 freigeschaltet wird. Es wird ausschließlich als bcrypt-Hash lokal gespeichert.
+
+Nach dem Login wählst du zwischen **Lagerplätze** und **PDF-Editor**.
+Die [Lagerplatzverwaltung](docs/lagerplaetze.md) zeigt die Belegung und erlaubt neue
+Lagerorte sowie Änderungen der Nummernbereiche.
 
 Im [PDF-Designer](docs/pdf-designer.md) kannst du A4-Vorlagen für die einzelnen
 Vorgänge gestalten, testen und aktivieren. Das Raster dient nur als Gestaltungshilfe
@@ -143,6 +148,7 @@ Automatisierte Tests verwenden temporäre Datenbanken und ausschließlich fiktiv
 ## Dokumentation
 
 - [Betrieb, Datenbank und HTTP-API](docs/betrieb-und-api.md)
+- [Lagerorte und Nummernbereiche verwalten](docs/lagerplaetze.md)
 - [PDF-Designer und Admin-Einrichtung](docs/pdf-designer.md)
 - [Kennzeichen und Landkreis-Auswahl](docs/kennzeichen.md)
 - [Fachliche Projektübersicht](docs/projektuebersicht.md) – enthält auch geplante Funktionen

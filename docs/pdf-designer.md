@@ -1,6 +1,8 @@
 # Admin-Panel und PDF-Designer
 
-Der Designer ist der erste Administrationsbereich. Normale Werkstattvorgänge
+Die Administration bietet getrennte Bereiche für **Lagerplätze** und **PDF-Editor**.
+Nach der Anmeldung oben „PDF-Editor“ wählen. Zur Lagerplatzverwaltung siehe
+[Lagerorte und Nummernbereiche](lagerplaetze.md). Normale Werkstattvorgänge
 benötigen weiterhin keine Anmeldung. Die Startseite behält ihr bestehendes Design.
 Auf „Administration“ klicken, um den geschützten Bereich zu öffnen.
 
@@ -20,7 +22,7 @@ Anschließend „Administration“ öffnen. Es gibt genau einen festen Benutzer:
 - Startpasswort: **`Reifenapp-Start2026!`**.
 
 Nach der ersten Anmeldung ist nur die Passwortänderung freigeschaltet. Eigenes
-Passwort und Wiederholung eingeben; erst danach öffnet sich der Designer.
+Passwort und Wiederholung eingeben; erst danach öffnet sich die Administration.
 Mindestens 12 Zeichen, höchstens 72 Bytes (bei Umlauten können weniger als 72
 Zeichen möglich sein). Startpasswort und bisheriges Passwort dürfen nicht erneut
 gewählt werden. Für spätere Änderungen gibt es „Passwort ändern“; dort wird auch

@@ -7,21 +7,21 @@
   const details=document.getElementById('release-details');
   const save=document.getElementById('release-save');
   const closeButtons=['release-x','release-back','release-close'].map(id=>document.getElementById(id));
-  let target=null, timer, request, generation=0, saving=false, ready=false;
+  let storageAreas=[], target=null, timer, request, generation=0, saving=false, ready=false;
   function message(text,error=false){status.textContent=text;status.classList.toggle('is-error',error);}
   function clearTarget(){target=null;details.hidden=true;field('confirmed').checked=false;field('confirmed').disabled=true;save.disabled=true;}
-  function range(){const area=field('area').value;field('number').min=area==='C2'?201:1;field('number').max=area==='C1'?200:area==='C2'?400:60;}
+  function range(){const area=storageAreas.find(a=>a.code===field('area').value);field('number').min=area?.first_number||1;field('number').max=area?.last_number||100000;}
   function reset(){
     clearTimeout(timer);request?.abort();generation++;form.reset();clearTarget();range();message('');
     form.querySelectorAll('[aria-invalid]').forEach(el=>el.removeAttribute('aria-invalid'));
     for(const id of ['release-name','release-vehicle','release-place'])document.getElementById(id).textContent='';
   }
   window.openRelease=async()=>{
-    reset();dialog.showModal();if(ready)return;
+    reset();dialog.showModal();ready=false;
     message('Lagerbereiche werden geladen …');
     try{
       const response=await fetch('/api/storage/options',{cache:'no-store'});if(!response.ok)throw Error();
-      const options=await response.json();field('area').replaceChildren(new Option('Bitte wählen',''));
+      const options=await response.json();storageAreas=options.storage_areas;field('area').replaceChildren(new Option('Bitte wählen',''));
       for(const area of options.area)field('area').add(new Option(area,area));ready=true;range();message('');
     }catch{message('Lagerbereiche konnten nicht geladen werden. Bitte schließen und erneut öffnen.',true);}
   };

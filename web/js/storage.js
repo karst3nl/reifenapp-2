@@ -10,7 +10,7 @@
   document.getElementById('copy-front').addEventListener('click',()=>{
     for(const key of ['width','ratio','inches','load','speed']){const el=field('rear.'+key);el.value=field('front.'+key).value;if(el.hasAttribute('aria-invalid'))validateField(el);}
   });
-  let ready=false, saving=false, reservationMode=false, wheelChangeMode=false;
+  let storageAreas=[], ready=false, saving=false, reservationMode=false, wheelChangeMode=false;
   let nameTimer, nameRequest, nameGeneration=0;
   let activeName=-1, conflictPlace='';
   let placeTimer, placeRequest, placeGeneration=0, placePending=false, placeAllowed=null;
@@ -19,9 +19,9 @@
   const nameHint=document.getElementById('customer-hint');
   const field=name=>form.elements.namedItem(name);
   function numberRange(){
-    const area=field('area').value;
-    field('number').min=area==='C2'?201:1;
-    field('number').max=area==='C1'?200:area==='C2'?400:60;
+    const area=storageAreas.find(a=>a.code===field('area').value);
+    field('number').min=area?.first_number||1;
+    field('number').max=area?.last_number||100000;
   }
   function clearFieldError(el){
     const id='error-'+el.name.replaceAll('.','-');
@@ -135,12 +135,12 @@
   window.openStorage=async(reservation=false,wheelChange=false)=>{
     reservationMode=reservation;wheelChangeMode=wheelChange;
     resetForm();dialog.showModal();
-    if(ready){status.textContent='';updateSaveState();return;}
+    ready=false;
     save.disabled=true;status.textContent='Auswahllisten werden geladen …';
     try {
-      const response=await fetch('/api/storage/options');
+      const response=await fetch('/api/storage/options',{cache:'no-store'});
       if(!response.ok)throw Error();
-      const options=await response.json();
+      const options=await response.json();storageAreas=options.storage_areas;
       form.querySelectorAll('select').forEach(select=>{
         const key=select.dataset.options||select.name;
         select.replaceChildren(new Option(select.required?'Bitte wählen':'Keine Angabe',''));

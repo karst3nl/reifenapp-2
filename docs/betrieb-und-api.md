@@ -34,6 +34,9 @@ bei laufendem WAL-Betrieb nicht lediglich die einzelne Hauptdatei kopieren.
 
 ## Lagerregeln und Historie
 
+Die folgenden Bereiche sind die Ausgangskonfiguration. Lagerorte und Nummernbereiche
+sind über die [Lagerplatzverwaltung](lagerplaetze.md) im Adminbereich anpassbar.
+
 | Bereich | Nummern |
 | --- | --- |
 | C1 | 1–200 |
@@ -66,7 +69,7 @@ konkrete JSON-Strukturen und Validierungen stehen in `internal/handlers/` und
 | --- | --- |
 | `GET /api/search?q=...` | Suche in der Vorgangshistorie nach Kunde, Kennzeichen, Platz oder Vorgangsart |
 | `GET /api/customers?q=...` | Bis zu 20 Namensvorschläge per Präfixsuche |
-| `GET /api/storage/options` | Zentrale Auswahlwerte der Formulare |
+| `GET /api/storage/options` | Auswahlwerte und aktueller Lagerkatalog (`area`, `storage_areas`) |
 | `POST /api/storage/check` | Lagerplatz für Einlagerung oder Reservierung prüfen |
 | `POST /api/storage` | Neueinlagerung speichern |
 | `POST /api/wheel-changes` | Einlagerung mit Vorgangsart Radwechsel speichern |

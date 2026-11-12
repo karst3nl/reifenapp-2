@@ -10,7 +10,8 @@
   if(!response.ok){let data;try{data=await response.json()}catch{}throw Error(data?.error||'Anfrage fehlgeschlagen.');}
   return options.pdf?response.blob():response.json();
  }
- function showLogin(){loadGeneration++;csrf='';$('password-form').reset();$('password').value='';$('login-panel').hidden=false;$('editor').hidden=true;$('logout').hidden=true;$('change-password').hidden=true;$('password-panel').hidden=true;if(previewURL){URL.revokeObjectURL(previewURL);previewURL=''}$('pdf-preview').removeAttribute('src');}
+ function hideSections(){for(const id of ['admin-nav','areas-panel','editor'])$(id).hidden=true;}
+ function showLogin(){hideSections();loadGeneration++;csrf='';$('password-form').reset();$('password').value='';$('login-panel').hidden=false;$('editor').hidden=true;$('logout').hidden=true;$('change-password').hidden=true;$('password-panel').hidden=true;if(previewURL){URL.revokeObjectURL(previewURL);previewURL=''}$('pdf-preview').removeAttribute('src');}
  function selectedElement(){return state?.template.elements.find(e=>e.id===selected)}
  function remember(){undo.push(clone(state.template));if(undo.length>80)undo.shift();redo=[];dirty=true;}
  function round(n){return Math.round(n*100)/100}
@@ -49,12 +50,50 @@
   if(generation!==loadGeneration||$('operation').value!==operation)return;state=data.layout;defaults=data.default;values=sample;selected='';dirty=false;undo=[];redo=[];paint();zoom();updateGrid();status('Elemente ziehen oder links hinzufügen. Vorschau enthält fiktive Daten.');
  }
  async function enter(){
-  $('login-panel').hidden=true;$('password-panel').hidden=true;$('editor').hidden=false;$('logout').hidden=false;$('change-password').hidden=false;
+  $('login-panel').hidden=true;$('password-panel').hidden=true;$('admin-nav').hidden=false;$('logout').hidden=false;$('change-password').hidden=false;
   fields=await api('fields');for(const id of ['palette-field','prop-field']){$(id).replaceChildren();for(const f of fields)$(id).add(new Option(f.label,f.key))}
-  if(state&&dirty){$('operation').value=state.operation;const [data,sample]=await Promise.all([api('layout?operation='+state.operation),api('values?operation='+state.operation)]);defaults=data.default;values=sample;paint();zoom();status('Sitzung erneuert. Ungespeicherter Entwurf bleibt geöffnet.');}else{await load();}await document.fonts.load('12px Receipt');await document.fonts.load('bold 12px Receipt');paint();
+  if(state&&dirty){$('operation').value=state.operation;const [data,sample]=await Promise.all([api('layout?operation='+state.operation),api('values?operation='+state.operation)]);defaults=data.default;values=sample;paint();zoom();status('Sitzung erneuert. Ungespeicherter Entwurf bleibt geöffnet.');}else{await load();}await document.fonts.load('12px Receipt');await document.fonts.load('bold 12px Receipt');paint();await selectSection(activeSection);
  }
+ let activeSection='areas',areaRevision=0,areaSaving=false,areaDirty=false,areaGeneration=0;
+ const areaMessage=(text,error=false)=>{$('area-status').textContent=text;$('area-status').classList.toggle('error',error)};
+ async function selectSection(section){
+  if(busy||areaSaving)return;
+  if(section!==activeSection&&areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;
+  if(section!==activeSection){areaDirty=false;$('area-form').hidden=true;}
+  activeSection=section;$('editor').hidden=section!=='pdf';$('areas-panel').hidden=section!=='areas';
+  for(const [id,name] of [['nav-areas','areas'],['nav-pdf','pdf']]){$(id).setAttribute('aria-pressed',String(name===section));$(id).classList.toggle('secondary',name!==section);}
+  if(section==='areas')await loadAreas();else{zoom();paint();}
+ }
+ async function loadAreas(){
+  const generation=++areaGeneration;$('areas-status').textContent='Lagerorte werden geladen …';
+  try{const areas=await api('areas');if(generation!==areaGeneration||!csrf)return;
+   $('areas-list').replaceChildren();
+   for(const a of areas){const row=document.createElement('tr'),count=a.last_number-a.first_number+1;
+    for(const value of [a.code,a.first_number+'–'+a.last_number,count,a.occupied,a.reserved,count-a.occupied-a.reserved]){const cell=document.createElement('td');cell.textContent=value;row.append(cell)}
+    const cell=document.createElement('td'),edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Bearbeiten';edit.setAttribute('aria-label','Lagerort '+a.code+' bearbeiten');edit.onclick=()=>editArea(a);cell.append(edit);row.append(cell);$('areas-list').append(row);
+   }$('areas-status').textContent=areas.length+' Lagerorte';$('areas-status').classList.remove('error');
+  }catch(error){$('areas-status').textContent=error.message;$('areas-status').classList.add('error');}
+ }
+ function editArea(a){
+  if(areaSaving)return;if(areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;
+  areaRevision=a?.revision||0;areaDirty=false;$('area-form').reset();$('area-form').hidden=false;
+  $('area-title').textContent=a?'Lagerort bearbeiten':'Lagerort anlegen';$('area-code').value=a?.code||'';$('area-code').readOnly=!!a;$('area-first').value=a?.first_number||'';$('area-last').value=a?.last_number||'';areaMessage('');areaSummary();$('area-form').scrollIntoView({behavior:'smooth'});$(a?'area-first':'area-code').focus();
+ }
+ function areaSummary(){const first=Number($('area-first').value),last=Number($('area-last').value);$('area-summary').textContent=first>0&&last>=first?`${last-first+1} Plätze · ${$('area-code').value}.${first} bis ${$('area-code').value}.${last}`:'';}
+ $('nav-areas').onclick=()=>selectSection('areas');$('nav-pdf').onclick=()=>selectSection('pdf');
+ $('area-new').onclick=()=>editArea(null);$('areas-reload').onclick=()=>{if(areaSaving)return;if(areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;areaDirty=false;$('area-form').hidden=true;loadAreas();};
+ $('area-cancel').onclick=()=>{if(areaSaving)return;if(areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;areaDirty=false;$('area-form').hidden=true;};
+ $('area-form').addEventListener('input',()=>{areaDirty=true;areaSummary()});
+ $('area-form').addEventListener('submit',async event=>{
+  event.preventDefault();if(areaSaving)return;
+  const first=Number($('area-first').value),last=Number($('area-last').value);
+  if(last<first||last-first>=10000){areaMessage('Bitte einen aufsteigenden Bereich mit höchstens 10000 Plätzen eingeben.',true);return}
+  areaSaving=true;$('area-form').inert=true;$('change-password').disabled=true;$('logout').disabled=true;areaMessage('Lagerort wird gespeichert …');
+  try{await api('areas',{method:'POST',body:JSON.stringify({code:$('area-code').value,first_number:first,last_number:last,revision:areaRevision})});areaDirty=false;$('area-form').hidden=true;await loadAreas();$('areas-status').textContent+=' · Änderung gespeichert.';}
+  catch(error){areaMessage(error.message,true)}finally{areaSaving=false;$('area-form').inert=false;$('change-password').disabled=false;$('logout').disabled=false;}
+ });
  $('login-form').addEventListener('submit',async event=>{event.preventDefault();const input=$('password');const password=input.value;input.value='';$('login-status').textContent='Anmeldung …';try{const data=await api('login',{method:'POST',body:JSON.stringify({username:$('username').value,password})});csrf=data.csrf;if(data.must_change)showPasswordChange(true);else await enter();$('login-status').textContent=''}catch(error){$('login-status').textContent=error.message}});
- function showPasswordChange(required){
+ function showPasswordChange(required){hideSections();
   loadGeneration++;$('login-panel').hidden=true;$('editor').hidden=true;$('password-panel').hidden=false;$('logout').hidden=false;$('change-password').hidden=true;
   $('current-password-label').hidden=required;$('current-password').required=!required;$('current-password').disabled=required;$('cancel-password').hidden=required;
   $('password-title').textContent=required?'Neues Admin-Passwort festlegen':'Admin-Passwort ändern';
@@ -69,7 +108,7 @@
   try{const data=await api('password',{method:'POST',body:JSON.stringify(body)});csrf=data.csrf;$('password-form').reset();await enter();status('Neues Admin-Passwort gespeichert. Bisherige Anmeldungen wurden beendet.');}
   catch(error){$('password-status').textContent=error.message}finally{enabled.forEach(el=>el.disabled=false);$('save-password').disabled=false;$('logout').disabled=false}
  });
- $('logout').addEventListener('click',async()=>{if(dirty&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;try{await api('logout',{method:'POST',body:'{}'});dirty=false;state=null;showLogin()}catch(error){status(error.message,true)}});
+ $('logout').addEventListener('click',async()=>{if((dirty||areaDirty)&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;if(areaSaving||busy)return;try{await api('logout',{method:'POST',body:'{}'});dirty=false;areaDirty=false;state=null;showLogin()}catch(error){status(error.message,true)}});
  $('operation').addEventListener('change',async()=>{if(dirty&&!confirm('Ungespeicherte Änderungen verwerfen?')){$('operation').value=state.operation;return}try{await load()}catch(error){status(error.message,true)}});
  $('reload').addEventListener('click',async()=>{if(dirty&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;try{await load()}catch(error){status(error.message,true)}});
  function add(type){if(state.template.elements.length>=100){status('Maximal 100 Elemente erlaubt.',true);return}remember();let id;do{id='element-'+Date.now()+'-'+(++counter)}while(state.template.elements.some(e=>e.id===id));
@@ -118,6 +157,6 @@
  $('save').addEventListener('click',()=>persist(true));$('standard').addEventListener('click',()=>persist(false));
  $('preview').addEventListener('click',async()=>{try{const blob=await api('preview',{method:'POST',body:JSON.stringify(state),pdf:true});if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(blob);$('pdf-preview').src=previewURL;$('preview-panel').hidden=false;$('preview-panel').scrollIntoView({behavior:'smooth'});status('Echte PDF-Vorschau erzeugt. Noch nicht gespeicherte Änderungen sind enthalten.')}catch(error){status(error.message,true)}});
  $('close-preview').addEventListener('click',()=>{$('preview-panel').hidden=true;$('pdf-preview').removeAttribute('src');if(previewURL){URL.revokeObjectURL(previewURL);previewURL=''}});
- window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue=''}});
+ window.addEventListener('beforeunload',event=>{if(dirty||areaDirty){event.preventDefault();event.returnValue=''}});
  (async()=>{try{const response=await fetch('/api/admin/session',{cache:'no-store'});const data=await response.json();if(response.ok){csrf=data.csrf;if(data.must_change)showPasswordChange(true);else await enter()}else if(response.status!==401){$('login-status').textContent=data.error||'Anmeldung derzeit nicht verfügbar.'}}catch{$('login-status').textContent='Verbindung zum Server nicht möglich.'}})();
 })();
