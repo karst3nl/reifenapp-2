@@ -55,6 +55,9 @@ func storageHandler(db *sql.DB, wheelChange bool) http.HandlerFunc {
 }
 
 func readStorageJSON(w http.ResponseWriter, r *http.Request, input any) bool {
+	return readLimitedJSON(w, r, input, 32768)
+}
+func readLimitedJSON(w http.ResponseWriter, r *http.Request, input any, limit int64) bool {
 	// Reject browser cross-origin writes; no CORS access is granted.
 	if origin := r.Header.Get("Origin"); origin != "" {
 		u, err := url.Parse(origin)
@@ -68,7 +71,7 @@ func readStorageJSON(w http.ResponseWriter, r *http.Request, input any) bool {
 		writeJSON(w, 415, map[string]string{"error": "JSON wird erwartet."})
 		return false
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, 32768)
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	err := decoder.Decode(input)

@@ -27,6 +27,10 @@ func main() {
 	if headerErr != nil {
 		log.Fatal(headerErr)
 	}
+	adminPassword := os.Getenv("REIFENAPP_ADMIN_PASSWORD")
+	if adminPassword != "" && (len(adminPassword) < 12 || len(adminPassword) > 128) {
+		log.Fatal("REIFENAPP_ADMIN_PASSWORD muss 12 bis 128 Bytes lang sein.")
+	}
 	path := "data/reifenapp.sqlite"
 	if *dev {
 		path = "data/development.sqlite"
@@ -45,6 +49,7 @@ func main() {
 	}
 	web, _ := fs.Sub(assets, "web")
 	mux := http.NewServeMux()
+	handlers.NewAdmin(db, header, adminPassword).Register(mux)
 	mux.HandleFunc("GET /api/search", handlers.Search(db))
 	mux.HandleFunc("GET /api/receipts/{claim}/{operation}", handlers.Receipts(db, header))
 	mux.HandleFunc("GET /api/customers", handlers.Customers(db))
