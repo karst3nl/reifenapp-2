@@ -21,7 +21,7 @@ func CheckStorage(db *sql.DB) http.HandlerFunc {
 		if !readStorageJSON(w, r, &input) {
 			return
 		}
-		if (input.Purpose != "" && input.Purpose != "storage" && input.Purpose != "reservation") || utf8.RuneCountInString(input.Name) > 200 || utf8.RuneCountInString(input.Plate) > 30 || len(input.Area) > 2 {
+		if (input.Purpose != "" && input.Purpose != "storage" && input.Purpose != "reservation") || utf8.RuneCountInString(input.Name) > 200 || utf8.RuneCountInString(input.Plate) > 30 || len(input.Area) > 12 {
 			writeJSON(w, 422, map[string]string{"error": "Ungültige Prüfwerte."})
 			return
 		}

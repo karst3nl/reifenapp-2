@@ -59,7 +59,7 @@ func main() {
 	mux.HandleFunc("POST /api/wheel-changes", handlers.WheelChanges(db))
 	mux.HandleFunc("POST /api/reservations", handlers.Reservations(db))
 	mux.HandleFunc("POST /api/storage/check", handlers.CheckStorage(db))
-	mux.HandleFunc("GET /api/storage/options", handlers.StorageOptions)
+	mux.HandleFunc("GET /api/storage/options", handlers.StorageOptions(db))
 	mux.Handle("GET /", http.FileServer(http.FS(web)))
 	server := &http.Server{Addr: *addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second}
 	log.Printf("Reifenapp: http://%s (development=%t)", *addr, *dev)

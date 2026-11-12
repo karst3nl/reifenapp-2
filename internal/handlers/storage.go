@@ -19,9 +19,29 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(v)
 }
-func StorageOptions(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, 200, models.StorageOptions())
+
+// StorageOptions exposes the live catalogue to every workshop form.
+func StorageOptions(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		areas, err := database.StorageAreas(r.Context(), db)
+		if err != nil {
+			writeJSON(w, 500, map[string]string{"error": "Lagerbereiche nicht verfügbar."})
+			return
+		}
+		options := map[string]any{}
+		for key, value := range models.StorageOptions() {
+			options[key] = value
+		}
+		codes := []string{}
+		for _, a := range areas {
+			codes = append(codes, a.Code)
+		}
+		options["area"] = codes
+		options["storage_areas"] = areas
+		writeJSON(w, 200, options)
+	}
 }
+
 func Storage(db *sql.DB) http.HandlerFunc      { return storageHandler(db, false) }
 func WheelChanges(db *sql.DB) http.HandlerFunc { return storageHandler(db, true) }
 func storageHandler(db *sql.DB, wheelChange bool) http.HandlerFunc {
@@ -42,6 +62,10 @@ func storageHandler(db *sql.DB, wheelChange bool) http.HandlerFunc {
 			message = "Radwechsel gespeichert."
 		}
 		id, err := create(r.Context(), db, input)
+		if errors.Is(err, database.ErrInvalidPlace) {
+			writeJSON(w, 422, map[string]any{"error": err.Error(), "fields": map[string]string{"number": err.Error()}})
+			return
+		}
 		if errors.Is(err, database.ErrPlaceUnavailable) {
 			writeJSON(w, 409, map[string]string{"error": err.Error()})
 			return

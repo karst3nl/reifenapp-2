@@ -22,7 +22,7 @@ func TestStorageHTTP(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/storage", Storage(db))
 	mux.HandleFunc("GET /api/search", Search(db))
-	mux.HandleFunc("GET /api/storage/options", StorageOptions)
+	mux.HandleFunc("GET /api/storage/options", StorageOptions(db))
 	call := func(body, media, origin string) *httptest.ResponseRecorder {
 		r := httptest.NewRequest("POST", "/api/storage", strings.NewReader(body))
 		r.Header.Set("Content-Type", media)

@@ -57,7 +57,7 @@ func TestAdminSetupAuthenticationAndEditorAPI(t *testing.T) {
 		csrf = response.CSRF
 		return response.MustChange
 	}
-	if w := call("GET", "/api/admin/layout?operation=storage", nil, false); w.Code != 401 {
+	if w := call("GET", "/api/admin/areas", nil, false); w.Code != 401 {
 		t.Fatal(w.Code)
 	}
 	body, _ := json.Marshal(map[string]string{"username": "other", "password": database.DefaultAdminPassword})
@@ -73,7 +73,7 @@ func TestAdminSetupAuthenticationAndEditorAPI(t *testing.T) {
 		t.Fatal(cookie)
 	}
 	oldCookie := cookie
-	for _, path := range []string{"/api/admin/layout?operation=storage", "/api/admin/fields", "/api/admin/font"} {
+	for _, path := range []string{"/api/admin/layout?operation=storage", "/api/admin/fields", "/api/admin/font", "/api/admin/areas"} {
 		if w = call("GET", path, nil, false); w.Code != 403 {
 			t.Fatal("setup bypass", path, w.Code)
 		}
@@ -94,6 +94,27 @@ func TestAdminSetupAuthenticationAndEditorAPI(t *testing.T) {
 		t.Fatal("old session survived")
 	}
 	cookie = freshCookie
+	areaBody := []byte(`{"code":"HALLE2","first_number":5,"last_number":8,"revision":0}`)
+	if w = call("POST", "/api/admin/areas", areaBody, false); w.Code != 403 {
+		t.Fatal("areas missing CSRF", w.Code)
+	}
+	if w = call("POST", "/api/admin/areas", areaBody, true); w.Code != 200 {
+		t.Fatal("create area", w.Code, w.Body)
+	}
+	if w = call("POST", "/api/admin/areas", areaBody, true); w.Code != 409 {
+		t.Fatal("area conflict", w.Code)
+	}
+	if w = call("GET", "/api/admin/areas", nil, false); w.Code != 200 || !strings.Contains(w.Body.String(), "HALLE2") {
+		t.Fatal("list areas", w.Code, w.Body)
+	}
+	if w = call("POST", "/api/admin/areas", []byte(`{"code":"BAD.X","first_number":1,"last_number":2}`), true); w.Code != 422 {
+		t.Fatal("invalid area", w.Code)
+	}
+	options := httptest.NewRecorder()
+	StorageOptions(db)(options, httptest.NewRequest("GET", "/api/storage/options", nil))
+	if options.Code != 200 || !strings.Contains(options.Body.String(), "HALLE2") || !strings.Contains(options.Body.String(), "storage_areas") {
+		t.Fatal("live options", options.Body)
+	}
 	w = call("GET", "/api/admin/layout?operation=storage", nil, false)
 	if w.Code != 200 {
 		t.Fatal(w.Body)

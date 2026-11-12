@@ -30,7 +30,7 @@ func lookupRelease(ctx context.Context, q rowQuerier, area string, number int) (
 	err := q.QueryRowContext(ctx, `SELECT s.id,s.kind,c.name,v.plate,v.car FROM storage_places p
  LEFT JOIN storage_claims s ON s.place_id=p.id AND s.status='active'
  LEFT JOIN tire_sets t ON t.id=s.tire_set_id LEFT JOIN vehicles v ON v.id=t.vehicle_id
- LEFT JOIN customers c ON c.id=v.customer_id WHERE p.id=?`, result.Place).Scan(&id, &kind, &name, &plate, &car)
+ LEFT JOIN customers c ON c.id=v.customer_id WHERE p.id=? AND p.enabled=1`, result.Place).Scan(&id, &kind, &name, &plate, &car)
 	if errors.Is(err, sql.ErrNoRows) {
 		return result, ErrInvalidPlace
 	}

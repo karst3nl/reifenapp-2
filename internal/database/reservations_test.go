@@ -84,7 +84,7 @@ func TestReservationRollbackAndValidation(t *testing.T) {
 	input = reservationInput()
 	input.Area = "C2"
 	input.Number = 2
-	if _, err := CreateReservation(context.Background(), db, input); !errors.Is(err, ErrInvalidStorage) {
+	if _, err := CreateReservation(context.Background(), db, input); !errors.Is(err, ErrInvalidPlace) {
 		t.Fatal(err)
 	}
 	if _, err := db.Exec(`CREATE TRIGGER reject_reservation BEFORE INSERT ON storage_claims BEGIN SELECT RAISE(ABORT,'test failure'); END`); err != nil {

@@ -29,7 +29,7 @@ func TestDatabase(t *testing.T) {
 		t.Fatal(count)
 	}
 	for _, s := range []string{
-		`INSERT INTO storage_places VALUES('C2.2','C2',2)`,
+		`INSERT INTO storage_places(id,area,number) VALUES('BAD.2','BAD',2)`,
 		`INSERT INTO storage_claims(place_id,kind,status,updated_at) VALUES('BAD','reservation','active','now')`,
 	} {
 		if _, err := db.Exec(s); err == nil {

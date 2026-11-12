@@ -2,10 +2,13 @@ package models
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 )
+
+var storageAreaCode = regexp.MustCompile(`^[A-Z0-9_-]{1,12}$`)
 
 type TireSize struct {
 	Width  string `json:"width"`
@@ -53,7 +56,6 @@ func StorageOptions() map[string][]string {
 	}
 	return map[string][]string{
 		"plate_district": strings.Fields(plateDistricts),
-		"area":           {"C1", "C2", "C3", "C4", "OL", "OR"},
 		"brand":          {"Audi", "BMW", "Citroën", "Dacia", "Fiat", "Ford", "Honda", "Hyundai", "Kia", "Mazda", "Mercedes-Benz", "MINI", "Nissan", "Opel", "Peugeot", "Renault", "Seat", "Škoda", "Tesla", "Toyota", "Volvo", "VW", "Sonstige"},
 		"tire_type":      {"Sommer", "Winter", "Ganzjahr"}, "rim_type": {"Aluminium", "Stahl", "Sonstige"},
 		"width": ranges(125, 355, 10), "ratio": ranges(20, 85, 5), "inches": ranges(10, 24, 1), "load": ranges(50, 130, 1),
@@ -98,19 +100,12 @@ func (s *StorageInput) validate(details bool) map[string]string {
 		choice("tire_type", s.TireType, "tire_type", true)
 		choice("rim_type", s.RimType, "rim_type", true)
 	}
-	lo, hi := 1, 60
-	switch s.Area {
-	case "C1":
-		hi = 200
-	case "C2":
-		lo = 201
-		hi = 400
-	case "C3", "C4", "OL", "OR":
-	default:
+	// Configured ranges are checked against SQLite inside the write transaction.
+	if !storageAreaCode.MatchString(s.Area) {
 		e["area"] = "Ungültiger Lagerbereich."
 	}
-	if s.Number < lo || s.Number > hi {
-		e["number"] = fmt.Sprintf("Für diesen Bereich sind Nummern %d bis %d erlaubt.", lo, hi)
+	if s.Number < 1 || s.Number > 100000 {
+		e["number"] = "Bitte eine gültige Lagernummer eingeben."
 	}
 	if !details {
 		return e

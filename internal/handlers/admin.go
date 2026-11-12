@@ -108,6 +108,8 @@ func (a *Admin) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/admin/layout", a.protect(a.load))
 	mux.HandleFunc("POST /api/admin/layout", a.protect(a.save))
 	mux.HandleFunc("POST /api/admin/preview", a.protect(a.preview))
+	mux.HandleFunc("GET /api/admin/areas", a.protect(a.areas))
+	mux.HandleFunc("POST /api/admin/areas", a.protect(a.areas))
 	mux.HandleFunc("GET /api/admin/fields", a.protect(func(w http.ResponseWriter, r *http.Request) { writeJSON(w, 200, receipts.Fields) }))
 	mux.HandleFunc("GET /api/admin/values", a.protect(func(w http.ResponseWriter, r *http.Request) {
 		op := r.URL.Query().Get("operation")

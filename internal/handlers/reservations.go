@@ -20,6 +20,10 @@ func Reservations(db *sql.DB) http.HandlerFunc {
 			return
 		}
 		id, err := database.CreateReservation(r.Context(), db, input)
+		if errors.Is(err, database.ErrInvalidPlace) {
+			writeJSON(w, 422, map[string]any{"error": err.Error(), "fields": map[string]string{"number": err.Error()}})
+			return
+		}
 		if errors.Is(err, database.ErrPlaceUnavailable) {
 			writeJSON(w, 409, map[string]string{"error": "Lagerplatz ist bereits belegt oder reserviert. Keine weitere Reservierung möglich."})
 			return

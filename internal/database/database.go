@@ -15,7 +15,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const currentSchema = 7
+const currentSchema = 8
 
 // Open opens the current schema without upgrading an existing database.
 func Open(path string) (*sql.DB, error) { return OpenWithMigration(path, false) }
@@ -83,6 +83,12 @@ func migrate(db *sql.DB, version int) error {
 	if version == currentSchema {
 		return nil
 	}
+	// SQLite requires foreign keys off outside the transaction to rebuild a parent table.
+	// All references are checked before commit; enforcement is restored on every exit.
+	if _, err := db.Exec("PRAGMA foreign_keys=OFF"); err != nil {
+		return err
+	}
+	defer db.Exec("PRAGMA foreign_keys=ON")
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -93,7 +99,7 @@ func migrate(db *sql.DB, version int) error {
 			return err
 		}
 	}
-	files := []string{"001_initial.sql", "002_storage_details.sql", "003_storage_operation.sql", "004_storage_releases.sql", "005_history_events.sql", "006_pdf_layouts.sql", "007_admin_account.sql"}
+	files := []string{"001_initial.sql", "002_storage_details.sql", "003_storage_operation.sql", "004_storage_releases.sql", "005_history_events.sql", "006_pdf_layouts.sql", "007_admin_account.sql", "008_storage_areas.sql"}
 	for i := version; i < len(files); i++ {
 		script, err := migrations.Files.ReadFile(files[i])
 		if err != nil {
@@ -105,6 +111,19 @@ func migrate(db *sql.DB, version int) error {
 		if _, err = tx.Exec("INSERT INTO schema_migrations VALUES(?)", i+1); err != nil {
 			return err
 		}
+	}
+	rows, err := tx.Query("PRAGMA foreign_key_check")
+	if err != nil {
+		return err
+	}
+	hasViolation := rows.Next()
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return err
+	}
+	if hasViolation {
+		return fmt.Errorf("Migration verletzt Fremdschlüssel; Änderungen zurückgerollt")
 	}
 	return tx.Commit()
 }
