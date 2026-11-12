@@ -202,3 +202,30 @@ Historien-Nachdruck und Ersatzlink bei simuliertem Popup-Blocker erfolgreich.
 Reale Firmenangaben aus dem Anhang wurden nicht versioniert. Keine Datenbanken
 verändert oder migriert. Echter Drucker, CachyOS-/Pi-Hardware und andere Browser
 nicht geprüft. Alte Reifensuch-App-Repositories wurden nicht verwendet.
+
+## Admin-PDF-Designer – 12. November 2026
+
+Erfolgreich: `go test ./...`, `go test -race ./...`, `go vet ./...`, Build,
+JavaScript-Syntax und `git diff --check`.
+Neue Tests: gültige einseitige A4-Vorlagen für vier Vorgangsarten, Formen/Farben,
+Seitenbegrenzung, unbekannte Felder, falsche Größen/Farben, doppelte IDs,
+Textüberlauf und vollständiger Standard-Fallback. Lokale Vorlagen bleiben nach
+Wiederöffnung erhalten; Revisionskonflikte werden abgewiesen, Vorgangsarten bleiben
+getrennt, fehlerhafte Vorlagen werden nicht gespeichert. Upgrade Schema 5 auf 6
+benötigt Freigabe, erhält beide historischen Alteinträge und erstellt ein lesbares
+Schema-5-Backup.
+Admin-API: ohne Login gesperrt, falsches Passwort, HttpOnly-/SameSite-Cookie,
+CSRF-Prüfung, Layout laden/speichern, echte PDF-Vorschau, Revisionskonflikt,
+Vorschauwerte, Schriftabruf, Logout, Sitzungsablauf, deaktivierter Admin ohne
+Passwort und Begrenzung der Anmeldeversuche.
+Chromium: Navigation über Administration, Anmeldung, echtes Ziehen und Skalieren,
+Eigenschaften, Duplizieren/Rückgängig/Wiederholen, Vorschau-PDF als Browser-Blob,
+Aktivieren und Neuladen, eigener Textmarker auch im echten Beleg, getrennte
+Vorgangsarten, Zurückschalten auf Standard, 390px ohne Seitenüberlauf, Logout.
+PDF-Textprüfung und pdfinfo bestätigen Marker in Vorschau und eigenem Echtbeleg,
+keinen Marker nach Standardumschaltung und genau eine A4-Seite. Zu kleines
+aktives Namensfeld wurde mit 200 Zeichen realer fiktiver Eingabe getestet:
+vollständiger Standardbeleg mit sichtbarem Fallback-Hinweis.
+Nur fiktive temporäre Datenbanken und Testpasswort, keine vorhandenen lokalen
+Repository-Datenbanken migriert. Keine neue Abhängigkeit. Echte CachyOS-/Pi-
+Hardware, LAN-Betrieb, Drucker und weitere Browser nicht geprüft.

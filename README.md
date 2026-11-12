@@ -39,7 +39,7 @@ produktive Datenbank importieren. Laufzeitdaten bleiben durch `.gitignore` lokal
 - Leerzeichen und Bindestriche werden ignoriert, Groß-/Kleinschreibung ebenfalls
   (einschließlich deutscher Umlaute). Leerer Suchtext liefert `[]`.
 - Maximal 200 Zeichen; HTTP 400 bei Überschreitung, HTTP 500 bei Datenbankfehler.
-- Ladezustand, keine Treffer und Fehleranzeige; Radwechsel, Neueinlagerung, Reservierung und Auslagerung sind nutzbar; Historie und Administration bleiben Platzhalter.
+- Ladezustand, keine Treffer und Fehleranzeige; Radwechsel, Neueinlagerung, Reservierung und Auslagerung sind nutzbar; Die Historie ist über die Suche zugänglich; Administration enthält den PDF-Designer.
 - 640 gültige Plätze: C1.1–200, C2.201–400, C3/C4/OL/OR jeweils 1–60.
 
 ## Struktur und Entscheidungen
@@ -64,7 +64,7 @@ Direkte externe Go-Bausteine sind der SQLite-Treiber
 `github.com/mattn/go-sqlite3` und für lokale PDF-Belege `github.com/go-pdf/fpdf`. SQLite verwendet WAL, Fremdschlüssel und einen
 Busy-Timeout. SQL-Migrationen laufen transaktional bei der Erstinitialisierung.
 Bestehende Datenbanken werden auf die bekannte Schemaversion geprüft; unbekannte
-Versionen werden abgelehnt. Schema 1 bis 4 benötigen das unten beschriebene explizite
+Versionen werden abgelehnt. Schema 1 bis 5 benötigen das unten beschriebene explizite
 Upgrade mit Integritätsprüfung und konsistentem SQLite-Backup.
 
 Belegung und Reservierung nutzen eine gemeinsame Tabelle `storage_claims`.
@@ -114,9 +114,9 @@ go run . -dev -migrate
 
 Diese Variante arbeitet weiterhin mit den fiktiven Entwicklungsdaten.
 Für die normale Datenbank stattdessen `go run . -migrate` verwenden.
-Einmalig nötig bei Schema 1 bis 4: Integritätsprüfung, dann `VACUUM INTO` für eine
+Einmalig nötig bei Schema 1 bis 5: Integritätsprüfung, dann `VACUUM INTO` für eine
 konsistente Sicherung inklusive noch im WAL befindlicher Änderungen, danach
-transaktionale Migrationen bis einschließlich 005. Das Backup liegt neben der ursprünglichen Datei
+transaktionale Migrationen bis einschließlich 006. Das Backup liegt neben der ursprünglichen Datei
 als `*.sqlite.backup-<UTC-Zeitstempel>` und ist ebenfalls ignoriert.
 Bei einem Backupfehler findet keine Migration statt. Vorhandene Datensätze werden
 nicht neu angelegt, gelöscht oder mit Beispielen überschrieben. Alle anderen
@@ -200,7 +200,7 @@ Browserursprüngen werden abgelehnt; LAN-Authentifizierung bleibt ein späteres 
 Weitere Entwicklung wird auf `beta` gesammelt. `main` wird nicht automatisch
 aktualisiert; ein späterer Merge erfolgt gesondert. Zum Wechseln den Server stoppen,
 `git fetch origin`, `git switch beta`, `git pull --ff-only origin beta` ausführen.
-Start weiterhin `go run . -dev` (ein Upgrade von Schema 1 bis 4 benötigt einmalig zusätzlich
+Start weiterhin `go run . -dev` (ein Upgrade von Schema 1 bis 5 benötigt einmalig zusätzlich
 `-migrate`, siehe oben). Für diese Formularänderungen ist keine Migration nötig.
 
 Kennzeichen: Landkreiskürzel per Dropdown, Buchstaben und Nummer separat;
@@ -569,3 +569,19 @@ falls nötig folgt eine kompakte Tabellenanordnung mit demselben Firmenkopf,
 damit alle Daten erhalten bleiben. Keine weitere Migration oder Abhängigkeit.
 Die zusätzliche fette DejaVu-Schrift ist unter derselben bestehenden Fontlizenz
 mitgeliefert. Die Startseite und die Formulare werden nicht neu gestaltet.
+
+## Administration: frei gestaltbarer DIN-A4-PDF-Designer
+
+Über „Administration“ öffnet sich ein eigener passwortgeschützter Bereich mit
+DIN-A4-Arbeitsfläche. Text, Datenfelder, Linien und Flächen frei ziehen, skalieren,
+färben und anordnen. Millimeterwerte, Schriftgröße/Fettdruck, Ausrichtung,
+Duplizieren, Ebenen und Rückgängig/Wiederholen stehen bereit. Eigene Vorlage pro
+Vorgangsart, echte PDF-Vorschau und lokale Speicherung in SQLite.
+
+**Einrichtung:** `REIFENAPP_ADMIN_PASSWORD` beim Serverstart setzen (12–128 Bytes).
+Ohne Passwort bleibt der Admin-Bereich deaktiviert. Einmalig `-migrate` verwenden,
+um die neue Vorlagentabelle mit vorherigem Backup anzulegen. Normale Vorgänge
+bleiben ohne Login. Automatische PDFs und Ausdruck auf einer A4-Seite bleiben erhalten.
+
+[Anleitung, Passwort-Einrichtung und API](docs/pdf-designer.md).
+Bilder/Logos sind in der ersten Version noch nicht enthalten. Keine neue Bibliothek.
