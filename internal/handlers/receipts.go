@@ -35,7 +35,21 @@ func Receipts(db *sql.DB, headers ...receipts.Header) http.HandlerFunc {
 			http.Error(w, "Beleg derzeit nicht abrufbar. Bitte erneut versuchen.", 500)
 			return
 		}
-		data, err := receipts.GenerateWithHeader(receipt, header)
+		layout, layoutErr := database.LoadPDFLayout(r.Context(), db, operation)
+		if layoutErr != nil {
+			http.Error(w, "Druckvorlage derzeit nicht abrufbar. Bitte erneut versuchen.", 500)
+			return
+		}
+		var data []byte
+		if layout.Enabled {
+			var fallback bool
+			data, fallback, err = receipts.GenerateWithFallback(receipt, header, layout.Template)
+			if fallback {
+				w.Header().Set("X-Reifenapp-Layout-Fallback", "standard")
+			}
+		} else {
+			data, err = receipts.GenerateWithHeader(receipt, header)
+		}
 		if err != nil {
 			http.Error(w, "PDF konnte nicht erstellt werden. Der Vorgang bleibt gespeichert. Bitte erneut versuchen.", 500)
 			return

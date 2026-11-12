@@ -174,6 +174,9 @@ func Generate(r models.Receipt) ([]byte, error) { return GenerateWithHeader(r, H
 // GenerateWithHeader follows the supplied legacy print layout for normal input.
 // Unusually long input switches to a compact table rather than clipping data.
 func GenerateWithHeader(r models.Receipt, h Header) ([]byte, error) {
+	return generateStandard(r, h, "")
+}
+func generateStandard(r models.Receipt, h Header, notice string) ([]byte, error) {
 	if err := h.validate(); err != nil {
 		return nil, err
 	}
@@ -258,6 +261,14 @@ func GenerateWithHeader(r models.Receipt, h Header) ([]byte, error) {
 	}
 	pdf.SetFont("Receipt", "", 8)
 	pdf.SetTextColor(90, 90, 90)
+	if notice != "" {
+		pdf.SetFont("Receipt", "", 7)
+		pdf.SetTextColor(130, 35, 35)
+		pdf.SetXY(25, 278)
+		pdf.CellFormat(160, 4, notice, "", 0, "L", false, 0, "")
+		pdf.SetFont("Receipt", "", 8)
+		pdf.SetTextColor(90, 90, 90)
+	}
 	pdf.SetXY(25, 283)
 	pdf.CellFormat(160, 4, fmt.Sprintf("Historieneintrag #%d · Belegung #%d · Seite 1 von 1", r.EventID, r.ClaimID), "", 0, "L", false, 0, "")
 	if pdf.PageCount() != 1 {
