@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -14,11 +15,14 @@ import (
 
 	"github.com/karst3nl/reifenapp-2/internal/database"
 	"github.com/karst3nl/reifenapp-2/internal/receipts"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type adminSession struct {
-	csrf    string
-	expires time.Time
+	csrf       string
+	expires    time.Time
+	revision   int
+	mustChange bool
 }
 type loginAttempts struct {
 	count int
@@ -27,16 +31,17 @@ type loginAttempts struct {
 type Admin struct {
 	db       *sql.DB
 	header   receipts.Header
-	password [32]byte
-	enabled  bool
 	mu       sync.Mutex
 	sessions map[[32]byte]adminSession
 	attempts map[string]loginAttempts
 	now      func() time.Time
 }
 
-func NewAdmin(db *sql.DB, header receipts.Header, password string) *Admin {
-	return &Admin{db: db, header: header, password: sha256.Sum256([]byte(password)), enabled: len(password) >= 12 && len(password) <= 128, sessions: map[[32]byte]adminSession{}, attempts: map[string]loginAttempts{}, now: time.Now}
+func NewAdmin(db *sql.DB, header receipts.Header) (*Admin, error) {
+	if err := database.EnsureAdminAccount(context.Background(), db); err != nil {
+		return nil, err
+	}
+	return &Admin{db: db, header: header, sessions: map[[32]byte]adminSession{}, attempts: map[string]loginAttempts{}, now: time.Now}, nil
 }
 func token() string {
 	var b [32]byte
@@ -52,20 +57,27 @@ func (a *Admin) session(r *http.Request) (adminSession, bool) {
 	}
 	key := sha256.Sum256([]byte(cookie.Value))
 	a.mu.Lock()
-	defer a.mu.Unlock()
 	s, ok := a.sessions[key]
 	if ok && !a.now().Before(s.expires) {
 		delete(a.sessions, key)
 		ok = false
 	}
-	return s, ok
+	a.mu.Unlock()
+	if !ok {
+		return s, false
+	}
+	account, err := database.LoadAdminAccount(r.Context(), a.db)
+	if err != nil || account.Revision != s.revision {
+		return s, false
+	}
+	s.mustChange = account.MustChange
+	return s, true
 }
 func (a *Admin) protect(next func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return a.authorize(next, false)
+}
+func (a *Admin) authorize(next func(http.ResponseWriter, *http.Request), allowSetup bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !a.enabled {
-			writeJSON(w, 503, map[string]any{"error": "Administration ist noch nicht eingerichtet.", "enabled": false})
-			return
-		}
 		s, ok := a.session(r)
 		if !ok {
 			writeJSON(w, 401, map[string]string{"error": "Bitte als Administrator anmelden."})
@@ -75,23 +87,24 @@ func (a *Admin) protect(next func(http.ResponseWriter, *http.Request)) http.Hand
 			writeJSON(w, 403, map[string]string{"error": "Ungültige Sitzung. Bitte neu anmelden."})
 			return
 		}
+		if s.mustChange && !allowSetup {
+			writeJSON(w, 403, map[string]any{"error": "Bitte zuerst ein neues Admin-Passwort festlegen.", "must_change": true})
+			return
+		}
 		next(w, r)
 	}
 }
 func (a *Admin) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/admin/session", func(w http.ResponseWriter, r *http.Request) {
-		if !a.enabled {
-			writeJSON(w, 503, map[string]any{"enabled": false, "error": "Administration ist noch nicht eingerichtet."})
-			return
-		}
 		if s, ok := a.session(r); ok {
-			writeJSON(w, 200, map[string]any{"csrf": s.csrf, "expires": s.expires})
+			writeJSON(w, 200, map[string]any{"csrf": s.csrf, "expires": s.expires, "username": "admin", "must_change": s.mustChange})
 			return
 		}
 		writeJSON(w, 401, map[string]any{"enabled": true, "error": "Bitte anmelden."})
 	})
 	mux.HandleFunc("POST /api/admin/login", a.login)
-	mux.HandleFunc("POST /api/admin/logout", a.protect(a.logout))
+	mux.HandleFunc("POST /api/admin/password", a.authorize(a.changePassword, true))
+	mux.HandleFunc("POST /api/admin/logout", a.authorize(a.logout, true))
 	mux.HandleFunc("GET /api/admin/layout", a.protect(a.load))
 	mux.HandleFunc("POST /api/admin/layout", a.protect(a.save))
 	mux.HandleFunc("POST /api/admin/preview", a.protect(a.preview))
@@ -119,12 +132,29 @@ func (a *Admin) Register(mux *http.ServeMux) {
 		}
 	}))
 }
-func (a *Admin) login(w http.ResponseWriter, r *http.Request) {
-	if !a.enabled {
-		writeJSON(w, 503, map[string]string{"error": "Administration ist noch nicht eingerichtet."})
-		return
+func (a *Admin) putSession(w http.ResponseWriter, r *http.Request, value, csrf string, revision int, mustChange, clearAll bool) {
+	now := a.now()
+	a.mu.Lock()
+	if clearAll {
+		a.sessions = map[[32]byte]adminSession{}
 	}
+	if old, err := r.Cookie("reifenapp_admin"); err == nil {
+		delete(a.sessions, sha256.Sum256([]byte(old.Value)))
+	}
+	if len(a.sessions) >= 64 {
+		for k := range a.sessions {
+			delete(a.sessions, k)
+			break
+		}
+	}
+	a.sessions[sha256.Sum256([]byte(value))] = adminSession{csrf: csrf, expires: now.Add(30 * time.Minute), revision: revision, mustChange: mustChange}
+	a.mu.Unlock()
+	http.SetCookie(w, &http.Cookie{Name: "reifenapp_admin", Value: value, Path: "/api/admin", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: 1800})
+	writeJSON(w, 200, map[string]any{"csrf": csrf, "expires": now.Add(30 * time.Minute), "username": "admin", "must_change": mustChange})
+}
+func (a *Admin) login(w http.ResponseWriter, r *http.Request) {
 	var input struct {
+		Username string `json:"username"`
 		Password string `json:"password"`
 	}
 	if !readStorageJSON(w, r, &input) {
@@ -164,8 +194,13 @@ func (a *Admin) login(w http.ResponseWriter, r *http.Request) {
 	attempt.count++
 	a.attempts[ip] = attempt
 	a.mu.Unlock()
-	got := sha256.Sum256([]byte(input.Password))
-	if len(input.Password) > 128 || subtle.ConstantTimeCompare(got[:], a.password[:]) != 1 {
+	account, err := database.LoadAdminAccount(r.Context(), a.db)
+	if err != nil {
+		writeJSON(w, 500, map[string]string{"error": "Anmeldung derzeit nicht möglich."})
+		return
+	}
+	match := bcrypt.CompareHashAndPassword([]byte(account.Hash), []byte(input.Password)) == nil
+	if input.Username != "admin" || len(input.Password) > 72 || !match {
 		writeJSON(w, 401, map[string]string{"error": "Anmeldung fehlgeschlagen."})
 		return
 	}
@@ -174,20 +209,45 @@ func (a *Admin) login(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 500, map[string]string{"error": "Anmeldung derzeit nicht möglich."})
 		return
 	}
-	a.mu.Lock()
-	if old, err := r.Cookie("reifenapp_admin"); err == nil {
-		delete(a.sessions, sha256.Sum256([]byte(old.Value)))
+	a.putSession(w, r, value, csrf, account.Revision, account.MustChange, false)
+}
+func (a *Admin) changePassword(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Current string `json:"current_password"`
+		New     string `json:"new_password"`
+		Confirm string `json:"confirm_password"`
 	}
-	if len(a.sessions) >= 64 {
-		for k := range a.sessions {
-			delete(a.sessions, k)
-			break
-		}
+	if !readStorageJSON(w, r, &input) {
+		return
 	}
-	a.sessions[sha256.Sum256([]byte(value))] = adminSession{csrf: csrf, expires: now.Add(30 * time.Minute)}
-	a.mu.Unlock()
-	http.SetCookie(w, &http.Cookie{Name: "reifenapp_admin", Value: value, Path: "/api/admin", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: 1800})
-	writeJSON(w, 200, map[string]any{"csrf": csrf, "expires": now.Add(30 * time.Minute)})
+	if input.New != input.Confirm {
+		writeJSON(w, 422, map[string]string{"error": "Die neuen Passwörter stimmen nicht überein."})
+		return
+	}
+	s, ok := a.session(r)
+	if !ok {
+		writeJSON(w, 401, map[string]string{"error": "Bitte neu anmelden."})
+		return
+	}
+	value, csrf := token(), token()
+	if value == "" || csrf == "" {
+		writeJSON(w, 500, map[string]string{"error": "Passwortänderung derzeit nicht möglich."})
+		return
+	}
+	account, err := database.ChangeAdminPassword(r.Context(), a.db, s.revision, input.Current, input.New)
+	if errors.Is(err, database.ErrAdminRevision) {
+		writeJSON(w, 409, map[string]string{"error": err.Error()})
+		return
+	}
+	if errors.Is(err, database.ErrAdminPolicy) || errors.Is(err, database.ErrAdminCredentials) {
+		writeJSON(w, 422, map[string]string{"error": err.Error()})
+		return
+	}
+	if err != nil {
+		writeJSON(w, 500, map[string]string{"error": "Passwort konnte nicht gespeichert werden. Bitte erneut versuchen."})
+		return
+	}
+	a.putSession(w, r, value, csrf, account.Revision, false, true)
 }
 func (a *Admin) logout(w http.ResponseWriter, r *http.Request) {
 	var body struct{}
