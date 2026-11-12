@@ -266,3 +266,16 @@ das sichtbare Raster gelangt nicht in die PDF-Vorlage. PDF-Vorschau weiter gült
 Keine Backend-/Schemaänderung; Race-Tests für diesen Frontend-Schritt nicht erneut
 ausgeführt. Nur fiktive temporäre Daten. Hardware, LAN, Drucker und andere Browser
 nicht geprüft.
+
+## Raster in beiden Richtungen sichtbar – 12. November 2026
+
+Die horizontale und vertikale Rasteranzeige liegen nun als gemeinsame
+pointer-transparente Overlay-Ebene über den Elementen. Weiße Flächen verdecken
+die Hilfslinien nicht mehr. Die Linienstärke wird zoomabhängig angepasst;
+Cache-Versionen an Admin-CSS/JS sorgen für das Laden der korrigierten Assets.
+Chromium und Pixelprüfung von Screenshots bestätigen beide Linienrichtungen
+mit korrektem 5-mm-Abstand bei 50/75/100 % Zoom, auch über einer seitenfüllenden
+weißen Fläche. Ziehen mit Einrasten durch das Overlay und Ausschalten funktionieren.
+Build, JavaScript-Syntaxprüfung und diff-check erfolgreich. Keine Backendänderung,
+Migration oder PDF-Änderung. Go-/Race-Tests, Hardware, Drucker und andere Browser
+für diese reine Darstellungskorrektur nicht erneut geprüft.

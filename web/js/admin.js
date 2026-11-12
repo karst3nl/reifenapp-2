@@ -17,7 +17,7 @@
  function gridStep(){return Number($('grid').value)}
  function snap(value,step){return step>0?round(Math.round(value/step)*step):round(value)}
  function gridNext(value,direction,multiple=1){const step=gridStep();if(!step)return value+direction*(multiple===2?2:0.5);const index=direction>0?Math.floor(value/step+1e-6)+multiple:Math.ceil(value/step-1e-6)-multiple;return round(index*step)}
- function updateGrid(){const step=gridStep();$('paper').classList.toggle('with-grid',step>0);$('paper').style.setProperty('--grid-step',step+'mm');}
+ function updateGrid(){const step=gridStep();$('paper').classList.toggle('with-grid',step>0);$('paper').style.setProperty('--grid-step',step+'mm');$('paper').style.setProperty('--grid-line',(1/Number($('zoom').value))+'px');}
  function alignPosition(e){const step=gridStep();e.x=snap(e.x,step);e.y=snap(e.y,step);bounded(e);}
  function bounded(e){e.width=round(Math.min(210,Math.max(1,e.width)));e.height=round(Math.min(297,Math.max(1,e.height)));e.x=round(Math.max(0,Math.min(210-e.width,e.x)));e.y=round(Math.max(0,Math.min(297-e.height,e.y)));}
  function textFor(e){return (e.text+(e.type==='field'?(values[e.field]||''):'' )).replace(/\s+/g,' ').trim()}
@@ -43,7 +43,7 @@
   for(const key of ['text','field','x','y','width','height','font_size','align','color','background','stroke'])$('prop-'+key).value=e[key];$('prop-bold').checked=e.bold;
   $('prop-field').disabled=e.type!=='field';for(const key of ['text','font_size','align','bold'])$('prop-'+key).disabled=e.type==='line'||e.type==='box';$('prop-background').disabled=e.type!=='box';
  }
- function zoom(){const z=Number($('zoom').value);$('paper').style.transform=`scale(${z})`;$('paper-holder').style.width=210*96/25.4*z+'px';$('paper-holder').style.height=297*96/25.4*z+'px';}
+ function zoom(){const z=Number($('zoom').value);$('paper').style.transform=`scale(${z})`;$('paper-holder').style.width=210*96/25.4*z+'px';$('paper-holder').style.height=297*96/25.4*z+'px';updateGrid();}
  async function load(){
   const operation=$('operation').value,generation=++loadGeneration;const [data,sample]=await Promise.all([api('layout?operation='+operation),api('values?operation='+operation)]);
   if(generation!==loadGeneration||$('operation').value!==operation)return;state=data.layout;defaults=data.default;values=sample;selected='';dirty=false;undo=[];redo=[];paint();zoom();updateGrid();status('Elemente ziehen oder links hinzufügen. Vorschau enthält fiktive Daten.');
