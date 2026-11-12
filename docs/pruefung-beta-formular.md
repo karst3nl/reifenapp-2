@@ -229,3 +229,27 @@ vollständiger Standardbeleg mit sichtbarem Fallback-Hinweis.
 Nur fiktive temporäre Datenbanken und Testpasswort, keine vorhandenen lokalen
 Repository-Datenbanken migriert. Keine neue Abhängigkeit. Echte CachyOS-/Pi-
 Hardware, LAN-Betrieb, Drucker und weitere Browser nicht geprüft.
+
+## Einfacher Admin-Login mit Ersteinrichtung – 12. November 2026
+
+Erfolgreich: `go test ./...`, `go test -race ./...`, `go vet ./...`, Build,
+JavaScript-Syntaxprüfung und `git diff --check`.
+Datenbanktests: Startpasswort nur als bcrypt-Hash, verpflichtender Wechsel,
+Passwortrichtlinie, neues Passwort überschreibt den Hash, bestehendes Konto
+wird beim Start nicht zurückgesetzt, falsches aktuelles Passwort und veraltete
+Revision abgewiesen. Migration Schema 6 auf 7 erhält Kunden, Historie und
+PDF-Vorlage; lesbares Backup mit Schemaversion 6.
+API: fester Benutzer, Startanmeldung nur mit eingeschränkter Sitzung,
+Designer-/Feld-/Schriftzugriff vor Passwortwechsel gesperrt, CSRF und Bestätigung,
+Sitzungswechsel, alte Sitzung ungültig, Startpasswort nach Änderung abgewiesen,
+eigenes Passwort akzeptiert, spätere Änderung erfordert aktuelles Passwort,
+Rate-Limit und Sitzungsablauf. Nach erneutem Öffnen der Datenbank und echter
+Serverneustart: neues Passwort bleibt gültig, Startpasswort ungültig.
+Chromium: vorbelegter Benutzer admin, Pflichtdialog auch nach Seitenneuladen,
+abweichende Wiederholung und erneute Startpasswortwahl abgewiesen, erfolgreicher
+Wechsel öffnet Designer, Felder danach leer, Logout und neues Login,
+regulärer Passwortwechsel und PDF-Vorlage unverändert. Echten Server ohne
+Umgebungsvariable neu gestartet und eigene Anmeldung mit erhaltener Vorlage geprüft.
+Nur fiktive Testpasswörter/-daten in separaten temporären Datenbanken.
+Keine vorhandene Repository-Datenbank migriert. Echte CachyOS-/Pi-Hardware,
+LAN, Drucker und andere Browser nicht geprüft.

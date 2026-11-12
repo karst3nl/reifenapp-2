@@ -6,11 +6,11 @@
  async function api(path,options={}){
   const headers={'Content-Type':'application/json',...(options.headers||{})};if(csrf)headers['X-CSRF-Token']=csrf;
   let response;try{response=await fetch('/api/admin/'+path,{...options,headers,cache:'no-store'})}catch{throw Error('Verbindung zum Server fehlgeschlagen. Bitte erneut versuchen.');}
-  if(response.status===401&&path!=='login'){showLogin();throw Error('Sitzung abgelaufen. Bitte neu anmelden.');}
+  if(response.status===401&&path!=='login'){showLogin();$('login-status').textContent='Sitzung abgelaufen. Bitte neu anmelden.';throw Error('Sitzung abgelaufen. Bitte neu anmelden.');}
   if(!response.ok){let data;try{data=await response.json()}catch{}throw Error(data?.error||'Anfrage fehlgeschlagen.');}
   return options.pdf?response.blob():response.json();
  }
- function showLogin(){loadGeneration++;csrf='';$('login-panel').hidden=false;$('editor').hidden=true;$('logout').hidden=true;if(previewURL){URL.revokeObjectURL(previewURL);previewURL=''}$('pdf-preview').removeAttribute('src');}
+ function showLogin(){loadGeneration++;csrf='';$('password-form').reset();$('password').value='';$('login-panel').hidden=false;$('editor').hidden=true;$('logout').hidden=true;$('change-password').hidden=true;$('password-panel').hidden=true;if(previewURL){URL.revokeObjectURL(previewURL);previewURL=''}$('pdf-preview').removeAttribute('src');}
  function selectedElement(){return state?.template.elements.find(e=>e.id===selected)}
  function remember(){undo.push(clone(state.template));if(undo.length>80)undo.shift();redo=[];dirty=true;}
  function round(n){return Math.round(n*100)/100}
@@ -44,11 +44,26 @@
   if(generation!==loadGeneration||$('operation').value!==operation)return;state=data.layout;defaults=data.default;values=sample;selected='';dirty=false;undo=[];redo=[];paint();zoom();status('Elemente ziehen oder links hinzufügen. Vorschau enthält fiktive Daten.');
  }
  async function enter(){
-  $('login-panel').hidden=true;$('editor').hidden=false;$('logout').hidden=false;
+  $('login-panel').hidden=true;$('password-panel').hidden=true;$('editor').hidden=false;$('logout').hidden=false;$('change-password').hidden=false;
   fields=await api('fields');for(const id of ['palette-field','prop-field']){$(id).replaceChildren();for(const f of fields)$(id).add(new Option(f.label,f.key))}
   if(state&&dirty){$('operation').value=state.operation;const [data,sample]=await Promise.all([api('layout?operation='+state.operation),api('values?operation='+state.operation)]);defaults=data.default;values=sample;paint();zoom();status('Sitzung erneuert. Ungespeicherter Entwurf bleibt geöffnet.');}else{await load();}await document.fonts.load('12px Receipt');await document.fonts.load('bold 12px Receipt');paint();
  }
- $('login-form').addEventListener('submit',async event=>{event.preventDefault();const input=$('password');const password=input.value;input.value='';$('login-status').textContent='Anmeldung …';try{const data=await api('login',{method:'POST',body:JSON.stringify({password})});csrf=data.csrf;await enter();$('login-status').textContent=''}catch(error){$('login-status').textContent=error.message}});
+ $('login-form').addEventListener('submit',async event=>{event.preventDefault();const input=$('password');const password=input.value;input.value='';$('login-status').textContent='Anmeldung …';try{const data=await api('login',{method:'POST',body:JSON.stringify({username:$('username').value,password})});csrf=data.csrf;if(data.must_change)showPasswordChange(true);else await enter();$('login-status').textContent=''}catch(error){$('login-status').textContent=error.message}});
+ function showPasswordChange(required){
+  loadGeneration++;$('login-panel').hidden=true;$('editor').hidden=true;$('password-panel').hidden=false;$('logout').hidden=false;$('change-password').hidden=true;
+  $('current-password-label').hidden=required;$('current-password').required=!required;$('current-password').disabled=required;$('cancel-password').hidden=required;
+  $('password-title').textContent=required?'Neues Admin-Passwort festlegen':'Admin-Passwort ändern';
+  $('password-help').textContent=required?'Bitte das Startpasswort jetzt durch ein eigenes Passwort ersetzen. Erst danach wird die Administration freigeschaltet.':'Aktuelles Passwort eingeben und ein neues Passwort wählen (mindestens 12 Zeichen).';
+  $('password-form').reset();$('password-status').textContent='';$('password-panel').scrollIntoView();(required?$('new-password'):$('current-password')).focus();
+ }
+ $('change-password').addEventListener('click',()=>showPasswordChange(false));
+ $('cancel-password').addEventListener('click',async()=>{try{$('password-form').reset();await enter()}catch(error){$('password-status').textContent=error.message}});
+ $('password-form').addEventListener('submit',async event=>{
+  event.preventDefault();if($('save-password').disabled)return;if($('new-password').value!==$('confirm-password').value){$('password-status').textContent='Die neuen Passwörter stimmen nicht überein.';return}
+  const body={current_password:$('current-password').value,new_password:$('new-password').value,confirm_password:$('confirm-password').value};const enabled=[...$('password-form').elements].filter(el=>!el.disabled);enabled.forEach(el=>el.disabled=true);$('logout').disabled=true;$('password-status').textContent='Passwort wird gespeichert …';
+  try{const data=await api('password',{method:'POST',body:JSON.stringify(body)});csrf=data.csrf;$('password-form').reset();await enter();status('Neues Admin-Passwort gespeichert. Bisherige Anmeldungen wurden beendet.');}
+  catch(error){$('password-status').textContent=error.message}finally{enabled.forEach(el=>el.disabled=false);$('save-password').disabled=false;$('logout').disabled=false}
+ });
  $('logout').addEventListener('click',async()=>{if(dirty&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;try{await api('logout',{method:'POST',body:'{}'});dirty=false;state=null;showLogin()}catch(error){status(error.message,true)}});
  $('operation').addEventListener('change',async()=>{if(dirty&&!confirm('Ungespeicherte Änderungen verwerfen?')){$('operation').value=state.operation;return}try{await load()}catch(error){status(error.message,true)}});
  $('reload').addEventListener('click',async()=>{if(dirty&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;try{await load()}catch(error){status(error.message,true)}});
@@ -89,13 +104,13 @@
   if(event.key==='Delete'){event.preventDefault();remove();return}
   const deltas={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]},e=selectedElement();if(e&&deltas[event.key]){event.preventDefault();remember();const step=event.shiftKey?2:0.5;e.x+=deltas[event.key][0]*step;e.y+=deltas[event.key][1]*step;bounded(e);paint()}
  });
- async function persist(enabled){if(busy)return;busy=true;$('editor').inert=true;$('logout').disabled=true;$('save').disabled=true;$('standard').disabled=true;
+ async function persist(enabled){if(busy)return;busy=true;$('editor').inert=true;$('logout').disabled=true;$('change-password').disabled=true;$('save').disabled=true;$('standard').disabled=true;
   try{state=await api('layout',{method:'POST',body:JSON.stringify({...state,enabled})});dirty=false;paint();status(enabled?'Layout gespeichert und für neue PDF-Abrufe aktiviert.':'Standardbeleg aktiviert. Eigener Entwurf bleibt gespeichert.')}
-  catch(error){status(error.message,true)}finally{busy=false;$('editor').inert=false;$('logout').disabled=false;$('save').disabled=false;$('standard').disabled=false}
+  catch(error){status(error.message,true)}finally{busy=false;$('editor').inert=false;$('logout').disabled=false;$('change-password').disabled=false;$('save').disabled=false;$('standard').disabled=false}
  }
  $('save').addEventListener('click',()=>persist(true));$('standard').addEventListener('click',()=>persist(false));
  $('preview').addEventListener('click',async()=>{try{const blob=await api('preview',{method:'POST',body:JSON.stringify(state),pdf:true});if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(blob);$('pdf-preview').src=previewURL;$('preview-panel').hidden=false;$('preview-panel').scrollIntoView({behavior:'smooth'});status('Echte PDF-Vorschau erzeugt. Noch nicht gespeicherte Änderungen sind enthalten.')}catch(error){status(error.message,true)}});
  $('close-preview').addEventListener('click',()=>{$('preview-panel').hidden=true;$('pdf-preview').removeAttribute('src');if(previewURL){URL.revokeObjectURL(previewURL);previewURL=''}});
  window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue=''}});
- (async()=>{try{const response=await fetch('/api/admin/session',{cache:'no-store'});const data=await response.json();if(response.ok){csrf=data.csrf;await enter()}else if(response.status===503){$('login-status').textContent='Administration ist noch nicht eingerichtet. Hinweise stehen in der Startanleitung.';$('login-form').hidden=true}}catch{$('login-status').textContent='Verbindung zum Server nicht möglich.'}})();
+ (async()=>{try{const response=await fetch('/api/admin/session',{cache:'no-store'});const data=await response.json();if(response.ok){csrf=data.csrf;if(data.must_change)showPasswordChange(true);else await enter()}else if(response.status!==401){$('login-status').textContent=data.error||'Anmeldung derzeit nicht verfügbar.'}}catch{$('login-status').textContent='Verbindung zum Server nicht möglich.'}})();
 })();

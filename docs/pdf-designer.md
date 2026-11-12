@@ -6,28 +6,44 @@ Auf „Administration“ klicken, um den geschützten Bereich zu öffnen.
 
 ## Einrichten und aktualisieren
 
-Server vor dem Update stoppen. In Bash (das Passwort wird nicht angezeigt und
-steht nicht als Klartext im eingegebenen Shellbefehl):
+Server vor dem Update stoppen und wie üblich aktualisieren:
 
 ```sh
 git switch beta
 git pull --ff-only origin beta
-read -rs -p 'Admin-Passwort: ' REIFENAPP_ADMIN_PASSWORD
-printf '\n'
-export REIFENAPP_ADMIN_PASSWORD
 go run . -dev -migrate
 ```
 
-Ein eigenes Passwort mit 12 bis 128 Bytes verwenden. Es gibt kein Standardpasswort.
-Der Server liest es beim Start aus der Umgebung; es wird nicht in SQLite oder
-Browser-Storage gespeichert und nicht protokolliert. Für die normale Datenbank
-`-dev` weglassen. Der Prozess muss die Umgebungsvariable bei jedem Start erhalten.
-Ohne sie bleibt die Administration deaktiviert; die Werkstattfunktionen laufen.
-Bei einem Neustart werden bestehende Admin-Sitzungen ungültig.
+Anschließend „Administration“ öffnen. Es gibt genau einen festen Benutzer:
 
-Migration `006_pdf_layouts.sql` ergänzt nur die lokale Vorlagentabelle. Das
-explizite Upgrade erstellt vorher wie bisher ein konsistentes SQLite-Backup nach
-Integritätsprüfung. Vorhandene Kunden, Radsätze und Historieneinträge bleiben
+- Benutzername: **`admin`** (bereits vorausgefüllt).
+- Startpasswort: **`Reifenapp-Start2026!`**.
+
+Nach der ersten Anmeldung ist nur die Passwortänderung freigeschaltet. Eigenes
+Passwort und Wiederholung eingeben; erst danach öffnet sich der Designer.
+Mindestens 12 Zeichen, höchstens 72 Bytes (bei Umlauten können weniger als 72
+Zeichen möglich sein). Startpasswort und bisheriges Passwort dürfen nicht erneut
+gewählt werden. Für spätere Änderungen gibt es „Passwort ändern“; dort wird auch
+das aktuelle Passwort verlangt.
+
+Das eigene Passwort ersetzt den Startpasswort-Hash in der lokalen Datenbank.
+Es bleibt nach Serverneustarts erhalten und wird ausschließlich als gesalzener
+bcrypt-Hash gespeichert. Das Startpasswort wird nach der Änderung nicht mehr
+akzeptiert. Alle alten Sitzungen werden beendet und die aktuelle Sitzung erneuert.
+Das alte Verfahren über `REIFENAPP_ADMIN_PASSWORD` entfällt; diese Variable wird
+nicht mehr verwendet. Es gibt keinen automatischen Rückfall auf das Startpasswort.
+
+Für die normale Datenbank `-dev` weglassen. Entwicklung und normaler Betrieb haben
+getrennte Datenbanken, damit auch getrennte Admin-Passwörter und Layouts. Die erste
+Einrichtung einmal lokal vornehmen, bevor der Server gegebenenfalls im LAN
+freigegeben wird. Passwörter oder Datenbankdateien nicht in GitHub veröffentlichen.
+Bei einem Neustart werden bestehende Sitzungen ungültig; mit dem eigenen Passwort
+neu anmelden. Ein Passwort-Reset ohne Kenntnis des aktuellen Passworts ist hier
+nicht implementiert; keinesfalls dafür die Kundendatenbank löschen.
+
+Migration `007_admin_account.sql` ergänzt das lokale Admin-Konto. Das explizite
+Upgrade erstellt wie bisher vorher ein konsistentes SQLite-Backup nach
+Integritätsprüfung. Bestehende PDF-Vorlagen, Kunden und Historieneinträge bleiben
 unverändert. Nach dem Upgrade genügt wieder `go run . -dev` bzw. `go run .`.
 
 ## Gestalten
@@ -85,17 +101,21 @@ Daten werden nicht abgeschnitten und eine zweite A4-Seite wird nicht angelegt.
 Sitzung: 30 Minuten, zufälliges Token im HttpOnly-/SameSite-Strict-Cookie, Secure
 bei direktem HTTPS. Admin-Schreibzugriffe benötigen zusätzlich ein sitzungsgebundenes
 CSRF-Token und gleichherkünftiges JSON. Anmeldeversuche werden pro Client begrenzt.
-Das Umgebungs-Passwort wird zum Vergleich in einem konstantzeitgeprüften Hash im
-Prozess gehalten; es gibt keine dauerhafte Passwortdatenbank. Die Umgebung und
-lokale Startkonfiguration entsprechend privat halten. Für Netzwerkbetrieb den
-Transport-/Zugriffsschutz beim Bereitstellen berücksichtigen; Standardstart bleibt
-auf 127.0.0.1 beschränkt.
+Die lokale Datenbank enthält ausschließlich den bcrypt-Hash des Passworts.
+Das Konto wird einmalig mit erzwungenem Passwortwechsel angelegt; ein bestehendes
+Konto wird beim Start nicht zurückgesetzt. Die Sitzungsrevision sperrt alte
+Sitzungen auch dann, wenn eine andere laufende Instanz das Passwort geändert hat.
+Für Netzwerkbetrieb den Transport-/Zugriffsschutz beim Bereitstellen
+berücksichtigen; Standardstart bleibt auf 127.0.0.1 beschränkt.
 
 Admin-Endpunkte:
 
-- `POST /api/admin/login` mit `{ "password": "…" }`, danach Session-Cookie und
-  CSRF-Wert aus der Antwort benutzen.
+- `POST /api/admin/login` mit `{ "username": "admin", "password": "…" }`.
+  Session-Cookie und CSRF-Wert aus der Antwort benutzen. `must_change: true`
+  sperrt alle Einstellungen bis zum Passwortwechsel.
 - `GET /api/admin/session`; `POST /api/admin/logout`.
+- `POST /api/admin/password` mit `new_password`, `confirm_password`, später
+  zusätzlich `current_password`. Benötigt CSRF und erneuert Cookie/CSRF-Token.
 - `GET /api/admin/layout?operation=storage` liefert gespeicherte Vorlage und
   Ausgangsvorlage. Andere Operationen: `wheel_change`, `reservation`, `release`.
 - `POST /api/admin/layout` mit `operation`, `template`, `enabled`, `revision`.
@@ -105,5 +125,5 @@ Admin-Endpunkte:
 
 Schreibzugriffe außer Login benötigen `X-CSRF-Token`. 401: nicht angemeldet,
 403: Sitzung/Ursprung ungültig, 409: Revisionskonflikt, 422: Layout ungültig,
-429: Anmeldebegrenzung, 503: Administration nicht eingerichtet. Layoutdaten und
+429: Anmeldebegrenzung. Layoutdaten und
 PDFs werden nicht öffentlich zwischengespeichert.

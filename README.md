@@ -61,10 +61,11 @@ data/                      Erst beim Start erzeugt; nicht versioniert
 
 CSS bleibt in der Designvorlage; ein leerer CSS-Ordner wäre unnötig.
 Direkte externe Go-Bausteine sind der SQLite-Treiber
-`github.com/mattn/go-sqlite3` und für lokale PDF-Belege `github.com/go-pdf/fpdf`. SQLite verwendet WAL, Fremdschlüssel und einen
+`github.com/mattn/go-sqlite3`, für lokale PDF-Belege `github.com/go-pdf/fpdf` und
+für Passwort-Hashes `golang.org/x/crypto/bcrypt`. SQLite verwendet WAL, Fremdschlüssel und einen
 Busy-Timeout. SQL-Migrationen laufen transaktional bei der Erstinitialisierung.
 Bestehende Datenbanken werden auf die bekannte Schemaversion geprüft; unbekannte
-Versionen werden abgelehnt. Schema 1 bis 5 benötigen das unten beschriebene explizite
+Versionen werden abgelehnt. Schema 1 bis 6 benötigen das unten beschriebene explizite
 Upgrade mit Integritätsprüfung und konsistentem SQLite-Backup.
 
 Belegung und Reservierung nutzen eine gemeinsame Tabelle `storage_claims`.
@@ -114,9 +115,9 @@ go run . -dev -migrate
 
 Diese Variante arbeitet weiterhin mit den fiktiven Entwicklungsdaten.
 Für die normale Datenbank stattdessen `go run . -migrate` verwenden.
-Einmalig nötig bei Schema 1 bis 5: Integritätsprüfung, dann `VACUUM INTO` für eine
+Einmalig nötig bei Schema 1 bis 6: Integritätsprüfung, dann `VACUUM INTO` für eine
 konsistente Sicherung inklusive noch im WAL befindlicher Änderungen, danach
-transaktionale Migrationen bis einschließlich 006. Das Backup liegt neben der ursprünglichen Datei
+transaktionale Migrationen bis einschließlich 007. Das Backup liegt neben der ursprünglichen Datei
 als `*.sqlite.backup-<UTC-Zeitstempel>` und ist ebenfalls ignoriert.
 Bei einem Backupfehler findet keine Migration statt. Vorhandene Datensätze werden
 nicht neu angelegt, gelöscht oder mit Beispielen überschrieben. Alle anderen
@@ -200,7 +201,7 @@ Browserursprüngen werden abgelehnt; LAN-Authentifizierung bleibt ein späteres 
 Weitere Entwicklung wird auf `beta` gesammelt. `main` wird nicht automatisch
 aktualisiert; ein späterer Merge erfolgt gesondert. Zum Wechseln den Server stoppen,
 `git fetch origin`, `git switch beta`, `git pull --ff-only origin beta` ausführen.
-Start weiterhin `go run . -dev` (ein Upgrade von Schema 1 bis 5 benötigt einmalig zusätzlich
+Start weiterhin `go run . -dev` (ein Upgrade von Schema 1 bis 6 benötigt einmalig zusätzlich
 `-migrate`, siehe oben). Für diese Formularänderungen ist keine Migration nötig.
 
 Kennzeichen: Landkreiskürzel per Dropdown, Buchstaben und Nummer separat;
@@ -578,10 +579,12 @@ färben und anordnen. Millimeterwerte, Schriftgröße/Fettdruck, Ausrichtung,
 Duplizieren, Ebenen und Rückgängig/Wiederholen stehen bereit. Eigene Vorlage pro
 Vorgangsart, echte PDF-Vorschau und lokale Speicherung in SQLite.
 
-**Einrichtung:** `REIFENAPP_ADMIN_PASSWORD` beim Serverstart setzen (12–128 Bytes).
-Ohne Passwort bleibt der Admin-Bereich deaktiviert. Einmalig `-migrate` verwenden,
-um die neue Vorlagentabelle mit vorherigem Backup anzulegen. Normale Vorgänge
-bleiben ohne Login. Automatische PDFs und Ausdruck auf einer A4-Seite bleiben erhalten.
+**Einrichtung:** Nach `go run . -dev -migrate` unter Administration mit Benutzer
+`admin` und Startpasswort `Reifenapp-Start2026!` anmelden. Direkt ein eigenes
+Passwort festlegen und wiederholen; erst danach wird der Designer freigeschaltet.
+Das eigene Passwort bleibt als bcrypt-Hash lokal gespeichert. Keine
+Umgebungsvariable mehr nötig. Normale Vorgänge bleiben ohne Login; automatische
+PDFs und Ausdruck auf einer A4-Seite bleiben erhalten.
 
 [Anleitung, Passwort-Einrichtung und API](docs/pdf-designer.md).
-Bilder/Logos sind in der ersten Version noch nicht enthalten. Keine neue Bibliothek.
+Bilder/Logos sind in der ersten Version noch nicht enthalten. Passwort-Hashing erfolgt mit `golang.org/x/crypto/bcrypt`.
