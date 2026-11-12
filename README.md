@@ -588,3 +588,12 @@ PDFs und Ausdruck auf einer A4-Seite bleiben erhalten.
 
 [Anleitung, Passwort-Einrichtung und API](docs/pdf-designer.md).
 Bilder/Logos sind in der ersten Version noch nicht enthalten. Passwort-Hashing erfolgt mit `golang.org/x/crypto/bcrypt`.
+
+### Raster im PDF-Designer
+
+Ein sichtbares Raster hilft beim Anordnen: 5 mm als Standard, außerdem 1/2/10 mm
+oder „Aus“. Elemente rasten beim Ziehen und Skalieren ein; auch neue Elemente,
+Duplikate und die Pfeiltasten orientieren sich daran. Alt erlaubt vorübergehend
+freie Bewegung, und manuelle Millimeterwerte bleiben präzise einstellbar.
+Das Raster skaliert mit der Ansicht, verändert vorhandene Vorlagen beim Umschalten
+nicht und erscheint nicht im PDF. Kein Datenbankupgrade erforderlich.

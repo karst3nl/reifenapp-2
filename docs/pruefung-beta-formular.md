@@ -253,3 +253,16 @@ Umgebungsvariable neu gestartet und eigene Anmeldung mit erhaltener Vorlage gepr
 Nur fiktive Testpasswörter/-daten in separaten temporären Datenbanken.
 Keine vorhandene Repository-Datenbank migriert. Echte CachyOS-/Pi-Hardware,
 LAN, Drucker und andere Browser nicht geprüft.
+
+## Raster im PDF-Designer – 12. November 2026
+
+Erfolgreich: JavaScript-Syntax, `go test ./...`, Build und `git diff --check`.
+Chromium: sichtbares Standardraster, 2/5/10-mm-Ausrichtung beim echten Ziehen,
+Skalieren an rechten/unteren Rasterkanten, Pfeiltasten mit/ohne Umschalt, neue und
+duplizierte Elemente, freie Bewegung bei „Aus“/Alt, manuelle Präzisionswerte,
+Rückgängig/Wiederholen, Zoom 50/75/100 %, Begrenzung auf A4, Speichern/Neuladen
+und Mobilbreite. Die PDF-Vorschaudaten sind vor/nach Rasterumschaltung identisch;
+das sichtbare Raster gelangt nicht in die PDF-Vorlage. PDF-Vorschau weiter gültig.
+Keine Backend-/Schemaänderung; Race-Tests für diesen Frontend-Schritt nicht erneut
+ausgeführt. Nur fiktive temporäre Daten. Hardware, LAN, Drucker und andere Browser
+nicht geprüft.

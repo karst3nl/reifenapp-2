@@ -58,7 +58,17 @@ unverändert. Nach dem Upgrade genügt wieder `go run . -dev` bzw. `go run .`.
   Fettdruck, Ausrichtung, Text-/Linienfarbe und Flächenfarbe bearbeiten.
 - Duplizieren, löschen und nach vorn/hinten legen. Überlagerungen sind möglich,
   etwa ein Rahmen hinter einem Text. „Rückgängig“/„Wiederholen“ bzw. Strg+Z/Y.
-- Pfeiltasten verschieben das ausgewählte Element um 0,5 mm, mit Umschalt um 2 mm.
+- Raster: standardmäßig 5 mm, alternativ 1/2/10 mm oder „Aus“. Beim Ziehen
+  rasten X/Y am Seitenraster ein; beim Skalieren die rechte/untere Kante.
+  Neue und duplizierte Elemente starten ebenfalls auf Rasterpunkten.
+- Pfeiltasten bewegen um einen Rasterschritt, mit Umschalt um zwei. Ohne Raster
+  bleiben es 0,5 mm bzw. 2 mm. Ein Element neben dem Raster springt zuerst zum
+  nächsten Rasterpunkt in Bewegungsrichtung.
+- Alt beim Ziehen/Skalieren erlaubt vorübergehend freie Bewegung. Exakte manuelle
+  Zahlenwerte in den Eigenschaften bleiben auch bei aktivem Raster möglich.
+- Umschalten des Rasters verändert vorhandene Elemente nicht. Die A4-Seitengrenzen
+  begrenzen Bewegungen auch dann, wenn die letzte mögliche Position kein
+  Rasterpunkt ist. Das sichtbare Raster wird weder gespeichert noch gedruckt.
 - Ansicht 50/75/100 % beeinflusst nur die Bildschirmdarstellung, nicht das Papier.
 
 Die Arbeitsfläche nutzt eine lokale eingebettete Schrift und fiktive Beispieldaten.
