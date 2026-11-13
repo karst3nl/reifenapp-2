@@ -278,7 +278,7 @@ func (a *Admin) load(w http.ResponseWriter, r *http.Request) {
 }
 func (a *Admin) save(w http.ResponseWriter, r *http.Request) {
 	var layout database.PDFLayout
-	if !readLimitedJSON(w, r, &layout, 256*1024) {
+	if !readLimitedJSON(w, r, &layout, 8*1024*1024) {
 		return
 	}
 	if !receipts.ValidOperation(layout.Operation) {
@@ -308,7 +308,7 @@ func (a *Admin) save(w http.ResponseWriter, r *http.Request) {
 }
 func (a *Admin) preview(w http.ResponseWriter, r *http.Request) {
 	var layout database.PDFLayout
-	if !readLimitedJSON(w, r, &layout, 256*1024) {
+	if !readLimitedJSON(w, r, &layout, 8*1024*1024) {
 		return
 	}
 	if !receipts.ValidOperation(layout.Operation) {

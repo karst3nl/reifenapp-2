@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
+	"image"
+	"image/png"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -124,6 +127,19 @@ func TestAdminSetupAuthenticationAndEditorAPI(t *testing.T) {
 	}
 	json.Unmarshal(w.Body.Bytes(), &response)
 	response.Layout.Enabled = true
+	// A fictitious logo larger than the former 256 KiB request limit must persist.
+	img := image.NewNRGBA(image.Rect(0, 0, 400, 300))
+	var noise uint32 = 19
+	for i := range img.Pix {
+		noise = noise*1664525 + 1013904223
+		img.Pix[i] = byte(noise >> 24)
+	}
+	var logo bytes.Buffer
+	if err = png.Encode(&logo, img); err != nil {
+		t.Fatal(err)
+	}
+	logoElement := receipts.Element{ID: "fictitious-logo", Type: "image", Image: "data:image/png;base64," + base64.StdEncoding.EncodeToString(logo.Bytes()), X: 140, Y: 2, Width: 60, Height: 20, Color: "#000000", Background: "#ffffff"}
+	response.Layout.Template.Elements = append(response.Layout.Template.Elements, logoElement)
 	body, _ = json.Marshal(response.Layout)
 	if w = call("POST", "/api/admin/layout", body, false); w.Code != 403 {
 		t.Fatal(w.Code)
@@ -133,6 +149,24 @@ func TestAdminSetupAuthenticationAndEditorAPI(t *testing.T) {
 	}
 	if w = call("POST", "/api/admin/layout", body, true); w.Code != 200 {
 		t.Fatal(w.Body)
+	}
+	loaded := call("GET", "/api/admin/layout?operation=storage", nil, false)
+	var persisted struct {
+		Layout database.PDFLayout `json:"layout"`
+	}
+	if err = json.Unmarshal(loaded.Body.Bytes(), &persisted); err != nil {
+		t.Fatal(err)
+	}
+	elements := persisted.Layout.Template.Elements
+	if elements[len(elements)-1].Image != logoElement.Image {
+		t.Fatal("logo not persisted")
+	}
+	bad := response.Layout
+	bad.Template.Elements = append([]receipts.Element(nil), bad.Template.Elements...)
+	bad.Template.Elements[len(bad.Template.Elements)-1].Image = "https://example.invalid/logo.png"
+	badBody, _ := json.Marshal(bad)
+	if w = call("POST", "/api/admin/preview", badBody, true); w.Code != 422 {
+		t.Fatal("remote logo accepted", w.Code)
 	}
 	if w = call("POST", "/api/admin/layout", body, true); w.Code != 409 {
 		t.Fatal(w.Body)

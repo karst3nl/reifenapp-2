@@ -2,6 +2,7 @@ package receipts
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -14,6 +15,7 @@ import (
 
 type Element struct {
 	ID         string  `json:"id"`
+	Image      string  `json:"image,omitempty"`
 	Type       string  `json:"type"`
 	Text       string  `json:"text"`
 	Field      string  `json:"field"`
@@ -54,12 +56,26 @@ func (t Template) Validate() error {
 		fields[f.Key] = true
 	}
 	seen := map[string]bool{}
+	logoBytes := 0
 	for _, e := range t.Elements {
 		if e.ID == "" || len(e.ID) > 64 || seen[e.ID] {
 			return fmt.Errorf("Elementkennungen müssen eindeutig sein.")
 		}
 		seen[e.ID] = true
-		if e.Type != "text" && e.Type != "field" && e.Type != "line" && e.Type != "box" {
+		if e.Type == "image" {
+			data, _, err := decodeLogo(e.Image)
+			if err != nil {
+				return err
+			}
+			logoBytes += len(data)
+			if logoBytes > MaxTemplateLogoBytes {
+				return fmt.Errorf("Logos einer Vorlage dürfen zusammen höchstens 4 MiB belegen.")
+			}
+		} else if e.Image != "" {
+			return fmt.Errorf("Bilddaten sind nur für Logo-Elemente erlaubt.")
+		}
+
+		if e.Type != "text" && e.Type != "field" && e.Type != "line" && e.Type != "box" && e.Type != "image" {
 			return fmt.Errorf("Unbekannter Elementtyp.")
 		}
 		for _, n := range []float64{e.X, e.Y, e.Width, e.Height, e.FontSize, e.Stroke} {
@@ -192,6 +208,19 @@ func GenerateTemplate(r models.Receipt, h Header, t Template) ([]byte, error) {
 				style = "DF"
 			}
 			p.Rect(e.X, e.Y, e.Width, e.Height, style)
+			continue
+		}
+		if e.Type == "image" {
+			data, cfg, err := decodeLogo(e.Image)
+			if err != nil {
+				return nil, err
+			}
+			name := fmt.Sprintf("logo-%x", sha256.Sum256(data))
+			options := fpdf.ImageOptions{ImageType: "PNG", ReadDpi: false}
+			p.RegisterImageOptionsReader(name, options, bytes.NewReader(data))
+			scale := math.Min(e.Width/float64(cfg.Width), e.Height/float64(cfg.Height))
+			width, height := float64(cfg.Width)*scale, float64(cfg.Height)*scale
+			p.ImageOptions(name, e.X+(e.Width-width)/2, e.Y+(e.Height-height)/2, width, height, false, options, 0, "")
 			continue
 		}
 		value := e.Text
