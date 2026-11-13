@@ -87,6 +87,38 @@ in einer anderen Sitzung gespeicherten Vorlage. Bei Konflikt neu laden, nicht
 blind erneut speichern. Eine vollständige Liste früherer Vorlagenversionen ist
 nicht Teil dieses ersten Designers; Rückgängig/Wiederholen gilt für die Sitzung.
 
+## Firmenlogo importieren
+
+1. Im Bereich **PDF-Editor** links **Firmenlogo importieren** wählen.
+2. Eine lokale Datei als **PNG**, **JPEG** (`.jpg`/`.jpeg`) oder **SVG** auswählen.
+3. Das Logo auf der A4-Seite ziehen und mit dem Griff skalieren oder seine
+   Millimeterwerte anpassen. Es wird mittig und ohne Verzerrung in seinen Rahmen
+   eingepasst. Transparente Hintergründe bleiben erhalten.
+4. Die **PDF-Vorschau** prüfen und **Speichern & aktivieren** wählen.
+
+Logos unterstützen Raster, Ebenen, Duplizieren, Löschen und Rückgängig/Wiederholen
+wie die übrigen Elemente. Jede Vorgangsart hat weiterhin eine eigene Vorlage;
+ein Logo wird mit der jeweils gewählten Vorlage gespeichert.
+
+Der Import verarbeitet Dateien lokal im Browser. PNG und JPEG werden normalisiert,
+SVG wird in ein PNG mit bis zu 2048 Pixeln an der längsten Seite umgewandelt.
+SVGs bleiben im PDF deshalb keine Vektorgrafiken. Eine statische SVG mit Breite/Höhe
+oder `viewBox` verwenden. Skripte, Animationen, externe Ressourcen und eingebettete
+Bilder werden abgewiesen; bei einem nicht unterstützten SVG-Export alternativ
+PNG verwenden. Lokale SVG-Pfade, Formen, Verläufe und interne `use`-Verweise sind
+möglich. Es werden keine Dateien zu einem externen Dienst hochgeladen.
+
+Grenzen: 5 MiB je ausgewählter Quelldatei, 2 MiB je aufbereitetem PNG,
+2048 × 2048 Pixel und zusammen 4 MiB an Logos je Vorlage. Bei Überschreitung ein
+kleineres Logo verwenden. Der Server prüft Bilddaten und Grenzen erneut.
+
+Bilddaten bleiben zusammen mit der Vorlage in der lokalen SQLite-Datenbank,
+nicht in GitHub oder in einem öffentlichen Uploadverzeichnis. Sie sind damit
+auch Bestandteil eines konsistenten Datenbankbackups. Vorschau, neue Belege und
+Nachdruck verwenden dasselbe eingebettete Bild. Erst Speichern übernimmt den
+Entwurf dauerhaft; Abbruch oder ungültige Dateien verändern die gespeicherte
+Vorlage nicht. Für dieses Feature ist keine zusätzliche Migration nötig.
+
 ## PDF-Ausgabe
 
 Automatische neue Tabs nach Werkstattvorgängen, Druck per Strg+P und Nachdrucklinks
@@ -97,8 +129,8 @@ Schnappschuss. Die Vorlage wird innerhalb der gewählten lokalen Datenbank gespe
 
 Alle Elemente müssen innerhalb A4 liegen; maximal 100 Elemente, je höchstens 2000
 Zeichen statischer Text. Erlaubte Datenfelder sind fest definiert; kein HTML,
-JavaScript, externe Ressourcen oder Dateipfade in Vorlagen. Bilder/Logos und
-mehrseitige Dokumente sind in dieser ersten Version noch nicht vorgesehen.
+JavaScript, externe Ressourcen oder Dateipfade in Vorlagen. Logos werden als
+eingebettete PNG-Bilddaten gespeichert; mehrseitige Dokumente sind nicht vorgesehen.
 Bewusst entfernte Datenfelder erscheinen im eigenen Layout nicht mehr.
 
 Text wird umgebrochen und bei Bedarf innerhalb des Feldes bis 6 pt verkleinert.

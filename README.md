@@ -27,7 +27,7 @@ Historie und druckbaren DIN-A4-Belegen. Ohne Cloudpflicht.
 | Auslagerung | Belegung nach Bestätigung aufheben und den Platz wieder freigeben; Historie erhalten. |
 | Druckbelege | Nach jedem erfolgreichen Vorgang automatisch eine einseitige A4-PDF im neuen Tab öffnen; Nachdruck über die Suche. |
 | Lagerplatzverwaltung | Lagerorte anlegen, Nummernbereiche ändern und freie, belegte oder reservierte Plätze überblicken. |
-| Administration | Getrennte Bereiche für Lagerplätze und passwortgeschützten PDF-Designer mit Drag-and-drop, horizontalem und vertikalem Raster und eigenen Vorlagen je Vorgangsart. |
+| Administration | Getrennte Bereiche für Lagerplätze und passwortgeschützten PDF-Designer mit Drag-and-drop, horizontalem und vertikalem Raster, Logoimport (PNG/JPEG/SVG) und eigenen Vorlagen je Vorgangsart. |
 
 Aktive Belegungen und Reservierungen dürfen sich nicht überschneiden. Diese Regel
 wird auch in der Datenbank abgesichert. Die Ausgangskonfiguration enthält 640 Lagerplätze in den Bereichen
@@ -36,8 +36,7 @@ wird auch in der Datenbank abgesichert. Die Ausgangskonfiguration enthält 640 L
 Noch offen sind unter anderem eine eigenständige Historienansicht, CSV-Import und
 die Pflege von Auswahllisten im Adminbereich. Die Historie ist bereits über die
 Suche erreichbar. Der Radwechsel erfasst aktuell einen eigenen Einlagerungsvorgang;
-er tauscht keinen bereits belegten Radsatz automatisch aus. Bilder und Logos im
-PDF-Designer folgen später.
+er tauscht keinen bereits belegten Radsatz automatisch aus.
 
 ## Schnellstart
 

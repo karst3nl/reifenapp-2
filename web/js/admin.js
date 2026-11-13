@@ -28,6 +28,7 @@
    const node=document.createElement('div');node.className='item'+(e.id===selected?' selected':'');node.dataset.id=e.id;node.tabIndex=0;node.setAttribute('role','button');node.setAttribute('aria-label',e.type==='field'?(fields.find(f=>f.key===e.field)?.label||e.field):e.text||e.type);
    Object.assign(node.style,{left:e.x+'mm',top:e.y+'mm',width:e.width+'mm',height:e.height+'mm',fontSize:e.font_size+'pt',fontWeight:e.bold?'700':'400',textAlign:{L:'left',C:'center',R:'right'}[e.align],color:e.color});
    if(e.type==='line'){node.classList.add('line-item');const line=document.createElement('div');line.className='line-mark';line.style.borderTop=`${e.stroke}mm solid ${e.color}`;node.append(line)}
+   else if(e.type==='image'){const image=document.createElement('img');image.src=e.image;image.alt='Firmenlogo';image.draggable=false;image.className='logo-image';node.append(image)}
    else if(e.type==='box'){node.style.background=e.background;node.style.border=`${e.stroke}mm solid ${e.color}`}
    else{node.textContent=textFor(e)}
    if(e.id===selected){const handle=document.createElement('span');handle.className='resize-handle';handle.setAttribute('aria-hidden','true');node.append(handle)}
@@ -42,7 +43,7 @@
  }
  function properties(){const e=selectedElement();$('properties').hidden=!e;$('selection-hint').hidden=!!e;if(!e)return;
   for(const key of ['text','field','x','y','width','height','font_size','align','color','background','stroke'])$('prop-'+key).value=e[key];$('prop-bold').checked=e.bold;
-  $('prop-field').disabled=e.type!=='field';for(const key of ['text','font_size','align','bold'])$('prop-'+key).disabled=e.type==='line'||e.type==='box';$('prop-background').disabled=e.type!=='box';
+  $('prop-field').disabled=e.type!=='field';for(const key of ['text','font_size','align','bold'])$('prop-'+key).disabled=e.type==='line'||e.type==='box'||e.type==='image';$('prop-background').disabled=e.type!=='box';$('prop-color').disabled=e.type==='image';$('prop-stroke').disabled=e.type==='image';
  }
  function zoom(){const z=Number($('zoom').value);$('paper').style.transform=`scale(${z})`;$('paper-holder').style.width=210*96/25.4*z+'px';$('paper-holder').style.height=297*96/25.4*z+'px';updateGrid();}
  async function load(){
@@ -114,6 +115,20 @@
  function add(type){if(state.template.elements.length>=100){status('Maximal 100 Elemente erlaubt.',true);return}remember();let id;do{id='element-'+Date.now()+'-'+(++counter)}while(state.template.elements.some(e=>e.id===id));
   const e={id,type,text:type==='text'?'Neuer Text':'',field:type==='field'?$('palette-field').value:'',x:25,y:25,width:type==='line'?100:60,height:type==='line'?2:15,font_size:12,bold:false,align:'L',color:'#000000',background:'#ffffff',stroke:type==='line'||type==='box'?0.3:0};alignPosition(e);state.template.elements.push(e);selected=e.id;paint();}
  for(const type of ['text','field','line','box'])$('add-'+type).addEventListener('click',()=>add(type));
+ $('import-logo').addEventListener('click',()=>{if(!busy)$('logo-file').click()});
+ $('logo-file').addEventListener('change',async()=>{
+  const file=$('logo-file').files[0];$('logo-file').value='';if(!file||busy||!state)return;
+  if(state.template.elements.length>=100){status('Maximal 100 Elemente erlaubt.',true);return}
+  busy=true;$('editor').inert=true;$('logout').disabled=true;$('change-password').disabled=true;status('Logo wird lokal aufbereitet …');
+  try{
+   const logo=await window.importLogo(file);
+   const total=state.template.elements.reduce((bytes,e)=>bytes+(e.type==='image'?Math.floor((e.image.length-22)*3/4):0),0);
+   if(total+Math.floor((logo.data.length-22)*3/4)>4*1024*1024)throw Error('Logos einer Vorlage dürfen zusammen höchstens 4 MiB belegen. Bitte vorhandene Logos entfernen oder kleinere Grafiken verwenden.');
+   remember();const scale=Math.min(60/logo.width,80/logo.height),width=Math.max(1,logo.width*scale),height=Math.max(1,logo.height*scale);
+   const e={id:'logo-'+Date.now()+'-'+(++counter),type:'image',image:logo.data,text:'',field:'',x:25,y:15,width,height,font_size:12,bold:false,align:'L',color:'#000000',background:'#ffffff',stroke:0};
+   alignPosition(e);state.template.elements.push(e);selected=e.id;paint();status('Logo importiert. Ziehen oder skalieren; das Seitenverhältnis bleibt im Rahmen erhalten. Mit „Speichern & aktivieren“ übernehmen.');
+  }catch(error){status(error.message,true)}finally{busy=false;$('editor').inert=false;$('logout').disabled=false;$('change-password').disabled=false;}
+ });
  $('properties').addEventListener('submit',event=>event.preventDefault());
  for(const key of ['text','field','x','y','width','height','font_size','align','color','background','stroke','bold'])$('prop-'+key).addEventListener('change',()=>{
   const e=selectedElement();if(!e)return;const control=$('prop-'+key);if(control.type==='number'&&!control.checkValidity()){status('Bitte gültige Abmessungen eingeben.',true);properties();return}
