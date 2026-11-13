@@ -3,11 +3,11 @@
 #storage-form legend{color:var(--accent);font-weight:700}
 #storage-form .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 #storage-form label{display:flex;flex-direction:column;gap:5px;font-size:14px;min-width:0}
-#storage-form input,#storage-form select,#storage-form textarea{width:100%;min-width:0;background:#091521;color:var(--text);border:1px solid #395167;border-radius:9px;padding:10px;font:inherit}
+#storage-form input,#storage-form select,#storage-form textarea{width:100%;min-width:0;background:#ffffff;color:var(--text);border:1px solid #8a8a83;border-radius:9px;padding:10px;font:inherit}
 #storage-form input[type=checkbox]{width:auto}
 #storage-form .check{flex-direction:row;align-items:center}
-#storage-form [aria-invalid=true]{border-color:#f3a6a6}
-#storage-form .field-error{color:#f3a6a6;font-size:13px}
+#storage-form [aria-invalid=true]{border-color:#a62530}
+#storage-form .field-error{color:#a62530;font-size:13px}
 #storage-status{white-space:pre-line}
 #storage-form .form-actions{display:flex;gap:12px;flex-wrap:wrap}
 #storage-form button:disabled{opacity:.6;cursor:wait}
@@ -38,21 +38,21 @@
 @media(max-width:1100px){#storage-form{grid-template-columns:repeat(2,minmax(0,1fr))}#storage-form fieldset:first-of-type{grid-column:1/-1}}
 @media(max-width:600px){#storage-dialog{padding:14px}#storage-form{grid-template-columns:1fr}#storage-form fieldset{grid-column:1/-1}#storage-form .fields,#storage-form .plate-fields{grid-template-columns:1fr}}
 @media(min-width:1101px) and (max-height:800px){#storage-dialog{padding:10px 18px}#storage-dialog .storage-heading{margin-bottom:6px}#storage-form{gap:8px}#storage-form fieldset{padding:8px}#storage-form input,#storage-form select,#storage-form textarea{padding:5px}#storage-form .fields{gap:6px}#storage-form label{gap:2px}}
-#storage-form [aria-invalid=true]{border:1px solid #f08d98;background:#321e2a;box-shadow:0 0 0 2px #f08d9826}
-#storage-form [aria-invalid=true]:focus{outline-color:#f08d98}
-#storage-form label:has([aria-invalid=true]){color:#ffc0c7}
-#storage-form .field-error{display:block;color:#ffc0c7;line-height:1.3}
+#storage-form [aria-invalid=true]{border:1px solid #ac2634;background:#fff0f1;box-shadow:0 0 0 2px #ac263426}
+#storage-form [aria-invalid=true]:focus{outline-color:#ac2634}
+#storage-form label:has([aria-invalid=true]){color:#9b1c29}
+#storage-form .field-error{display:block;color:#9b1c29;line-height:1.3}
 #storage-form #customer-hint{font-size:11px;margin:0;color:var(--muted)}
-#storage-status.is-error{padding:14px 16px;border:2px solid #f08d98;border-radius:10px;background:#321e2a;color:#ffd6dc;font-size:16px;font-weight:700;line-height:1.45}
-#storage-form [name=number][aria-invalid=true]{border:2px solid #f08d98;box-shadow:0 0 0 3px #f08d982b}
+#storage-status.is-error{padding:14px 16px;border:2px solid #ac2634;border-radius:10px;background:#fff0f1;color:#9b1c29;font-size:16px;font-weight:700;line-height:1.45}
+#storage-form [name=number][aria-invalid=true]{border:2px solid #ac2634;box-shadow:0 0 0 3px #ac26342b}
 #storage-form .customer-picker{position:relative;min-width:0}
-#customer-names:not([hidden]){position:absolute;top:58px;left:0;right:0;z-index:5;max-height:220px;overflow-y:auto;border:1px solid #57778d;border-radius:10px;background:var(--surface);box-shadow:var(--shadow);padding:5px}
+#customer-names:not([hidden]){position:absolute;top:58px;left:0;right:0;z-index:5;max-height:220px;overflow-y:auto;border:1px solid #a84308;border-radius:10px;background:var(--surface);box-shadow:var(--shadow);padding:5px}
 #customer-names [role=option]{padding:9px 11px;border-radius:7px;color:var(--text);font-size:14px;cursor:pointer;overflow-wrap:anywhere}
-#customer-names [role=option]:hover,#customer-names [aria-selected=true]{background:#1a413f;color:var(--accent2);outline:1px solid #55d6ad66}
+#customer-names [role=option]:hover,#customer-names [aria-selected=true]{background:#ffead9;color:var(--accent2);outline:1px solid #a8430866}
 #storage-form .place-check{font-size:12px;line-height:1.4}
 #storage-form .place-check:empty{display:none}
-#storage-form .place-check.is-available{color:var(--accent2)}
-#storage-form .place-check.is-unavailable{color:#ffc0c7;font-weight:700}
+#storage-form .place-check.is-available{color:#22643e}
+#storage-form .place-check.is-unavailable{color:#9b1c29;font-weight:700}
 #storage-form #place-recheck{align-self:flex-start;padding:4px 8px;font-size:12px}
 #storage-form fieldset[hidden]{display:none}
 #storage-dialog.reservation-mode #storage-form{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -72,7 +72,7 @@
 #release-form legend{color:var(--accent);font-weight:700}
 #release-form .release-fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 #release-form label{display:flex;flex-direction:column;gap:5px;font-size:14px}
-#release-form input,#release-form select{background:#091521;color:var(--text);border:1px solid #395167;border-radius:9px;padding:10px;font:inherit;width:100%;min-width:0}
+#release-form input,#release-form select{background:#ffffff;color:var(--text);border:1px solid #8a8a83;border-radius:9px;padding:10px;font:inherit;width:100%;min-width:0}
 #release-form #release-check{margin-top:12px}
 #release-form .secondary{background:var(--surface2);color:var(--text);border:1px solid var(--line)}
 #release-form .release-confirm{flex-direction:row;align-items:center;gap:10px;margin:20px 0}
@@ -81,8 +81,10 @@
 #release-dialog button:disabled{opacity:.5;cursor:not-allowed}
 #release-details[hidden]{display:none}
 #release-status{margin:16px 0;color:var(--muted)}
-#release-status.is-error{padding:14px;border:2px solid #f08d98;border-radius:10px;background:#321e2a;color:#ffd6dc;font-weight:700}
-#release-form [aria-invalid=true]{border:2px solid #f08d98;background:#321e2a}
+#release-status.is-error{padding:14px;border:2px solid #ac2634;border-radius:10px;background:#fff0f1;color:#9b1c29;font-weight:700}
+#release-form [aria-invalid=true]{border:2px solid #ac2634;background:#fff0f1}
 @media(max-width:520px){#release-dialog{padding:14px}#release-form .release-fields{grid-template-columns:1fr}}
 #storage-confirmation a,#result-list .result a{color:var(--accent2);font-size:13px;text-decoration:underline;text-underline-offset:3px}
 #result-list .result a{display:inline-block;margin-top:5px}
+
+#result-list .result a{font-size:15px}input,select,textarea{accent-color:var(--accent)}
