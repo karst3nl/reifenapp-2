@@ -43,7 +43,7 @@ function searchCard(item){
   details.addEventListener('toggle',()=>{label.textContent=details.open?'Details schließen':'Alle Daten anzeigen'});
   const grid=document.createElement('dl');grid.className='result-data';
   const add=(key,value)=>{const group=document.createElement('div'),term=document.createElement('dt'),description=document.createElement('dd');term.textContent=key;description.textContent=value===undefined||value===null||value===''?'Nicht erfasst':String(value);group.append(term,description);grid.append(group)};
-  const size=axle=>{if(!axle)return '';return [['Breite',axle.width],['Querschnitt',axle.ratio],['Zoll',axle.inches],['Traglastindex',axle.load],['Geschwindigkeitsindex',axle.speed]].map(([key,value])=>key+': '+(value||'Nicht erfasst')).join(' · ')};
+  const size=axle=>{if(!axle||![axle.width,axle.ratio,axle.inches,axle.load,axle.speed].some(Boolean))return '';return `${axle.width||'?'}/${axle.ratio||'?'} R${axle.inches||'?'} ${axle.load||'?'}${axle.speed||'?'}${[axle.width,axle.ratio,axle.inches,axle.load,axle.speed].every(Boolean)?'':' (unvollständig)'}`};
   const depth=value=>typeof value==='string'&&value.trim()!==''?value.replace('.',',')+' mm':'';
   add('Kunde',item.name);add('Kennzeichen',item.plate);add('Fahrzeug',item.car);add('Marke',data.brand);add('Modell',data.model);add('Lagerplatz',item.place);add('Vorgang',labels[item.operation]);add('Status',state);add('Zeitpunkt',stamp);add('Reifenart',data.tire_type);add('Felgenart',data.rim_type);
   add('Reifendaten Vorderachse',size(data.front));add('Reifendaten Hinterachse',size(data.rear));add('Profiltiefe Vorderachse',depth(data.front_depth));add('Profiltiefe Hinterachse',depth(data.rear_depth));
