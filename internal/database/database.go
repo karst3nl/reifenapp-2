@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -140,7 +141,7 @@ func Search(ctx context.Context, db *sql.DB, q string) ([]models.SearchResult, e
 	}
 	rows, err := db.QueryContext(ctx, `SELECT h.id,h.claim_id,h.place,h.name,h.plate,h.car,h.occurred_at,h.operation,
  CASE h.operation WHEN 'reservation' THEN 'reservation' WHEN 'release' THEN 'release' ELSE 'occupancy' END,
- s.status,(s.status='active' AND h.operation!='release'),h.source
+ s.status,(s.status='active' AND h.operation!='release'),h.source,h.payload
  FROM history_events h JOIN storage_claims s ON s.id=h.claim_id
  ORDER BY julianday(h.occurred_at) DESC,h.id DESC`)
 	if err != nil {
@@ -150,12 +151,16 @@ func Search(ctx context.Context, db *sql.DB, q string) ([]models.SearchResult, e
 	for rows.Next() {
 		var r models.SearchResult
 		var claimID int64
-		if err = rows.Scan(&r.EventID, &claimID, &r.Place, &r.Name, &r.Plate, &r.Car, &r.Date, &r.Operation, &r.Kind, &r.Status, &r.Active, &r.Source); err != nil {
+		var payload string
+		if err = rows.Scan(&r.EventID, &claimID, &r.Place, &r.Name, &r.Plate, &r.Car, &r.Date, &r.Operation, &r.Kind, &r.Status, &r.Active, &r.Source, &payload); err != nil {
 			return nil, err
 		}
 		r.ReceiptURL = models.ReceiptPath(claimID, r.Operation)
 		label := map[string]string{"storage": "Neueinlagerung", "wheel_change": "Radwechsel", "reservation": "Reservierung", "release": "Auslagerung"}[r.Operation]
 		if strings.Contains(normalize(label), q) || strings.Contains(normalize(r.Name), q) || strings.Contains(normalize(r.Plate), q) || strings.Contains(normalize(r.Place), q) {
+			if err = json.Unmarshal([]byte(payload), &r.Details); err != nil {
+				return nil, err
+			}
 			result = append(result, r)
 		}
 	}

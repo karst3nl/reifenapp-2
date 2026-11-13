@@ -1,6 +1,23 @@
 package models
 
+// SearchDetails contains the immutable data captured for this particular event.
+type SearchDetails struct {
+	Brand       string               `json:"brand"`
+	Model       string               `json:"model"`
+	TireType    string               `json:"tire_type"`
+	RimType     string               `json:"rim_type"`
+	Front       TireSize             `json:"front"`
+	Rear        TireSize             `json:"rear"`
+	FrontDepth  string               `json:"front_depth"`
+	RearDepth   string               `json:"rear_depth"`
+	Accessories map[string]Accessory `json:"accessories"`
+	Mechanic    string               `json:"mechanic"`
+	Notes       string               `json:"notes"`
+}
+
 type SearchResult struct {
+	Details SearchDetails `json:"details"`
+
 	ReceiptURL string `json:"pdf_url"`
 	EventID    int64  `json:"event_id"`
 	Status     string `json:"status"`

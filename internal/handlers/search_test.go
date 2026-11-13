@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -70,5 +71,33 @@ func TestSearchFindsReleaseHistory(t *testing.T) {
 		if err = json.Unmarshal(w.Body.Bytes(), &rows); err != nil || len(rows) == 0 || rows[0].Operation != "release" || rows[0].Active || rows[0].EventID <= 0 {
 			t.Fatal(w.Body, err)
 		}
+	}
+}
+
+func TestSearchHTTPIncludesDetails(t *testing.T) {
+	db, err := database.Open(filepath.Join(t.TempDir(), "details.sqlite"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	input := models.StorageInput{Area: "C1", Number: 7, Name: "Details Fiktiv", Plate: "MZ-DF 123", Brand: "VW", Model: "Golf", TireType: "Sommer", RimType: "Aluminium", Front: models.TireSize{Width: "205", Ratio: "55", Inches: "16", Load: "91", Speed: "H"}, Rear: models.TireSize{Width: "225", Ratio: "45", Inches: "17", Load: "94", Speed: "V"}, FrontDepth: "3.0", RearDepth: "4.5", Notes: "Fiktiver Prüfhinweis", Mechanic: "Fiktiver Monteur", Lock: models.Accessory{Present: true, Location: "Am Radsatz"}}
+	if _, err = database.CreateStorage(context.Background(), db, input); err != nil {
+		t.Fatal(err)
+	}
+	w := httptest.NewRecorder()
+	Search(db)(w, httptest.NewRequest("GET", "/api/search?q=C1.7", nil))
+	var rows []models.SearchResult
+	if w.Code != 200 {
+		t.Fatal(w.Code)
+	}
+	if err = json.Unmarshal(w.Body.Bytes(), &rows); err != nil || len(rows) != 1 {
+		t.Fatal(err, w.Body)
+	}
+	d := rows[0].Details
+	if d.Notes != input.Notes || d.FrontDepth != "3.0" || d.RearDepth != "4.5" || d.Rear != input.Rear || d.Accessories["lock"] != input.Lock || d.Mechanic != input.Mechanic {
+		t.Fatal("API omitted details", d)
+	}
+	if w.Header().Get("Cache-Control") != "no-store" {
+		t.Fatal("customer details must not be cached")
 	}
 }
