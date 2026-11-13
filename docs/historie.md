@@ -44,6 +44,15 @@ Sie werden nicht erfunden. Historische Verschleißwarnungen beziehen sich auf di
 damalige Messung. PDFs verwenden die aktuell aktivierte Druckvorlage und die
 unveränderten damaligen Vorgangsdaten.
 
+## Radwechsel auf dem bisherigen Kundenplatz
+
+Ein Radwechsel protokolliert die Entnahme des bisher eingelagerten Satzes als
+Auslagerung und die Einlagerung des anderen Satzes als Radwechsel mit demselben
+Lagerplatz und Zeitpunkt. Beide Bewegungen werden atomar gespeichert. Das alte
+Reifenprofil und der alte Beleg bleiben erhalten; nur die neue Belegung ist aktiv.
+Bei späteren Wechseln kann der bereits bekannte Sommer- beziehungsweise Wintersatz
+wieder demselben Platz zugeordnet werden.
+
 ## Aktualisieren und Fehlerfälle
 
 Eine Ereignis-ID-Grenze hält neu hinzugekommene Vorgänge während des Blätterns aus

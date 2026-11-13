@@ -75,7 +75,7 @@ konkrete JSON-Strukturen und Validierungen stehen in `internal/handlers/` und
 | `GET /api/storage/options` | Auswahlwerte und aktueller Lagerkatalog (`area`, `storage_areas`) |
 | `POST /api/storage/check` | Lagerplatz für Einlagerung oder Reservierung prüfen |
 | `POST /api/storage` | Neueinlagerung speichern |
-| `POST /api/wheel-changes` | Einlagerung mit Vorgangsart Radwechsel speichern |
+| `POST /api/wheel-changes` | Radsatztausch auf dem bisherigen Kundenplatz oder erste Radwechsel-Einlagerung speichern |
 | `POST /api/reservations` | Freien Platz reservieren |
 | `POST /api/releases/check` | Aktuelle Belegung für eine Auslagerung ermitteln |
 | `POST /api/releases` | Belegung nach ausdrücklicher Bestätigung freigeben |
@@ -118,8 +118,14 @@ Reservierungen benötigen nur Platz, Kunde, Kennzeichen, Marke und Modell.
 ersetzt nicht die transaktionale Kontrolle beim Speichern. Im Radwechselformular
 entfällt die laufende Vorabprüfung einschließlich „Erneut prüfen“. Die bestehenden
 serverseitigen Regeln gegen doppelte Belegung und fremde Reservierungen gelten
-beim Speichern weiterhin; ein automatischer Austausch belegter Radsätze ist
-damit nicht verbunden.
+beim Speichern weiterhin. Bei einem Radwechsel auf einem belegten Platz müssen
+Kundenname und Kennzeichen zur bisherigen Belegung passen. Dann werden alter Satz
+und neuer Satz atomar getauscht: Auslagerung des alten Satzes, neue Belegung und
+beide Historienschnappschüsse werden zusammen gespeichert. Das Formular erfasst
+die Daten des **neu eingelagerten** Radsatzes. Derselbe bereits eingelagerte
+Reifentyp wird als Konflikt zurückgewiesen, auch bei doppeltem Absenden. Bereits
+bekannte Sommer-/Wintersätze desselben Fahrzeugs und Platzes werden bei ihrer
+Rückkehr wiederverwendet. Bei einem Fehler bleibt die alte Belegung unverändert.
 Bei einer Auslagerung müssen `claim_id` der zuvor ermittelten Belegung und
 `confirmed: true` mitgesendet werden. So wird keine inzwischen geänderte Belegung
 versehentlich freigegeben. Reservierungen werden darüber nicht storniert.

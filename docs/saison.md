@@ -46,10 +46,14 @@ Reifenart ohne aktuellen Radwechselbeleg erscheinen als **unklar**. Erfasste
 Vorgangsschnappschüsse bleiben die Datengrundlage; fehlende historische Angaben
 werden nicht nachträglich aus veränderlichen Details ergänzt.
 
-Der bestehende Radwechselablauf legt eine neue Einlagerung an. Eine bisherige
-Belegung muss wie bisher ausdrücklich ausgelagert werden. Solange ein Winterradsatz
-in der Wintersaison noch aktiv belegt ist, bleibt er im offenen Bestand; der
-Saisonzähler hebt diese Belegung nicht automatisch auf.
+Beim Radwechsel werden die Radsätze auf dem bisherigen Kundenplatz in einer
+Transaktion getauscht. Der alte Satz wird aus der aktiven Belegung genommen, der
+neue Satz eingelagert. Eine vorherige manuelle Auslagerung ist dafür nicht nötig.
+So wird beispielsweise aus einem offenen Winterradsatz ein erledigter Wechsel mit
+Sommerreifen im Lager, während der zugeordnete Gesamtbestand gleich bleibt.
+Voraussetzung ist die Übereinstimmung von Kundenname und Kennzeichen mit der
+bisherigen Belegung. Bekannte saisonale Sätze werden bei späteren Wechseln
+wiederverwendet; alte Profiltiefen und Vorgangsdaten bleiben in der Historie.
 
 Die Anzeige ist ein Fortschritt des **jetzigen Bestands**, keine unveränderliche
 Gesamtzahl aller Saisontermine: Wird ein Radsatz dauerhaft ausgelagert, entfällt

@@ -120,6 +120,7 @@
   dialog.addEventListener('close',resetForm);
   function setFormMode(){
     document.getElementById('storage-title').textContent=reservationMode?'Reservierung':wheelChangeMode?'Radwechsel':'Neueinlagerung';
+    document.getElementById('storage-help').textContent=wheelChangeMode?'Daten des neu eingelagerten Radsatzes eingeben. Der bisherige Satz desselben Kunden und Fahrzeugs wird auf diesem Lagerplatz getauscht. Pflichtfelder sind mit * markiert.':'Pflichtfelder sind mit * markiert. Testdaten bitte ausdrücklich als fiktiv kennzeichnen.';
     save.textContent=reservationMode?'Reservierung speichern':wheelChangeMode?'Radwechsel speichern':'Einlagerung speichern';
     dialog.classList.toggle('reservation-mode',reservationMode);
     placeHint.hidden=wheelChangeMode;document.getElementById('place-recheck').hidden=wheelChangeMode;
@@ -217,7 +218,7 @@
       const data=await response.json();
       if(!response.ok){
         receipt.cancel();status.classList.add('is-error');
-        if(response.status===409&&wheelChangeMode){markError(field('number'),data.error||'Dieser Lagerplatz ist bereits vergeben.');}
+        if(response.status===409&&wheelChangeMode&&!data.fields){markError(field('number'),data.error||'Dieser Lagerplatz ist bereits vergeben.');}
         if(response.status===409&&!wheelChangeMode){placeAllowed=false;placeHint.textContent='Belegung oder Reservierung hat sich geändert. Bitte Eingaben prüfen und erneut prüfen.';placeHint.className='place-check is-unavailable';conflictPlace=input.area+'.'+input.number;markError(field('number'),'Lagerplatz '+conflictPlace+' ist belegt oder reserviert. Bitte einen anderen wählen.');}
         status.textContent=data.error||'Speichern fehlgeschlagen.';
         for(const [name,message] of Object.entries(data.fields||{})){
