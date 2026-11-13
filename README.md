@@ -97,6 +97,11 @@ Alte Exporte lassen sich unter **CSV-Import** nach einer Vorschau übernehmen.
 Die Einträge sind in Suche und Historie als **CSV-Import** markiert. Aktuelle
 Lagerbelegungen bleiben unverändert. [Importanleitung und Dateiformat](docs/csv-import.md).
 
+Die Startseite zeigt oben rechts die Zahl **reservierter** und **freier**
+Lagerplätze. Berücksichtigt werden nur aktive Lagerplätze und aktuelle Belegungen
+bzw. Reservierungen. Die Zähler aktualisieren sich nach Vorgängen, bei Rückkehr
+zur Seite und jede Minute automatisch.
+
 Die Anzeige **Ohne Bewegung** oben rechts meldet belegte Plätze ohne erfasste
 Einlagerung oder Radwechsel seit standardmäßig **12 Monaten**. Ein Klick zeigt
 Kunde, Kennzeichen und letzte Bewegung. Unter **Administration → Lagerplätze**
