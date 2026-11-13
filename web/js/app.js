@@ -18,7 +18,7 @@ function searchCard(item){
   const header=document.createElement('div');header.className='result-summary';
   const info=document.createElement('div');info.className='result-info';
   const title=document.createElement('strong');
-  const identity=[item.name||'Ohne Kundenzuordnung',item.plate,item.car].filter(Boolean);
+  const identity=[item.place,item.name||'Ohne Kundenzuordnung',item.plate,item.car].filter(Boolean);
   if(!item.plate&&!item.car)identity.push('Keine Fahrzeugangaben im Altbestand');
   title.textContent=identity.join(' · ');
   const event=document.createElement('small');
@@ -28,8 +28,7 @@ function searchCard(item){
   event.textContent=`${labels[item.operation]||'Vorgang'} · ${state} · ${stamp}${item.source==='legacy'?' · Altbestand':''}`;
   info.append(title,event);
   if(item.pdf_url){const link=document.createElement('a');link.href=item.pdf_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Beleg als PDF';info.append(link);}
-  const place=document.createElement('span');place.className='place';place.textContent=item.place;
-  header.append(info,place);card.append(header);
+  header.append(info);card.append(header);
   const data=item.details||{},warnings=document.createElement('div');warnings.className='result-warnings';
   const warn=(text,kind)=>{const row=document.createElement('p');row.className='result-warning '+kind;const label=document.createElement('span');label.textContent=text;row.append(warningIcon(),label);warnings.append(row)};
   if(data.notes?.trim())warn('Hinweis: '+data.notes,'notes-warning');
