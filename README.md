@@ -20,6 +20,7 @@ Historie und druckbaren DIN-A4-Belegen. Ohne Cloudpflicht.
 
 | Bereich | Was bereits funktioniert |
 | --- | --- |
+| Historie | Eigene Seite mit Suche, Vorgangs-/Zeitraum-/Statusfiltern, Seitenwechsel, vollständigen Details und PDF-Nachdruck. |
 | Reifenwarnungen | Anzeige oben rechts mit aktuellem Zähler; Übersicht aller Verschleißwarnungen einschließlich Historie. |
 | Schnellsuche | Kunden, Kennzeichen, Lagerplätze und Vorgänge suchen; Karten mit allen Vorgangsdaten aufklappen. Hinweise und niedrige Profiltiefen direkt sehen – auch bei abgeschlossenen Auslagerungen. |
 | Neueinlagerung | Kunden- und Fahrzeugdaten, beide Achsen, Profiltiefen und Zubehör erfassen; Lagerplatz direkt prüfen. |
@@ -34,9 +35,8 @@ Aktive Belegungen und Reservierungen dürfen sich nicht überschneiden. Diese Re
 wird auch in der Datenbank abgesichert. Die Ausgangskonfiguration enthält 640 Lagerplätze in den Bereichen
 **C1, C2, C3, C4, OL und OR**. Weitere Lagerorte und Zahlenbereiche sind im Adminbereich verwaltbar.
 
-Noch offen sind unter anderem eine eigenständige Historienansicht, CSV-Import und
-die Pflege von Auswahllisten im Adminbereich. Die Historie ist bereits über die
-Suche erreichbar. Der Radwechsel erfasst aktuell einen eigenen Einlagerungsvorgang;
+Noch offen sind unter anderem CSV-Import und die Pflege von Auswahllisten im Adminbereich.
+Der Radwechsel erfasst aktuell einen eigenen Einlagerungsvorgang;
 er tauscht keinen bereits belegten Radsatz automatisch aus.
 
 ## Schnellstart
@@ -147,6 +147,7 @@ Automatisierte Tests verwenden temporäre Datenbanken und ausschließlich fiktiv
 
 ## Dokumentation
 
+- [Historie verwenden](docs/historie.md)
 - [Betrieb, Datenbank und HTTP-API](docs/betrieb-und-api.md)
 - [Lagerorte und Nummernbereiche verwalten](docs/lagerplaetze.md)
 - [PDF-Designer und Admin-Einrichtung](docs/pdf-designer.md)
