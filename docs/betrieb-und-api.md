@@ -86,6 +86,21 @@ sowie Leerzeichen und Bindestriche. Ergebnisse enthalten unter anderem `place`,
 `name`, `plate`, `car`, `date`, `operation`, `status`, `active` und `pdf_url`.
 Abgeschlossene Vorgänge bleiben auffindbar, auch wenn der Platz wieder frei ist.
 
+`details` enthält die damaligen Angaben zu Marke/Modell, Reifen-/Felgenart,
+Reifengrößen und Profiltiefen beider Achsen, Zubehör samt Aufbewahrungsorten,
+Monteur und Hinweisen. Die Daten stammen aus dem unveränderlichen Vorgangsschnappschuss,
+nicht aus einer späteren Belegung desselben Platzes. Bei Reservierungen und
+Altbeständen werden nicht erfasste Angaben nicht ergänzt.
+
+Auf der Startseite lassen sich die Ergebniskarten per Pfeil oder mit der Tastatur
+aufklappen. Hinweise erscheinen bereits in der geschlossenen Karte gelb/orange
+mit Warnsymbol. Für die Profiltiefe gelten die festgelegten App-Warnschwellen:
+**Sommer ≤ 3 mm**, **Winter/Ganzjahr ≤ 4 mm**, jeweils getrennt für VA und HA.
+Die Karte nennt Messwert und Warnschwelle. Fehlende Messwerte oder unbekannte
+Reifenarten lösen keine erfundene Verschleißbewertung aus. Historische Warnungen
+beziehen sich auf den Messwert des jeweiligen Vorgangs; sie sind keine neue Messung.
+
+
 ### Schreiben und Platzprüfung
 
 JSON-Anfragen verwenden `area` und `number` für den Platz, `name` und `plate`

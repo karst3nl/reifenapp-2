@@ -20,7 +20,7 @@ Historie und druckbaren DIN-A4-Belegen. Ohne Cloudpflicht.
 
 | Bereich | Was bereits funktioniert |
 | --- | --- |
-| Schnellsuche | Kunden, Kennzeichen, Lagerplätze und Vorgänge suchen – einschließlich abgeschlossener Auslagerungen. |
+| Schnellsuche | Kunden, Kennzeichen, Lagerplätze und Vorgänge suchen; Karten mit allen Vorgangsdaten aufklappen. Hinweise und niedrige Profiltiefen direkt sehen – auch bei abgeschlossenen Auslagerungen. |
 | Neueinlagerung | Kunden- und Fahrzeugdaten, beide Achsen, Profiltiefen und Zubehör erfassen; Lagerplatz direkt prüfen. |
 | Radwechsel | Eigenes Formular mit Reifendaten und eindeutiger Kennzeichnung des Vorgangs im Backend. |
 | Reservierung | Freie Lagerplätze für Kunden und Fahrzeuge reservieren; passende Reservierungen bei der Einlagerung übernehmen. |
