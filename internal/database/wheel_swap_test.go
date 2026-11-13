@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"path/filepath"
 	"sync"
@@ -55,7 +56,7 @@ func TestWheelSwapKeepsPlaceAndReusesSeasonalSets(t *testing.T) {
 	if err = db.QueryRow("SELECT tire_set_id FROM storage_claims WHERE id=?", fourth).Scan(&returned); err != nil || returned != summerID {
 		t.Fatal("summer identity lost", returned, err)
 	}
-	for table, want := range map[string]int{"customers": 1, "vehicles": 1, "tire_sets": 2, "storage_claims": 4, "history_events": 7, "storage_releases": 3} {
+	for table, want := range map[string]int{"customers": 1, "vehicles": 1, "tire_sets": 2, "storage_claims": 4, "history_events": 4, "storage_releases": 0} {
 		var count int
 		if err = db.QueryRow("SELECT count(*) FROM " + table).Scan(&count); err != nil || count != want {
 			t.Fatal(table, count, err)
@@ -66,12 +67,16 @@ func TestWheelSwapKeepsPlaceAndReusesSeasonalSets(t *testing.T) {
 		t.Fatal(active, err)
 	}
 	rows, err := Search(ctx, db, input.Place())
-	if err != nil || len(rows) != 7 || !rows[0].Active || rows[0].Operation != "wheel_change" {
+	if err != nil || len(rows) != 4 || !rows[0].Active || rows[0].Operation != "wheel_change" {
 		t.Fatal(rows, err)
 	}
-	old, err := Receipt(ctx, db, first, "release")
-	if err != nil || old.Car != "VW Golf" {
-		t.Fatal("outgoing snapshot altered", old, err)
+	if _, err := Receipt(ctx, db, first, "release"); !errors.Is(err, sql.ErrNoRows) {
+		t.Fatal("wheel swap created release receipt", err)
+	}
+	for _, row := range rows {
+		if row.Operation == "release" {
+			t.Fatal("wheel swap created Auslagerung history")
+		}
 	}
 	original, err := Receipt(ctx, db, first, "storage")
 	if err != nil || original.Car != "VW Golf" {
@@ -79,6 +84,17 @@ func TestWheelSwapKeepsPlaceAndReusesSeasonalSets(t *testing.T) {
 	}
 	if rows[len(rows)-1].Details.FrontDepth != "6.5" || rows[len(rows)-1].Details.TireType != "Winter" {
 		t.Fatal("original tire details changed")
+	}
+	if err = ReleaseStorage(ctx, db, input.Area, input.Number, fourth); err != nil {
+		t.Fatal(err)
+	}
+	var releases int
+	if err = db.QueryRow("SELECT count(*) FROM storage_releases").Scan(&releases); err != nil || releases != 1 {
+		t.Fatal("explicit release log", releases, err)
+	}
+	finalRows, err := Search(ctx, db, input.Place())
+	if err != nil || len(finalRows) != 5 || finalRows[0].Operation != "release" {
+		t.Fatal("explicit release history", finalRows, err)
 	}
 }
 
@@ -127,7 +143,7 @@ func TestWheelSwapRejectsForeignIdentityAndDuplicateType(t *testing.T) {
 	}
 }
 
-func TestWheelSwapFailureRollsBackBothMovements(t *testing.T) {
+func TestWheelSwapFailureRollsBackReplacement(t *testing.T) {
 	db := testDB(t)
 	ctx := context.Background()
 	input := storageExample()
@@ -199,7 +215,7 @@ func TestConcurrentWheelSwapsPreserveOneOccupancy(t *testing.T) {
 	if err = a.QueryRow("SELECT count(*) FROM storage_claims WHERE status='active'").Scan(&count); err != nil || count != 1 {
 		t.Fatal(count, err)
 	}
-	if err = a.QueryRow("SELECT count(*) FROM history_events").Scan(&count); err != nil || count != 3 {
+	if err = a.QueryRow("SELECT count(*) FROM history_events").Scan(&count); err != nil || count != 2 {
 		t.Fatal(count, err)
 	}
 }

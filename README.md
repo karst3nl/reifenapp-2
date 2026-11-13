@@ -25,7 +25,7 @@ Historie und druckbaren DIN-A4-Belegen. Ohne Cloudpflicht.
 | Reifenwarnungen | Anzeige oben rechts mit aktuellem Zähler; Übersicht aller Verschleißwarnungen einschließlich Historie. |
 | Schnellsuche | Kunden, Kennzeichen, Lagerplätze und Vorgänge suchen; Karten mit allen Vorgangsdaten aufklappen. Hinweise und niedrige Profiltiefen direkt sehen – auch bei abgeschlossenen Auslagerungen. |
 | Neueinlagerung | Kunden- und Fahrzeugdaten, beide Achsen, Profiltiefen und Zubehör erfassen; Lagerplatz direkt prüfen. |
-| Radwechsel | Sommer- und Winterradsatz desselben Kunden auf demselben Lagerplatz tauschen; beide Bewegungen werden gemeinsam gespeichert. |
+| Radwechsel | Sommer- und Winterradsatz desselben Kunden auf demselben Lagerplatz tauschen; der Tausch wird als ein Radwechsel gespeichert. |
 | Reservierung | Freie Lagerplätze für Kunden und Fahrzeuge reservieren; passende Reservierungen bei der Einlagerung übernehmen. |
 | Auslagerung | Belegung nach Bestätigung aufheben und den Platz wieder freigeben; Historie erhalten. |
 | Druckbelege | Nach jedem erfolgreichen Vorgang automatisch eine einseitige A4-PDF im neuen Tab öffnen; Nachdruck über die Suche. |
@@ -38,8 +38,9 @@ wird auch in der Datenbank abgesichert. Die Ausgangskonfiguration enthält 640 L
 
 Noch offen sind unter anderem CSV-Import und die Pflege von Auswahllisten im Adminbereich.
 Beim Radwechsel bleibt der Lagerplatz dem Kunden zugeordnet. Der bisher gelagerte
-Satz wird entnommen und der andere Satz auf demselben Platz eingelagert; die
-Vorgänge bleiben in der Historie erhalten.
+Satz wird abgelöst und der andere Satz auf demselben Platz eingelagert. Der
+Tausch erzeugt nur einen Radwechsel-Eintrag, keine Auslagerung. Frühere Angaben
+bleiben in der Historie erhalten.
 
 ## Schnellstart
 

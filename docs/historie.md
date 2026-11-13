@@ -46,12 +46,13 @@ unveränderten damaligen Vorgangsdaten.
 
 ## Radwechsel auf dem bisherigen Kundenplatz
 
-Ein Radwechsel protokolliert die Entnahme des bisher eingelagerten Satzes als
-Auslagerung und die Einlagerung des anderen Satzes als Radwechsel mit demselben
-Lagerplatz und Zeitpunkt. Beide Bewegungen werden atomar gespeichert. Das alte
-Reifenprofil und der alte Beleg bleiben erhalten; nur die neue Belegung ist aktiv.
-Bei späteren Wechseln kann der bereits bekannte Sommer- beziehungsweise Wintersatz
-wieder demselben Platz zugeordnet werden.
+Ein Radwechsel ersetzt die aktive Belegung auf demselben Kundenplatz und erzeugt
+genau einen neuen Historieneintrag der Art **Radwechsel**. Die bisherige Belegung
+wird intern abgelöst; es entstehen weder ein Auslagerungsvorgang noch ein
+Auslagerungsbeleg. Alte Reifenangaben und ursprüngliche Belege bleiben erhalten.
+Nur das ausdrückliche Auslagerungsformular protokolliert eine Auslagerung und
+gibt den Kundenplatz frei. Bereits zuvor gespeicherte Historieneinträge werden
+durch diese Änderung nicht nachträglich gelöscht.
 
 ## Aktualisieren und Fehlerfälle
 

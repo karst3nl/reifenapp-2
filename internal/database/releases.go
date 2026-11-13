@@ -74,7 +74,7 @@ func ReleaseStorage(ctx context.Context, db *sql.DB, area string, number int, cl
 	return tx.Commit()
 }
 
-// releaseClaim participates in its caller's transaction, including wheel swaps.
+// releaseClaim records an explicitly confirmed Auslagerung in its caller's transaction.
 func releaseClaim(ctx context.Context, tx *sql.Tx, claimID int64, stamp string) error {
 	result, err := tx.ExecContext(ctx, "UPDATE storage_claims SET status='released' WHERE id=? AND kind='occupancy' AND status='active'", claimID)
 	if err != nil {

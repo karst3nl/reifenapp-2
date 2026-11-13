@@ -120,8 +120,11 @@ entfällt die laufende Vorabprüfung einschließlich „Erneut prüfen“. Die b
 serverseitigen Regeln gegen doppelte Belegung und fremde Reservierungen gelten
 beim Speichern weiterhin. Bei einem Radwechsel auf einem belegten Platz müssen
 Kundenname und Kennzeichen zur bisherigen Belegung passen. Dann werden alter Satz
-und neuer Satz atomar getauscht: Auslagerung des alten Satzes, neue Belegung und
-beide Historienschnappschüsse werden zusammen gespeichert. Das Formular erfasst
+und neuer Satz atomar getauscht: Die bisherige Belegung wird intern abgelöst,
+die neue Belegung und genau ein Radwechsel-Schnappschuss werden zusammen gespeichert.
+Es entsteht weder ein Eintrag in `storage_releases` noch ein Auslagerungsvorgang
+oder Auslagerungsbeleg. Eine Auslagerung erfolgt nur über das dafür vorgesehene
+Formular. Frühere Historienschnappschüsse bleiben unverändert. Das Formular erfasst
 die Daten des **neu eingelagerten** Radsatzes. Derselbe bereits eingelagerte
 Reifentyp wird als Konflikt zurückgewiesen, auch bei doppeltem Absenden. Bereits
 bekannte Sommer-/Wintersätze desselben Fahrzeugs und Platzes werden bei ihrer

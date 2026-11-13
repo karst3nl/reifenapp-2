@@ -59,6 +59,12 @@ func TestWheelChangesHTTP(t *testing.T) {
 		t.Fatal(count, err)
 	}
 	w = call(string(body))
+	if err = db.QueryRow("SELECT count(*) FROM history_events WHERE operation='release'").Scan(&count); err != nil || count != 0 {
+		t.Fatal("swap generated release event", count, err)
+	}
+	if err = db.QueryRow("SELECT count(*) FROM storage_releases").Scan(&count); err != nil || count != 0 {
+		t.Fatal("swap generated release log", count, err)
+	}
 	var duplicate struct{ Fields map[string]string }
 	if err = json.Unmarshal(w.Body.Bytes(), &duplicate); err != nil || w.Code != 409 || duplicate.Fields["tire_type"] == "" {
 		t.Fatal(w.Code, w.Body, err)

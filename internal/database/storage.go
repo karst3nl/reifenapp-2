@@ -61,8 +61,18 @@ func createStorage(ctx context.Context, db *sql.DB, input models.StorageInput, o
 		if previousType != "" && previousType == input.TireType {
 			return 0, fmt.Errorf("%w: %w", ErrPlaceUnavailable, ErrWheelChangeSameType)
 		}
-		if err = releaseClaim(ctx, tx, checked.claimID, stamp); err != nil {
-			return 0, err
+		// Retire only the old occupancy. A wheel change is not an Auslagerung:
+		// no storage_releases entry and no separate release history/PDF.
+		retired, retireErr := tx.ExecContext(ctx, "UPDATE storage_claims SET status='released' WHERE id=? AND kind='occupancy' AND status='active'", checked.claimID)
+		if retireErr != nil {
+			return 0, retireErr
+		}
+		affected, retireErr := retired.RowsAffected()
+		if retireErr != nil {
+			return 0, retireErr
+		}
+		if affected != 1 {
+			return 0, ErrReleaseChanged
 		}
 		// Reuse the returning seasonal set for this vehicle and place when known.
 		err = tx.QueryRowContext(ctx, `SELECT t.id FROM tire_sets t

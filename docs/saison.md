@@ -48,7 +48,8 @@ werden nicht nachträglich aus veränderlichen Details ergänzt.
 
 Beim Radwechsel werden die Radsätze auf dem bisherigen Kundenplatz in einer
 Transaktion getauscht. Der alte Satz wird aus der aktiven Belegung genommen, der
-neue Satz eingelagert. Eine vorherige manuelle Auslagerung ist dafür nicht nötig.
+neue Satz eingelagert. Der Tausch wird ausschließlich als Radwechsel gespeichert;
+ein Auslagerungsvorgang und ein zusätzlicher Auslagerungsbeleg entstehen nicht.
 So wird beispielsweise aus einem offenen Winterradsatz ein erledigter Wechsel mit
 Sommerreifen im Lager, während der zugeordnete Gesamtbestand gleich bleibt.
 Voraussetzung ist die Übereinstimmung von Kundenname und Kennzeichen mit der
