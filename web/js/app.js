@@ -17,14 +17,16 @@ function searchCard(item){
   const card=document.createElement('article');card.className='result search-result';
   const header=document.createElement('div');header.className='result-summary';
   const info=document.createElement('div');info.className='result-info';
-  const title=document.createElement('strong');title.textContent=item.name||'Ohne Kundenzuordnung';
-  const meta=document.createElement('small');meta.textContent=[item.plate,item.car].filter(Boolean).join(' · ')||'Keine Fahrzeugangaben im Altbestand';
+  const title=document.createElement('strong');
+  const identity=[item.name||'Ohne Kundenzuordnung',item.plate,item.car].filter(Boolean);
+  if(!item.plate&&!item.car)identity.push('Keine Fahrzeugangaben im Altbestand');
+  title.textContent=identity.join(' · ');
   const event=document.createElement('small');
   const labels={storage:'Neueinlagerung',wheel_change:'Radwechsel',reservation:'Reservierung',release:'Auslagerung'};
   const state=item.operation==='release'?'Ausgelagert':item.active?(item.kind==='reservation'?'Reserviert':'Eingelagert'):item.status==='converted'?'In Einlagerung umgewandelt':'Abgeschlossen';
   const date=new Date(item.date),stamp=Number.isNaN(date.getTime())?'Zeitpunkt unbekannt':date.toLocaleString('de-DE');
   event.textContent=`${labels[item.operation]||'Vorgang'} · ${state} · ${stamp}${item.source==='legacy'?' · Altbestand':''}`;
-  info.append(title,meta,event);
+  info.append(title,event);
   if(item.pdf_url){const link=document.createElement('a');link.href=item.pdf_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Beleg als PDF';info.append(link);}
   const place=document.createElement('span');place.className='place';place.textContent=item.place;
   header.append(info,place);card.append(header);
