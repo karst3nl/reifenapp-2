@@ -6,7 +6,7 @@ Eine Open-Source-Reifenlagerverwaltung für Kfz-Werkstätten: Kunden und Lagerpl
 finden, Radsätze einlagern, reservieren und auslagern – mit nachvollziehbarer
 Historie und druckbaren DIN-A4-Belegen. Ohne Cloudpflicht.
 
-[Loslegen](#schnellstart) · [Funktionen](#funktionen) · [Dokumentation](#dokumentation) · [Mitmachen](#mitmachen)
+[Loslegen](#schnellstart) · [Raspberry Pi / SSH](docs/raspberry-pi.md) · [Funktionen](#funktionen) · [Dokumentation](#dokumentation) · [Mitmachen](#mitmachen)
 
 **MIT-Lizenz** · **Go ≥ 1.23** · **SQLite** · **HTML, CSS & Vanilla JavaScript**
 
@@ -115,7 +115,17 @@ Für den USB-Etikettendruck bietet **Administration → Etikettendrucker** eine 
 ist zunächst deaktiviert. Vor Aktivierung CUPS und den passenden Argox-Treiber
 einrichten und einen Ausdruck am Gerät prüfen. [Einrichtung und Druckablauf](docs/etikettendrucker.md).
 
+### Raspberry Pi als Werkstattserver
+
+Für den Betrieb ohne Bildschirm gibt es eine [vollständige SSH-Anleitung](docs/raspberry-pi.md)
+mit systemd-Autostart, stabiler LAN-Adresse, getrenntem Datenverzeichnis, GitHub-Updates,
+Backups und kontrolliertem Rückfall. Dienstvorlage und Update-Skript liegen unter
+[`deploy/`](deploy/). Der Dienst läuft auch nach dem Abmelden und startet beim Pi-Neustart.
+
 ## Aktualisieren
+
+**Pi-Dienst:** Das [Update-Verfahren per SSH](docs/raspberry-pi.md#5-updates-aus-github-per-ssh)
+verwenden; die folgenden Befehle gelten für den manuellen Entwicklungs-/Desktopstart.
 
 Beende den laufenden Server mit **Strg+C** und prüfe eigene Codeänderungen mit
 `git status`, bevor du aktualisierst:
@@ -144,9 +154,10 @@ Adminbereich; die normalen Werkstattfunktionen haben derzeit keinen Login.
 LAN-Betrieb braucht daher ein passend abgesichertes Werkstattnetz. Eine öffentliche
 Internetbereitstellung ist nicht der vorgesehene Betriebsmodus.
 
-Der spätere Betrieb auf einem **Raspberry Pi** ist vorgesehen. Wegen CGO empfiehlt
-sich zunächst der Build direkt auf dem Gerät mit Go und C-Compiler. Auf echter
-Pi-Hardware ist die Anwendung noch nicht geprüft.
+Der Betrieb auf einem **Raspberry Pi** ist mit systemd-Dienst und SSH-Updateverfahren
+vorbereitet. Wegen CGO wird direkt auf dem Gerät mit Go und C-Compiler gebaut.
+Auf echter Pi-Hardware ist die Anwendung noch nicht geprüft; Neustart, LAN-Zugriff
+und Etikettendruck vor Ort testen.
 
 ## Entwicklung
 
@@ -160,6 +171,7 @@ internal/               Datenbank, HTTP-Handler, Modelle und PDF-Erzeugung
 web/                    HTML, CSS und Vanilla JavaScript
 migrations/             Versionierte SQL-Migrationen
 docs/                   Anleitungen, Projektübersicht und Prüfberichte
+deploy/                 systemd-Dienst und SSH-Update-Skript
 AGENTS.md               Arbeitsregeln für Beiträge
 data/                   Lokale Laufzeitdaten, nicht versioniert
 ```
@@ -176,6 +188,9 @@ go build -o bin/reifenapp .
 Automatisierte Tests verwenden temporäre Datenbanken und ausschließlich fiktive Daten.
 
 ## Dokumentation
+
+- [Raspberry Pi: SSH, Autostart, LAN und GitHub-Updates](docs/raspberry-pi.md)
+- [USB-Etikettendrucker einrichten](docs/etikettendrucker.md)
 
 - [Backups herunterladen, lesen und wiederherstellen](docs/backups.md)
 - [Saisonanzeige und Zählweise](docs/saison.md)
