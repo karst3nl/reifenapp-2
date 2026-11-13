@@ -9,9 +9,10 @@ function searchCard(item){
   const header=document.createElement('div');header.className='result-summary';
   const info=document.createElement('div');info.className='result-info';
   const title=document.createElement('strong');
-  const identity=[item.place,item.name||'Ohne Kundenzuordnung',item.plate,item.car].filter(Boolean);
+  const identity=[item.name||'Ohne Kundenzuordnung',item.plate,item.car].filter(Boolean);
   if(!item.plate&&!item.car)identity.push('Keine Fahrzeugangaben im Altbestand');
-  title.textContent=identity.join(' · ');
+  if(item.place){const place=document.createElement('span');place.className='result-place';place.textContent=item.place;title.append(place,document.createTextNode(' · '));}
+  title.append(document.createTextNode(identity.join(' · ')));
   const event=document.createElement('small');
   const labels={storage:'Neueinlagerung',wheel_change:'Radwechsel',reservation:'Reservierung',release:'Auslagerung',imported:item.details?.import?.operation||'Altvorgang'};
   const state=item.source==='csv'?'CSV-Archiv · Lagerstatus nicht abgeleitet':item.operation==='release'?'Ausgelagert':item.active?(item.kind==='reservation'?'Reserviert':'Eingelagert'):item.status==='converted'?'In Einlagerung umgewandelt':'Abgeschlossen';
