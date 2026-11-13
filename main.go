@@ -53,6 +53,7 @@ func main() {
 	mux.HandleFunc("GET /api/search", handlers.Search(db))
 	mux.HandleFunc("GET /api/history", handlers.History(db))
 	mux.HandleFunc("GET /api/warnings", handlers.TreadWarnings(db))
+	mux.HandleFunc("GET /api/capacity", handlers.Capacity(db))
 	mux.HandleFunc("GET /api/season", handlers.SeasonProgress(db))
 	mux.HandleFunc("GET /api/inactivity", handlers.Inactivity(db))
 	mux.HandleFunc("GET /api/receipts/{claim}/{operation}", handlers.Receipts(db, header))
