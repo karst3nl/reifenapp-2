@@ -13,11 +13,11 @@ function searchCard(item){
   if(!item.plate&&!item.car)identity.push('Keine Fahrzeugangaben im Altbestand');
   title.textContent=identity.join(' · ');
   const event=document.createElement('small');
-  const labels={storage:'Neueinlagerung',wheel_change:'Radwechsel',reservation:'Reservierung',release:'Auslagerung'};
-  const state=item.operation==='release'?'Ausgelagert':item.active?(item.kind==='reservation'?'Reserviert':'Eingelagert'):item.status==='converted'?'In Einlagerung umgewandelt':'Abgeschlossen';
+  const labels={storage:'Neueinlagerung',wheel_change:'Radwechsel',reservation:'Reservierung',release:'Auslagerung',imported:item.details?.import?.operation||'Altvorgang'};
+  const state=item.source==='csv'?'CSV-Archiv · Lagerstatus nicht abgeleitet':item.operation==='release'?'Ausgelagert':item.active?(item.kind==='reservation'?'Reserviert':'Eingelagert'):item.status==='converted'?'In Einlagerung umgewandelt':'Abgeschlossen';
   const date=new Date(item.date),stamp=Number.isNaN(date.getTime())?'Zeitpunkt unbekannt':date.toLocaleString('de-DE');
   event.textContent=`${labels[item.operation]||'Vorgang'} · ${state} · ${stamp}${item.source==='legacy'?' · Altbestand':''}`;
-  info.append(title,event);
+  info.append(title);if(item.source==='csv'){const badge=document.createElement('span');badge.className='csv-badge';badge.textContent='CSV-Import';info.append(badge)}info.append(event);
   if(item.pdf_url){const link=document.createElement('a');link.href=item.pdf_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Beleg als PDF';info.append(link);}
   header.append(info);card.append(header);
   const data=item.details||{},warnings=document.createElement('div');warnings.className='result-warnings';
@@ -39,7 +39,17 @@ function searchCard(item){
   add('Reifendaten Vorderachse',size(data.front));add('Reifendaten Hinterachse',size(data.rear));add('Profiltiefe Vorderachse',depth(data.front_depth));add('Profiltiefe Hinterachse',depth(data.rear_depth));
   for(const [key,name] of [['hubcaps','Radkappen'],['bolts','Radschrauben'],['lock','Felgenschloss']]){const accessory=data.accessories?.[key];add(name,accessory?(accessory.present?'Vorhanden · Lagerort: '+(accessory.location||'Nicht erfasst'):'Nicht vorhanden'):'');}
   add('Monteur',data.mechanic);add('Hinweise',data.notes);add('Historieneintrag',item.event_id);
-  if(item.source==='legacy')add('Datenstand','Altbestand: Nicht mehr vorhandene Angaben können nicht rekonstruiert werden.');
+  if(item.source==='csv')add('Datenstand','Importierter historischer CSV-Vorgang. Keine aktuelle Lagerbelegung abgeleitet.');
+  else if(item.source==='legacy')add('Datenstand','Altbestand: Nicht mehr vorhandene Angaben können nicht rekonstruiert werden.');
   else add('Datenstand','Gespeicherte Angaben zu diesem Vorgang.');
-  details.append(summary,grid);card.append(details);return card;
+  details.append(summary,grid);
+  if(data.import){
+   add('CSV-Datei',data.import.filename);add('Originalzeile',data.import.line);add('Importiert am',new Date(data.import.imported_at).toLocaleString('de-DE'));
+   const original=document.createElement('details');original.className='csv-original';const heading=document.createElement('summary');heading.textContent='Alle CSV-Originalwerte anzeigen';original.append(heading);
+   const fields=document.createElement('dl');fields.className='result-data';
+   for(const field of data.import.fields||[]){const group=document.createElement('div'),term=document.createElement('dt'),value=document.createElement('dd');term.textContent=field.column;value.textContent=field.missing?'In dieser Zeile nicht enthalten':field.value||'(leer)';group.append(term,value);fields.append(group)}
+   original.append(fields);details.append(original);
+   if(data.import.warnings?.length){const notes=document.createElement('ul');notes.className='csv-notes';for(const warning of data.import.warnings){const entry=document.createElement('li');entry.textContent=warning;notes.append(entry)}details.append(notes)}
+  }
+  card.append(details);return card;
 }

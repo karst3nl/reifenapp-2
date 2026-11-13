@@ -4,15 +4,15 @@
  let csrf='',state=null,defaults=null,values={},fields=[],selected='',dirty=false,undo=[],redo=[],drag=null,previewURL='',counter=0,busy=false,loadGeneration=0;
  const status=(message,error=false)=>{$('editor-status').textContent=message;$('editor-status').classList.toggle('error',error)};
  async function api(path,options={}){
-  const headers={'Content-Type':'application/json',...(options.headers||{})};if(csrf)headers['X-CSRF-Token']=csrf;
+  const headers={...(options.form?{}:{'Content-Type':'application/json'}),...(options.headers||{})};if(csrf)headers['X-CSRF-Token']=csrf;
   let response;try{response=await fetch('/api/admin/'+path,{...options,headers,cache:'no-store'})}catch{throw Error('Verbindung zum Server fehlgeschlagen. Bitte erneut versuchen.');}
   if(response.status===401&&path!=='login'){showLogin();$('login-status').textContent='Sitzung abgelaufen. Bitte neu anmelden.';throw Error('Sitzung abgelaufen. Bitte neu anmelden.');}
   if(!response.ok){let data;try{data=await response.json()}catch{}throw Error(data?.error||'Anfrage fehlgeschlagen.');}
   if(options.download){const match=/filename="([a-zA-Z0-9._-]+)"/.exec(response.headers.get('Content-Disposition')||'');return {blob:await response.blob(),filename:match?.[1]||'reifenapp-backup.zip'};}
   return options.pdf?response.blob():response.json();
  }
- function hideSections(){for(const id of ['admin-nav','areas-panel','backup-panel','editor'])$(id).hidden=true;}
- function showLogin(){clearBackupLink();hideSections();loadGeneration++;csrf='';$('password-form').reset();$('password').value='';$('login-panel').hidden=false;$('editor').hidden=true;$('logout').hidden=true;$('change-password').hidden=true;$('password-panel').hidden=true;if(previewURL){URL.revokeObjectURL(previewURL);previewURL=''}$('pdf-preview').removeAttribute('src');}
+ function hideSections(){for(const id of ['admin-nav','areas-panel','backup-panel','import-panel','editor'])$(id).hidden=true;}
+ function showLogin(){clearCSVImport();clearBackupLink();hideSections();loadGeneration++;csrf='';$('password-form').reset();$('password').value='';$('login-panel').hidden=false;$('editor').hidden=true;$('logout').hidden=true;$('change-password').hidden=true;$('password-panel').hidden=true;if(previewURL){URL.revokeObjectURL(previewURL);previewURL=''}$('pdf-preview').removeAttribute('src');}
  function selectedElement(){return state?.template.elements.find(e=>e.id===selected)}
  function remember(){undo.push(clone(state.template));if(undo.length>80)undo.shift();redo=[];dirty=true;}
  function round(n){return Math.round(n*100)/100}
@@ -56,15 +56,15 @@
   fields=await api('fields');for(const id of ['palette-field','prop-field']){$(id).replaceChildren();for(const f of fields)$(id).add(new Option(f.label,f.key))}
   if(state&&dirty){$('operation').value=state.operation;const [data,sample]=await Promise.all([api('layout?operation='+state.operation),api('values?operation='+state.operation)]);defaults=data.default;values=sample;paint();zoom();status('Sitzung erneuert. Ungespeicherter Entwurf bleibt geöffnet.');}else{await load();}await document.fonts.load('12px Receipt');await document.fonts.load('bold 12px Receipt');paint();await selectSection(activeSection);
  }
- let activeSection='areas',areaRevision=0,areaSaving=false,areaDirty=false,areaGeneration=0,backupSaving=false,backupURL='';
+ let activeSection='areas',areaRevision=0,areaSaving=false,areaDirty=false,areaGeneration=0,backupSaving=false,backupURL='',importBusy=false,importHash='';
  const areaMessage=(text,error=false)=>{$('area-status').textContent=text;$('area-status').classList.toggle('error',error)};
  async function selectSection(section){
-  if(busy||areaSaving||backupSaving)return;
+  if(busy||areaSaving||backupSaving||importBusy)return;
   if(section!==activeSection&&areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;
   if(section!==activeSection){areaDirty=false;$('area-form').hidden=true;}
-  activeSection=section;$('editor').hidden=section!=='pdf';$('areas-panel').hidden=section!=='areas';$('backup-panel').hidden=section!=='backup';
-  for(const [id,name] of [['nav-areas','areas'],['nav-pdf','pdf'],['nav-backup','backup']]){$(id).setAttribute('aria-pressed',String(name===section));$(id).classList.toggle('secondary',name!==section);}
-  if(section==='areas')await loadAreas();else if(section==='backup')await loadBackupInfo();else{zoom();paint();}
+  activeSection=section;$('editor').hidden=section!=='pdf';$('areas-panel').hidden=section!=='areas';$('backup-panel').hidden=section!=='backup';$('import-panel').hidden=section!=='import';
+  for(const [id,name] of [['nav-areas','areas'],['nav-pdf','pdf'],['nav-backup','backup'],['nav-import','import']]){$(id).setAttribute('aria-pressed',String(name===section));$(id).classList.toggle('secondary',name!==section);}
+  if(section==='areas')await loadAreas();else if(section==='backup')await loadBackupInfo();else if(section==='import')await loadCSVImports();else{zoom();paint();}
  }
  async function loadAreas(){
   const generation=++areaGeneration;$('areas-status').textContent='Lagerorte werden geladen …';
@@ -82,7 +82,7 @@
   $('area-title').textContent=a?'Lagerort bearbeiten':'Lagerort anlegen';$('area-code').value=a?.code||'';$('area-code').readOnly=!!a;$('area-first').value=a?.first_number||'';$('area-last').value=a?.last_number||'';areaMessage('');areaSummary();$('area-form').scrollIntoView({behavior:'smooth'});$(a?'area-first':'area-code').focus();
  }
  function areaSummary(){const first=Number($('area-first').value),last=Number($('area-last').value);$('area-summary').textContent=first>0&&last>=first?`${last-first+1} Plätze · ${$('area-code').value}.${first} bis ${$('area-code').value}.${last}`:'';}
- $('nav-areas').onclick=()=>selectSection('areas');$('nav-pdf').onclick=()=>selectSection('pdf');$('nav-backup').onclick=()=>selectSection('backup');
+ $('nav-areas').onclick=()=>selectSection('areas');$('nav-pdf').onclick=()=>selectSection('pdf');$('nav-backup').onclick=()=>selectSection('backup');$('nav-import').onclick=()=>selectSection('import');
  $('area-new').onclick=()=>editArea(null);$('areas-reload').onclick=()=>{if(areaSaving)return;if(areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;areaDirty=false;$('area-form').hidden=true;loadAreas();};
  $('area-cancel').onclick=()=>{if(areaSaving)return;if(areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;areaDirty=false;$('area-form').hidden=true;};
  $('area-form').addEventListener('input',()=>{areaDirty=true;areaSummary()});
@@ -109,6 +109,40 @@
   }catch(error){$('backup-status').textContent=error.message;$('backup-status').classList.add('error');}
   finally{backupSaving=false;$('backup-download').disabled=false;$('logout').disabled=false;$('change-password').disabled=false;}
  });
+ function clearCSVImport(){importHash='';$('import-file').value='';$('import-confirm').checked=false;$('import-preview-panel').hidden=true;$('import-preview-rows').replaceChildren();$('import-commit').disabled=true;$('import-preview').disabled=true;}
+ function csvMessage(message,error=false){$('import-status').textContent=message;$('import-status').classList.toggle('error',error);}
+ function csvBusy(value){importBusy=value;for(const id of ['import-file','import-preview','import-confirm','logout','change-password'])$(id).disabled=value;$('import-commit').disabled=value||!importHash||!$('import-confirm').checked;}
+ async function loadCSVImports(){
+  try{const batches=await api('imports');if(!csrf)return;$('import-list').replaceChildren();
+   for(const batch of batches){const row=document.createElement('tr');for(const value of [batch.filename,new Date(batch.imported_at).toLocaleString('de-DE'),batch.rows,batch.imported,batch.duplicates]){const cell=document.createElement('td');cell.textContent=value;row.append(cell)}const cell=document.createElement('td'),link=document.createElement('a');link.href='/api/admin/imports/'+batch.id+'/original';link.textContent='CSV herunterladen';link.download=batch.filename;cell.append(link);row.append(cell);$('import-list').append(row)}
+   if(!batches.length){const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=6;cell.textContent='Noch keine CSV importiert.';row.append(cell);$('import-list').append(row)}
+  }catch(error){csvMessage(error.message,true)}
+ }
+ $('import-file').addEventListener('change',()=>{importHash='';$('import-confirm').checked=false;$('import-preview-panel').hidden=true;$('import-commit').disabled=true;const file=$('import-file').files[0];$('import-preview').disabled=!file;csvMessage(file?'Datei ausgewählt. Bitte zuerst die Vorschau prüfen.':'');});
+ $('import-confirm').addEventListener('change',()=>{$('import-commit').disabled=!importHash||!$('import-confirm').checked||importBusy;});
+ function csvForm(){const form=new FormData();form.append('file',$('import-file').files[0]);return form;}
+ $('import-preview').addEventListener('click',async()=>{
+  const file=$('import-file').files[0];if(!file||importBusy)return;if(file.size>10*1024*1024){csvMessage('Die CSV darf höchstens 10 MiB groß sein.',true);return}
+  importHash='';$('import-confirm').checked=false;$('import-preview-panel').hidden=true;csvBusy(true);csvMessage('CSV wird geprüft …');
+  try{
+   const data=await api('imports/preview',{method:'POST',body:csvForm(),form:true});if(!csrf)return;
+   importHash=data.already_imported?'':data.hash;
+   $('import-summary').textContent=data.filename+' · '+data.encoding+' · '+data.rows+' Vorgänge · '+data.new+' neu · '+data.duplicates+' bereits vorhanden · '+data.warning_rows+' Zeilen mit Prüfhinweisen';
+   $('import-preview-rows').replaceChildren();
+   const labels={storage:'Neueinlagerung',wheel_change:'Radwechsel',release:'Auslagerung',reservation:'Reservierung',imported:'Sonstiger Altvorgang'};
+   for(const item of data.preview){const row=document.createElement('tr');for(const value of [item.line,item.date?new Date(item.date).toLocaleString('de-DE'):'Unbekannt',labels[item.operation],item.name+' · '+item.plate,item.place,item.warnings.join(' ')||'OK']){const cell=document.createElement('td');cell.textContent=value;row.append(cell)}$('import-preview-rows').append(row)}
+   $('import-preview-panel').hidden=false;csvMessage(data.already_imported?'Diese Datei wurde bereits importiert. Es werden keine weiteren Vorgänge angelegt.':'Vorschau bereit. Historische Vorgänge erzeugen keine aktuelle Lagerbelegung.');
+  }catch(error){csvMessage(error.message,true)}finally{csvBusy(false);}
+ });
+ $('import-commit').addEventListener('click',async()=>{
+  if(importBusy||!importHash||!$('import-confirm').checked||!$('import-file').files[0])return;
+  const form=csvForm();form.append('confirmed','true');form.append('expected_sha256',importHash);csvBusy(true);csvMessage('Sicherung und Import werden erstellt …');
+  try{
+   const data=await api('imports/commit',{method:'POST',body:form,form:true});if(!csrf)return;
+   importHash='';$('import-confirm').checked=false;await loadCSVImports();
+   csvMessage(data.already_imported?'Datei war bereits importiert. Keine neuen Vorgänge angelegt.':'Import gespeichert: '+data.imported+' neue Vorgänge, '+data.duplicates+' bereits vorhanden. Sicherung: '+data.backup);
+  }catch(error){csvMessage(error.message,true)}finally{csvBusy(false);}
+ });
  $('login-form').addEventListener('submit',async event=>{event.preventDefault();const input=$('password');const password=input.value;input.value='';$('login-status').textContent='Anmeldung …';try{const data=await api('login',{method:'POST',body:JSON.stringify({username:$('username').value,password})});csrf=data.csrf;if(data.must_change)showPasswordChange(true);else await enter();$('login-status').textContent=''}catch(error){$('login-status').textContent=error.message}});
  function showPasswordChange(required){hideSections();
   loadGeneration++;$('login-panel').hidden=true;$('editor').hidden=true;$('password-panel').hidden=false;$('logout').hidden=false;$('change-password').hidden=true;
@@ -125,7 +159,7 @@
   try{const data=await api('password',{method:'POST',body:JSON.stringify(body)});csrf=data.csrf;$('password-form').reset();await enter();status('Neues Admin-Passwort gespeichert. Bisherige Anmeldungen wurden beendet.');}
   catch(error){$('password-status').textContent=error.message}finally{enabled.forEach(el=>el.disabled=false);$('save-password').disabled=false;$('logout').disabled=false}
  });
- $('logout').addEventListener('click',async()=>{if((dirty||areaDirty)&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;if(areaSaving||busy||backupSaving)return;try{await api('logout',{method:'POST',body:'{}'});dirty=false;areaDirty=false;state=null;showLogin()}catch(error){status(error.message,true)}});
+ $('logout').addEventListener('click',async()=>{if((dirty||areaDirty)&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;if(areaSaving||busy||backupSaving||importBusy)return;try{await api('logout',{method:'POST',body:'{}'});dirty=false;areaDirty=false;state=null;showLogin()}catch(error){status(error.message,true)}});
  $('operation').addEventListener('change',async()=>{if(dirty&&!confirm('Ungespeicherte Änderungen verwerfen?')){$('operation').value=state.operation;return}try{await load()}catch(error){status(error.message,true)}});
  $('reload').addEventListener('click',async()=>{if(dirty&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;try{await load()}catch(error){status(error.message,true)}});
  function add(type){if(state.template.elements.length>=100){status('Maximal 100 Elemente erlaubt.',true);return}remember();let id;do{id='element-'+Date.now()+'-'+(++counter)}while(state.template.elements.some(e=>e.id===id));

@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="de">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f3f3f0"><title>Historie · Reifenapp 2.0</title><link rel="stylesheet" href="/css/app.css?v=history-1"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f3f3f0"><title>Historie · Reifenapp 2.0</title><link rel="stylesheet" href="/css/app.css?v=csv-1"></head>
 <body><main>
 <header class="top"><span class="brand">Reifenapp <span style="color:var(--accent)">2.0</span></span><a class="history-back" href="/">← Startseite</a></header>
 <div class="history-heading"><h1>Historie</h1><button id="history-reload" type="button">Aktualisieren</button></div>
-<p class="history-help">Alle gespeicherten Vorgänge, neueste zuerst. Details zeigen die damaligen Angaben; der Lagerstatus bezeichnet den heutigen Stand der zugehörigen Belegung oder Reservierung.</p>
+<p class="history-help">Alle gespeicherten Vorgänge, neueste zuerst. Details zeigen die damaligen Angaben; der Lagerstatus bezeichnet den heutigen Stand der zugehörigen Belegung oder Reservierung. CSV-Importe sind historische Archivdaten ohne abgeleiteten aktuellen Lagerstatus.</p>
 <form id="history-filters" class="history-filters" role="search" aria-label="Historie filtern">
 <label class="history-query">Suche<input id="history-query" type="search" maxlength="200" placeholder="Kunde, Kennzeichen, Lagerplatz, Fahrzeug oder Hinweis …" autocomplete="off"></label>
-<label>Vorgangsart<select id="history-operation"><option value="">Alle Vorgänge</option><option value="storage">Neueinlagerung</option><option value="wheel_change">Radwechsel</option><option value="reservation">Reservierung</option><option value="release">Auslagerung</option></select></label>
-<label>Aktueller Lagerstatus<select id="history-state"><option value="">Alle</option><option value="active">Aktive Belegung / Reservierung</option><option value="closed">Abgeschlossen / ausgelagert</option></select></label>
+<label>Vorgangsart<select id="history-operation"><option value="">Alle Vorgänge</option><option value="storage">Neueinlagerung</option><option value="wheel_change">Radwechsel</option><option value="reservation">Reservierung</option><option value="release">Auslagerung</option><option value="imported">Sonstige Altvorgänge</option></select></label>
+<label>Aktueller Lagerstatus<select id="history-state"><option value="">Alle</option><option value="active">Aktive Belegung / Reservierung</option><option value="closed">Abgeschlossen / ausgelagert</option><option value="archived">Historische CSV-Importe</option></select></label>
 <label>Von<input id="history-from" type="date" min="1900-01-01" max="9998-12-31"></label><label>Bis einschließlich<input id="history-until" type="date" min="1900-01-01" max="9998-12-31"></label>
-<label>Datenquelle<select id="history-source"><option value="">Alle Daten</option><option value="recorded">Erfasste Vorgänge</option><option value="legacy">Übernommener Altbestand</option></select></label>
+<label>Datenquelle<select id="history-source"><option value="">Alle Daten</option><option value="recorded">Erfasste Vorgänge</option><option value="legacy">Übernommener Altbestand</option><option value="csv">CSV-Importe</option></select></label>
 <label>Einträge pro Seite<select id="history-size"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></label>
 <label class="history-check"><input id="history-warnings" type="checkbox">Nur Verschleißwarnungen</label>
 <button id="history-reset" class="history-secondary" type="button">Filter zurücksetzen</button>
@@ -19,4 +19,4 @@
 <div class="history-status-row"><p id="history-status" role="status" aria-live="polite"></p><span id="history-updated" class="history-help"></span></div>
 <div id="history-list" class="result-list" aria-busy="false"></div>
 <nav class="history-pagination" aria-label="Historienseiten"><button id="history-prev" type="button" disabled>← Zurück</button><span id="history-page">Seite 1</span><button id="history-next" type="button" disabled>Weiter →</button></nav>
-</main><script src="/js/search-card.js?v=history-1" defer></script><script src="/js/history.js?v=history-1" defer></script></body></html>
+</main><script src="/js/search-card.js?v=csv-1" defer></script><script src="/js/history.js?v=csv-1" defer></script></body></html>

@@ -30,6 +30,7 @@ Historie und druckbaren DIN-A4-Belegen. Ohne Cloudpflicht.
 | Auslagerung | Belegung nach Bestätigung aufheben und den Platz wieder freigeben; Historie erhalten. |
 | Druckbelege | Nach jedem erfolgreichen Vorgang automatisch eine einseitige A4-PDF im neuen Tab öffnen; Nachdruck über die Suche. |
 | Lagerplatzverwaltung | Lagerorte anlegen, Nummernbereiche ändern und freie, belegte oder reservierte Plätze überblicken. |
+| CSV-Import | Alte Vorgänge mit Vorschau importieren, als CSV-Archiv durchsuchen und Originaldateien aufbewahren. |
 | Backups | Vollständige Datenbank als ZIP herunterladen, inklusive offline lesbarer HTML-Übersicht und JSON-Export. |
 | Administration | Getrennte Bereiche für Backups, Lagerplätze und passwortgeschützten PDF-Designer mit Drag-and-drop, horizontalem und vertikalem Raster, Logoimport (PNG/JPEG/SVG) und eigenen Vorlagen je Vorgangsart. |
 
@@ -37,7 +38,7 @@ Aktive Belegungen und Reservierungen dürfen sich nicht überschneiden. Diese Re
 wird auch in der Datenbank abgesichert. Die Ausgangskonfiguration enthält 640 Lagerplätze in den Bereichen
 **C1, C2, C3, C4, OL und OR**. Weitere Lagerorte und Zahlenbereiche sind im Adminbereich verwaltbar.
 
-Noch offen sind unter anderem CSV-Import und die Pflege von Auswahllisten im Adminbereich.
+Noch offen ist unter anderem die Pflege von Auswahllisten im Adminbereich.
 Beim Radwechsel bleibt der Lagerplatz dem Kunden zugeordnet. Der bisher gelagerte
 Satz wird abgelöst und der andere Satz auf demselben Platz eingelagert. Der
 Tausch erzeugt nur einen Radwechsel-Eintrag, keine Auslagerung. Frühere Angaben
@@ -81,7 +82,7 @@ Benutzernamen `admin` und dem Startpasswort `Reifenapp-Start2026!` an.
 Beim ersten Login musst du ein eigenes Passwort festlegen, bevor der Adminbereich
 freigeschaltet wird. Es wird ausschließlich als bcrypt-Hash lokal gespeichert.
 
-Nach dem Login wählst du zwischen **Lagerplätze**, **PDF-Editor** und **Backup**.
+Nach dem Login wählst du zwischen **Lagerplätze**, **PDF-Editor**, **Backup** und **CSV-Import**.
 Unter [Backup](docs/backups.md) kannst du die komplette Datenbank herunterladen
 und die enthaltene HTML-Übersicht ohne SQLite-Software ansehen.
 Die [Lagerplatzverwaltung](docs/lagerplaetze.md) zeigt die Belegung und erlaubt neue
@@ -90,6 +91,10 @@ Lagerorte sowie Änderungen der Nummernbereiche.
 Im [PDF-Designer](docs/pdf-designer.md) kannst du A4-Vorlagen für die einzelnen
 Vorgänge gestalten, testen und aktivieren. Das Raster dient nur als Gestaltungshilfe
 und wird nicht mitgedruckt.
+
+Alte Exporte lassen sich unter **CSV-Import** nach einer Vorschau übernehmen.
+Die Einträge sind in Suche und Historie als **CSV-Import** markiert. Aktuelle
+Lagerbelegungen bleiben unverändert. [Importanleitung und Dateiformat](docs/csv-import.md).
 
 ## Aktualisieren
 

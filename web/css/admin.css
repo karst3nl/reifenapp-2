@@ -16,3 +16,5 @@
 input,select,textarea{accent-color:var(--accent)}
 
 #backup-panel{max-width:900px;margin:auto}#backup-panel li{margin:8px 0}#backup-status{min-height:24px}#backup-status.error{padding:12px;border:1px solid #ac2634;border-radius:8px;background:#fff0f1}#backup-link{display:inline-block;margin-bottom:12px}#backup-panel .hint{margin-top:18px}
+
+#import-panel{max-width:1200px;margin:auto}#import-panel>label{max-width:650px}#import-preview-panel{margin:18px 0}#import-preview-panel .check{margin-top:18px}#import-status{min-height:24px}#import-status.error{padding:12px;border:1px solid #ac2634;border-radius:8px;background:#fff0f1}#import-preview-rows td{max-width:300px;overflow-wrap:anywhere;white-space:pre-wrap;font-size:13px}.import-list-heading{margin-top:28px}#import-list td{overflow-wrap:anywhere;max-width:300px}
