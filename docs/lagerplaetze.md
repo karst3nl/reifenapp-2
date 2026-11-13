@@ -81,3 +81,26 @@ Passwortwechsel; Schreibzugriffe benötigen zusätzlich `X-CSRF-Token`:
 
 `GET /api/storage/options` liefert für die Werkstattformulare weiterhin die Liste
 `area` und zusätzlich `storage_areas` mit den aktuellen Nummerngrenzen.
+
+## Fehlende Lagerbewegung
+
+Unter **Administration → Lagerplätze** lässt sich die Meldefrist auf 1 bis 120
+Monate einstellen (Standard: 12 Monate). Die Einstellung wird lokal in SQLite
+gespeichert und ist im vollständigen Datenbankbackup enthalten.
+
+Oben rechts auf der Startseite zeigt **Ohne Bewegung** die Anzahl betroffener
+aktiver Belegungen. Ein Klick öffnet die Übersicht mit Kunde, Kennzeichen,
+letzter erfasster Bewegung und vergangenen Tagen. Die Liste wird bei Vorgängen,
+beim Zurückkehren zur Seite und jede Minute aktualisiert.
+
+Als Bewegung zählt die letzte tatsächlich erfasste Einlagerung oder der letzte
+Radwechsel der aktuellen Belegung. Die Monatsfrist wird ab diesem Zeitpunkt in
+der Zeitzone Europe/Berlin berechnet (Kalendermonate mit Go AddDate). Ein erneuter
+Radwechsel startet die Frist neu; eine Auslagerung entfernt die Meldung.
+Reservierungen, freie Plätze, CSV-Archive und nachträglich rekonstruierte
+Altbestandszeitpunkte gelten nicht als Bewegungsnachweis. Fehlende, ungültige
+oder zukünftige Zeitpunkte werden als unklar gezählt, ohne eine Liegezeit zu erfinden.
+
+Für das Update ist Migration 010 nötig: Server und andere Datenbankzugriffe
+beenden, dann `go run . -migrate` starten. Vor der Migration wird automatisch
+eine konsistente Sicherung erstellt.

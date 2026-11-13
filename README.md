@@ -30,6 +30,7 @@ Historie und druckbaren DIN-A4-Belegen. Ohne Cloudpflicht.
 | Auslagerung | Belegung nach Bestätigung aufheben und den Platz wieder freigeben; Historie erhalten. |
 | Druckbelege | Nach jedem erfolgreichen Vorgang automatisch eine einseitige A4-PDF im neuen Tab öffnen; Nachdruck über die Suche. |
 | Lagerplatzverwaltung | Lagerorte anlegen, Nummernbereiche ändern und freie, belegte oder reservierte Plätze überblicken. |
+| Lagerbewegungen | Anzeige lange unveränderter Belegungen oben rechts, mit einstellbarer Frist und Detailübersicht. |
 | CSV-Import | Alte Vorgänge mit Vorschau importieren, als CSV-Archiv durchsuchen und Originaldateien aufbewahren. |
 | Backups | Vollständige Datenbank als ZIP herunterladen, inklusive offline lesbarer HTML-Übersicht und JSON-Export. |
 | Administration | Getrennte Bereiche für Backups, Lagerplätze und passwortgeschützten PDF-Designer mit Drag-and-drop, horizontalem und vertikalem Raster, Logoimport (PNG/JPEG/SVG) und eigenen Vorlagen je Vorgangsart. |
@@ -95,6 +96,13 @@ und wird nicht mitgedruckt.
 Alte Exporte lassen sich unter **CSV-Import** nach einer Vorschau übernehmen.
 Die Einträge sind in Suche und Historie als **CSV-Import** markiert. Aktuelle
 Lagerbelegungen bleiben unverändert. [Importanleitung und Dateiformat](docs/csv-import.md).
+
+Die Anzeige **Ohne Bewegung** oben rechts meldet belegte Plätze ohne erfasste
+Einlagerung oder Radwechsel seit standardmäßig **12 Monaten**. Ein Klick zeigt
+Kunde, Kennzeichen und letzte Bewegung. Unter **Administration → Lagerplätze**
+lässt sich die Frist zwischen 1 und 120 Monaten einstellen. Freie Plätze,
+Reservierungen und CSV-Archivdaten lösen keine Meldung aus. Bestände ohne
+verlässlichen Bewegungszeitpunkt werden separat als unklar gezählt.
 
 ## Aktualisieren
 

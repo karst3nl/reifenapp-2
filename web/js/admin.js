@@ -67,6 +67,7 @@
   if(section==='areas')await loadAreas();else if(section==='backup')await loadBackupInfo();else if(section==='import')await loadCSVImports();else{zoom();paint();}
  }
  async function loadAreas(){
+  loadInactivitySettings();
   const generation=++areaGeneration;$('areas-status').textContent='Lagerorte werden geladen …';
   try{const areas=await api('areas');if(generation!==areaGeneration||!csrf)return;
    $('areas-list').replaceChildren();
@@ -82,6 +83,18 @@
   $('area-title').textContent=a?'Lagerort bearbeiten':'Lagerort anlegen';$('area-code').value=a?.code||'';$('area-code').readOnly=!!a;$('area-first').value=a?.first_number||'';$('area-last').value=a?.last_number||'';areaMessage('');areaSummary();$('area-form').scrollIntoView({behavior:'smooth'});$(a?'area-first':'area-code').focus();
  }
  function areaSummary(){const first=Number($('area-first').value),last=Number($('area-last').value);$('area-summary').textContent=first>0&&last>=first?`${last-first+1} Plätze · ${$('area-code').value}.${first} bis ${$('area-code').value}.${last}`:'';}
+ async function loadInactivitySettings(){
+  $('inactivity-months').disabled=true;$('inactivity-save').disabled=true;
+  try{const settings=await api('inactivity');if(!csrf)return;$('inactivity-months').value=settings.months;$('inactivity-months').disabled=false;$('inactivity-save').disabled=false;$('inactivity-settings-status').textContent='';}
+  catch(error){$('inactivity-settings-status').textContent=error.message;}
+ }
+ $('inactivity-settings').addEventListener('submit',async event=>{
+  event.preventDefault();if(areaSaving||busy||backupSaving||importBusy)return;
+  areaSaving=true;$('inactivity-save').disabled=true;$('inactivity-months').disabled=true;
+  try{const settings=await api('inactivity',{method:'POST',body:JSON.stringify({months:Number($('inactivity-months').value)})});if(!csrf)return;$('inactivity-months').value=settings.months;$('inactivity-settings-status').textContent='Gespeichert. Die Anzeige auf der Startseite wird automatisch aktualisiert.';}
+  catch(error){$('inactivity-settings-status').textContent=error.message;}
+  finally{areaSaving=false;$('inactivity-save').disabled=false;$('inactivity-months').disabled=false;}
+ });
  $('nav-areas').onclick=()=>selectSection('areas');$('nav-pdf').onclick=()=>selectSection('pdf');$('nav-backup').onclick=()=>selectSection('backup');$('nav-import').onclick=()=>selectSection('import');
  $('area-new').onclick=()=>editArea(null);$('areas-reload').onclick=()=>{if(areaSaving)return;if(areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;areaDirty=false;$('area-form').hidden=true;loadAreas();};
  $('area-cancel').onclick=()=>{if(areaSaving)return;if(areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;areaDirty=false;$('area-form').hidden=true;};
