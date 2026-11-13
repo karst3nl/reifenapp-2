@@ -32,6 +32,7 @@ Historie und druckbaren DIN-A4-Belegen. Ohne Cloudpflicht.
 | Lagerplatzverwaltung | Lagerorte anlegen, Nummernbereiche ändern und freie, belegte oder reservierte Plätze überblicken. |
 | Lagerbewegungen | Anzeige lange unveränderter Belegungen oben rechts, mit einstellbarer Frist und Detailübersicht. |
 | CSV-Import | Alte Vorgänge mit Vorschau importieren, als CSV-Archiv durchsuchen und Originaldateien aufbewahren. |
+| Etikettendruck | USB-Druck über lokales CUPS für ARGOX OS-214EX PRO; 78 × 51-mm-Vorlage, Testdruck und automatische Aufträge nach Einlagerung/Radwechsel. |
 | Backups | Vollständige Datenbank als ZIP herunterladen, inklusive offline lesbarer HTML-Übersicht und JSON-Export. |
 | Administration | Getrennte Bereiche für Backups, Lagerplätze und passwortgeschützten PDF-Designer mit Drag-and-drop, horizontalem und vertikalem Raster, Logoimport (PNG/JPEG/SVG) und eigenen Vorlagen je Vorgangsart. |
 
@@ -83,7 +84,7 @@ Benutzernamen `admin` und dem Startpasswort `Reifenapp-Start2026!` an.
 Beim ersten Login musst du ein eigenes Passwort festlegen, bevor der Adminbereich
 freigeschaltet wird. Es wird ausschließlich als bcrypt-Hash lokal gespeichert.
 
-Nach dem Login wählst du zwischen **Lagerplätze**, **PDF-Editor**, **Backup** und **CSV-Import**.
+Nach dem Login wählst du zwischen **Lagerplätze**, **PDF-Editor**, **Backup**, **CSV-Import** und **Etikettendrucker**.
 Unter [Backup](docs/backups.md) kannst du die komplette Datenbank herunterladen
 und die enthaltene HTML-Übersicht ohne SQLite-Software ansehen.
 Die [Lagerplatzverwaltung](docs/lagerplaetze.md) zeigt die Belegung und erlaubt neue
@@ -108,6 +109,11 @@ Kunde, Kennzeichen und letzte Bewegung. Unter **Administration → Lagerplätze*
 lässt sich die Frist zwischen 1 und 120 Monaten einstellen. Freie Plätze,
 Reservierungen und CSV-Archivdaten lösen keine Meldung aus. Bestände ohne
 verlässlichen Bewegungszeitpunkt werden separat als unklar gezählt.
+
+Für den USB-Etikettendruck bietet **Administration → Etikettendrucker** eine eigene
+78 × 51-mm-Vorlage, Druckerauswahl, Testdruck und Auftragsübersicht. Die Automatik
+ist zunächst deaktiviert. Vor Aktivierung CUPS und den passenden Argox-Treiber
+einrichten und einen Ausdruck am Gerät prüfen. [Einrichtung und Druckablauf](docs/etikettendrucker.md).
 
 ## Aktualisieren
 

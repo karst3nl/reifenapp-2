@@ -234,6 +234,7 @@
       confirmation.textContent=status.textContent;confirmation.hidden=false;
       window.dispatchEvent(new Event("workshop-data-changed"));
       receipt.complete(data.pdf_url,confirmation);
+      if(window.LabelPrints)window.LabelPrints.watch(data.label_job,confirmation);
       dialog.close();
       const search=document.getElementById('search');if(search.value.trim())search.dispatchEvent(new Event('input'));
     }catch{receipt.cancel();status.classList.add('is-error');status.textContent='Keine Speicherbestätigung erhalten. Bitte zuerst in der Schnellsuche prüfen, ob die Einlagerung gespeichert wurde. Ihre Eingaben bleiben erhalten.';}

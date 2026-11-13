@@ -11,8 +11,8 @@
   if(options.download){const match=/filename="([a-zA-Z0-9._-]+)"/.exec(response.headers.get('Content-Disposition')||'');return {blob:await response.blob(),filename:match?.[1]||'reifenapp-backup.zip'};}
   return options.pdf?response.blob():response.json();
  }
- function hideSections(){for(const id of ['admin-nav','areas-panel','backup-panel','import-panel','editor'])$(id).hidden=true;}
- function showLogin(){clearCSVImport();clearBackupLink();hideSections();loadGeneration++;csrf='';$('password-form').reset();$('password').value='';$('login-panel').hidden=false;$('editor').hidden=true;$('logout').hidden=true;$('change-password').hidden=true;$('password-panel').hidden=true;if(previewURL){URL.revokeObjectURL(previewURL);previewURL=''}$('pdf-preview').removeAttribute('src');}
+ function hideSections(){for(const id of ['admin-nav','areas-panel','backup-panel','import-panel','labels-panel','editor'])$(id).hidden=true;}
+ function showLogin(){if(labelURL){URL.revokeObjectURL(labelURL);labelURL=''}$('label-preview-frame').removeAttribute('src');$('label-preview-frame').hidden=true;clearCSVImport();clearBackupLink();hideSections();loadGeneration++;csrf='';$('password-form').reset();$('password').value='';$('login-panel').hidden=false;$('editor').hidden=true;$('logout').hidden=true;$('change-password').hidden=true;$('password-panel').hidden=true;if(previewURL){URL.revokeObjectURL(previewURL);previewURL=''}$('pdf-preview').removeAttribute('src');}
  function selectedElement(){return state?.template.elements.find(e=>e.id===selected)}
  function remember(){undo.push(clone(state.template));if(undo.length>80)undo.shift();redo=[];dirty=true;}
  function round(n){return Math.round(n*100)/100}
@@ -56,15 +56,16 @@
   fields=await api('fields');for(const id of ['palette-field','prop-field']){$(id).replaceChildren();for(const f of fields)$(id).add(new Option(f.label,f.key))}
   if(state&&dirty){$('operation').value=state.operation;const [data,sample]=await Promise.all([api('layout?operation='+state.operation),api('values?operation='+state.operation)]);defaults=data.default;values=sample;paint();zoom();status('Sitzung erneuert. Ungespeicherter Entwurf bleibt geöffnet.');}else{await load();}await document.fonts.load('12px Receipt');await document.fonts.load('bold 12px Receipt');paint();await selectSection(activeSection);
  }
- let activeSection='areas',areaRevision=0,areaSaving=false,areaDirty=false,areaGeneration=0,backupSaving=false,backupURL='',importBusy=false,importHash='';
+ let activeSection='areas',areaRevision=0,areaSaving=false,areaDirty=false,areaGeneration=0,backupSaving=false,backupURL='',importBusy=false,importHash='',labelConfig=null,labelFields={},labelDefault=null,labelDirty=false,labelBusy=false,labelURL='';
  const areaMessage=(text,error=false)=>{$('area-status').textContent=text;$('area-status').classList.toggle('error',error)};
  async function selectSection(section){
-  if(busy||areaSaving||backupSaving||importBusy)return;
+  if(busy||areaSaving||backupSaving||importBusy||labelBusy)return;
+  if(section!==activeSection&&labelDirty&&!confirm('Ungespeicherte Etikettenänderungen verwerfen?'))return;
   if(section!==activeSection&&areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;
-  if(section!==activeSection){areaDirty=false;$('area-form').hidden=true;}
-  activeSection=section;$('editor').hidden=section!=='pdf';$('areas-panel').hidden=section!=='areas';$('backup-panel').hidden=section!=='backup';$('import-panel').hidden=section!=='import';
-  for(const [id,name] of [['nav-areas','areas'],['nav-pdf','pdf'],['nav-backup','backup'],['nav-import','import']]){$(id).setAttribute('aria-pressed',String(name===section));$(id).classList.toggle('secondary',name!==section);}
-  if(section==='areas')await loadAreas();else if(section==='backup')await loadBackupInfo();else if(section==='import')await loadCSVImports();else{zoom();paint();}
+  if(section!==activeSection){labelDirty=false;areaDirty=false;$('area-form').hidden=true;}
+  activeSection=section;$('editor').hidden=section!=='pdf';$('areas-panel').hidden=section!=='areas';$('backup-panel').hidden=section!=='backup';$('import-panel').hidden=section!=='import';$('labels-panel').hidden=section!=='labels';
+  for(const [id,name] of [['nav-areas','areas'],['nav-pdf','pdf'],['nav-backup','backup'],['nav-import','import'],['nav-labels','labels']]){$(id).setAttribute('aria-pressed',String(name===section));$(id).classList.toggle('secondary',name!==section);}
+  if(section==='areas')await loadAreas();else if(section==='backup')await loadBackupInfo();else if(section==='import')await loadCSVImports();else if(section==='labels')await loadLabels();else{zoom();paint();}
  }
  async function loadAreas(){
   loadInactivitySettings();
@@ -89,13 +90,13 @@
   catch(error){$('inactivity-settings-status').textContent=error.message;}
  }
  $('inactivity-settings').addEventListener('submit',async event=>{
-  event.preventDefault();if(areaSaving||busy||backupSaving||importBusy)return;
+  event.preventDefault();if(areaSaving||busy||backupSaving||importBusy||labelBusy)return;
   areaSaving=true;$('inactivity-save').disabled=true;$('inactivity-months').disabled=true;
   try{const settings=await api('inactivity',{method:'POST',body:JSON.stringify({months:Number($('inactivity-months').value)})});if(!csrf)return;$('inactivity-months').value=settings.months;$('inactivity-settings-status').textContent='Gespeichert. Die Anzeige auf der Startseite wird automatisch aktualisiert.';}
   catch(error){$('inactivity-settings-status').textContent=error.message;}
   finally{areaSaving=false;$('inactivity-save').disabled=false;$('inactivity-months').disabled=false;}
  });
- $('nav-areas').onclick=()=>selectSection('areas');$('nav-pdf').onclick=()=>selectSection('pdf');$('nav-backup').onclick=()=>selectSection('backup');$('nav-import').onclick=()=>selectSection('import');
+ $('nav-labels').onclick=()=>selectSection('labels');$('nav-areas').onclick=()=>selectSection('areas');$('nav-pdf').onclick=()=>selectSection('pdf');$('nav-backup').onclick=()=>selectSection('backup');$('nav-import').onclick=()=>selectSection('import');
  $('area-new').onclick=()=>editArea(null);$('areas-reload').onclick=()=>{if(areaSaving)return;if(areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;areaDirty=false;$('area-form').hidden=true;loadAreas();};
  $('area-cancel').onclick=()=>{if(areaSaving)return;if(areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;areaDirty=false;$('area-form').hidden=true;};
  $('area-form').addEventListener('input',()=>{areaDirty=true;areaSummary()});
@@ -156,6 +157,47 @@
    csvMessage(data.already_imported?'Datei war bereits importiert. Keine neuen Vorgänge angelegt.':'Import gespeichert: '+data.imported+' neue Vorgänge, '+data.duplicates+' bereits vorhanden. Sicherung: '+data.backup);
   }catch(error){csvMessage(error.message,true)}finally{csvBusy(false);}
  });
+
+ function setLabelBusy(value){labelBusy=value;$('logout').disabled=value;$('change-password').disabled=value;}
+ const labelMessage=(text,error=false)=>{$('label-status').textContent=text;$('label-status').classList.toggle('error',error)};
+ function labelValues(){
+  const s=labelConfig.settings;s.enabled=$('label-enabled').checked;s.queue=$('label-queue').value;s.copies=Number($('label-copies').value);s.storage=$('label-storage').checked;s.wheel_change=$('label-wheel-change').checked;
+  s.elements=[...$('label-elements').rows].map(row=>{const value=key=>row.querySelector('[data-key="'+key+'"]');return {field:value('field').value,text:value('text').value,...Object.fromEntries(['x','y','width','height','size'].map(key=>[key,Number(value(key).value)])),bold:value('bold').checked}});return s;
+ }
+ function renderLabelElements(){
+  $('label-elements').replaceChildren();labelConfig.settings.elements.forEach((element,index)=>{const row=document.createElement('tr');
+   for(const key of ['field','text','x','y','width','height','size','bold']){const cell=document.createElement('td'),input=document.createElement(key==='field'?'select':'input');input.dataset.key=key;input.setAttribute('aria-label','Feld '+(index+1)+' '+key);
+    if(key==='field'){for(const [value,label]of Object.entries(labelFields))input.add(new Option(label,value));input.value=element.field}
+    else if(key==='bold'){input.type='checkbox';input.checked=element.bold}
+    else{input.type=key==='text'?'text':'number';input.value=element[key];if(key==='text')input.maxLength=200;else{input.step='0.5';input.min=key==='size'?'6':(['width','height'].includes(key)?'2':'0');input.max=key==='size'?'32':(['y','height'].includes(key)?'51':'78');input.required=true}}
+    cell.append(input);row.append(cell)}
+   const cell=document.createElement('td');for(const [text,delta]of [['↑',-1],['↓',1],['Entfernen',0]]){const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=text;button.setAttribute('aria-label',text+' Feld '+(index+1));button.disabled=delta===-1&&index===0||delta===1&&index===labelConfig.settings.elements.length-1||delta===0&&labelConfig.settings.elements.length===1;button.onclick=()=>{const s=labelValues();if(delta){[s.elements[index],s.elements[index+delta]]=[s.elements[index+delta],s.elements[index]]}else s.elements.splice(index,1);labelDirty=true;renderLabelElements()};cell.append(button)}row.append(cell);$('label-elements').append(row);
+  });
+ }
+ async function loadLabelPrinters(){
+  const selected=labelConfig?$('label-queue').value:'';const data=await api('labels/printers');if(!csrf)return;
+  $('label-queue').replaceChildren(new Option('Drucker auswählen',''));$('label-printer-list').replaceChildren();
+  for(const printer of data.printers){$('label-queue').add(new Option(printer.name,printer.name));const item=document.createElement('li');item.textContent=printer.name+': '+printer.state;$('label-printer-list').append(item)}
+  if(selected&&![...$('label-queue').options].some(o=>o.value===selected))$('label-queue').add(new Option(selected+' (nicht gefunden)',selected));$('label-queue').value=selected;
+  $('label-printers-status').textContent=data.message+(!data.printers.length?' Keine USB-Druckerwarteschlange gefunden.':'');
+ }
+ async function loadLabelJobs(){const jobs=await api('labels/jobs');if(!csrf)return;$('label-jobs').replaceChildren();
+  const states={pending:'Vorgemerkt',processing:'Übergabe läuft',submitted:'An CUPS übergeben',failed:'Fehlgeschlagen',uncertain:'Übergabe unklar',cancelled:'Abgebrochen'};
+  for(const job of jobs){const row=document.createElement('tr');for(const value of [job.id,job.event_id?'Historie #'+job.event_id:'Testdruck',states[job.status]||job.status,job.cups_id||'—',job.message||'—']){const cell=document.createElement('td');cell.textContent=value;row.append(cell)}const cell=document.createElement('td');if(['failed','uncertain','pending'].includes(job.status)){const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=job.status==='pending'?'Abbrechen':'Erneut versuchen';button.onclick=async()=>{const retry=job.status!=='pending';if(!confirm(retry?'Vor erneutem Druck: CUPS und vorhandene Etiketten geprüft? Ein weiterer Ausdruck kann entstehen. Aktuelle gespeicherte Vorlage verwenden?':'Diesen noch nicht übergebenen Auftrag abbrechen?'))return;button.disabled=true;try{await api('labels/jobs/'+job.id,{method:'POST',body:JSON.stringify({action:retry?'retry':'cancel',confirmed:true})});await loadLabelJobs()}catch(error){$('label-jobs-status').textContent=error.message;button.disabled=false}};cell.append(button)}row.append(cell);$('label-jobs').append(row)}$('label-jobs-status').textContent=jobs.length?jobs.length+' letzte Aufträge.':'Noch keine Etikettenaufträge.';
+ }
+ async function loadLabels(){
+  $('label-config-form').inert=true;try{const data=await api('labels/config');if(!csrf)return;labelConfig=data.config;labelFields=data.fields;labelDefault=data.default;labelDirty=false;const s=labelConfig.settings;$('label-enabled').checked=s.enabled;$('label-storage').checked=s.storage;$('label-wheel-change').checked=s.wheel_change;$('label-copies').value=s.copies;$('label-queue').replaceChildren(new Option(s.queue||'Drucker auswählen',s.queue));renderLabelElements();await loadLabelPrinters();await loadLabelJobs();labelMessage('Gespeicherte Vorlage. 78 × 51 mm.');}catch(error){labelMessage(error.message,true)}finally{$('label-config-form').inert=false;}
+ }
+ $('label-config-form').addEventListener('input',()=>{labelDirty=true;$('label-preview-frame').hidden=true;labelMessage('Ungespeicherte Änderungen. Vorschau prüfen und Einstellungen speichern.');});
+ $('label-add').onclick=()=>{if(!labelConfig)return;const s=labelValues();if(s.elements.length>=20){labelMessage('Höchstens 20 Felder.',true);return}s.elements.push({field:'text',text:'Eigener Text',x:3,y:43,width:72,height:5,size:9,bold:false});labelDirty=true;renderLabelElements()};
+ $('label-default').onclick=()=>{if(!labelConfig||!confirm('Etikettenlayout durch Standard ersetzen?'))return;labelValues().elements=clone(labelDefault.elements);labelDirty=true;renderLabelElements()};
+ $('label-config-form').addEventListener('submit',async event=>{event.preventDefault();if(!labelConfig||labelBusy)return;labelValues();setLabelBusy(true);$('label-config-form').inert=true;try{const data=await api('labels/config',{method:'POST',body:JSON.stringify(labelConfig)});if(!csrf)return;labelConfig=data.config;labelDirty=false;labelMessage('Drucker und Etikettenvorlage gespeichert.');}catch(error){labelMessage(error.message,true)}finally{setLabelBusy(false);$('label-config-form').inert=false;}});
+ $('label-preview').onclick=async()=>{if(!labelConfig||labelBusy)return;setLabelBusy(true);try{const blob=await api('labels/preview',{method:'POST',body:JSON.stringify(labelValues()),pdf:true});if(!csrf)return;if(labelURL)URL.revokeObjectURL(labelURL);labelURL=URL.createObjectURL(blob);$('label-preview-frame').src=labelURL;$('label-preview-frame').hidden=false;labelMessage('PDF-Vorschau mit fiktiven Daten. Noch nicht gespeicherte Änderungen sind enthalten.');}catch(error){labelMessage(error.message,true)}finally{setLabelBusy(false);}};
+ $('label-printers-refresh').onclick=async()=>{try{await loadLabelPrinters()}catch(error){labelMessage(error.message,true)}};
+ $('label-jobs-refresh').onclick=async()=>{try{await loadLabelJobs()}catch(error){$('label-jobs-status').textContent=error.message}};
+ $('label-test').onclick=async()=>{if(labelDirty){labelMessage('Bitte zuerst Einstellungen speichern.',true);return}if(labelBusy||!confirm('Genau ein Testetikett mit fiktiven Daten auf dem gespeicherten USB-Drucker drucken?'))return;setLabelBusy(true);$('label-test').disabled=true;try{const result=await api('labels/test',{method:'POST',body:'{"confirmed":true}'});labelMessage('Testdruck #'+result.id+' vorgemerkt. Auftragsstatus unten aktualisieren.');await loadLabelJobs()}catch(error){labelMessage(error.message,true)}finally{setLabelBusy(false);$('label-test').disabled=false;}};
+ setInterval(()=>{if(csrf&&activeSection==='labels'&&!document.hidden&&!labelBusy)loadLabelJobs().catch(()=>{$('label-jobs-status').textContent='Auftragsstatus derzeit nicht verfügbar.'})},5000);
+
  $('login-form').addEventListener('submit',async event=>{event.preventDefault();const input=$('password');const password=input.value;input.value='';$('login-status').textContent='Anmeldung …';try{const data=await api('login',{method:'POST',body:JSON.stringify({username:$('username').value,password})});csrf=data.csrf;if(data.must_change)showPasswordChange(true);else await enter();$('login-status').textContent=''}catch(error){$('login-status').textContent=error.message}});
  function showPasswordChange(required){hideSections();
   loadGeneration++;$('login-panel').hidden=true;$('editor').hidden=true;$('password-panel').hidden=false;$('logout').hidden=false;$('change-password').hidden=true;
@@ -172,7 +214,7 @@
   try{const data=await api('password',{method:'POST',body:JSON.stringify(body)});csrf=data.csrf;$('password-form').reset();await enter();status('Neues Admin-Passwort gespeichert. Bisherige Anmeldungen wurden beendet.');}
   catch(error){$('password-status').textContent=error.message}finally{enabled.forEach(el=>el.disabled=false);$('save-password').disabled=false;$('logout').disabled=false}
  });
- $('logout').addEventListener('click',async()=>{if((dirty||areaDirty)&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;if(areaSaving||busy||backupSaving||importBusy)return;try{await api('logout',{method:'POST',body:'{}'});dirty=false;areaDirty=false;state=null;showLogin()}catch(error){status(error.message,true)}});
+ $('logout').addEventListener('click',async()=>{if((dirty||areaDirty||labelDirty)&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;if(areaSaving||busy||backupSaving||importBusy||labelBusy)return;try{await api('logout',{method:'POST',body:'{}'});dirty=false;areaDirty=false;labelDirty=false;state=null;showLogin()}catch(error){status(error.message,true)}});
  $('operation').addEventListener('change',async()=>{if(dirty&&!confirm('Ungespeicherte Änderungen verwerfen?')){$('operation').value=state.operation;return}try{await load()}catch(error){status(error.message,true)}});
  $('reload').addEventListener('click',async()=>{if(dirty&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;try{await load()}catch(error){status(error.message,true)}});
  function add(type){if(state.template.elements.length>=100){status('Maximal 100 Elemente erlaubt.',true);return}remember();let id;do{id='element-'+Date.now()+'-'+(++counter)}while(state.template.elements.some(e=>e.id===id));
