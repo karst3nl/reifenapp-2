@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/karst3nl/reifenapp-2/internal/database"
+	"github.com/karst3nl/reifenapp-2/internal/printing"
 	"github.com/karst3nl/reifenapp-2/internal/receipts"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -29,6 +30,7 @@ type loginAttempts struct {
 	until time.Time
 }
 type Admin struct {
+	printer  *printing.Service
 	db       *sql.DB
 	header   receipts.Header
 	mu       sync.Mutex
@@ -42,7 +44,7 @@ func NewAdmin(db *sql.DB, header receipts.Header) (*Admin, error) {
 	if err := database.EnsureAdminAccount(context.Background(), db); err != nil {
 		return nil, err
 	}
-	return &Admin{db: db, header: header, sessions: map[[32]byte]adminSession{}, attempts: map[string]loginAttempts{}, now: time.Now}, nil
+	return &Admin{printer: printing.New(db), db: db, header: header, sessions: map[[32]byte]adminSession{}, attempts: map[string]loginAttempts{}, now: time.Now}, nil
 }
 func token() string {
 	var b [32]byte
@@ -96,6 +98,14 @@ func (a *Admin) authorize(next func(http.ResponseWriter, *http.Request), allowSe
 	}
 }
 func (a *Admin) Register(mux *http.ServeMux) {
+	mux.HandleFunc("GET /api/admin/labels/config", a.protect(a.labelConfig))
+	mux.HandleFunc("POST /api/admin/labels/config", a.protect(a.labelConfig))
+	mux.HandleFunc("GET /api/admin/labels/printers", a.protect(a.labelPrinters))
+	mux.HandleFunc("POST /api/admin/labels/preview", a.protect(a.labelPreview))
+	mux.HandleFunc("POST /api/admin/labels/test", a.protect(a.labelTest))
+	mux.HandleFunc("GET /api/admin/labels/jobs", a.protect(a.labelJobs))
+	mux.HandleFunc("POST /api/admin/labels/jobs/{id}", a.protect(a.labelJobAction))
+
 	mux.HandleFunc("GET /api/admin/session", func(w http.ResponseWriter, r *http.Request) {
 		if s, ok := a.session(r); ok {
 			writeJSON(w, 200, map[string]any{"csrf": s.csrf, "expires": s.expires, "username": "admin", "must_change": s.mustChange})

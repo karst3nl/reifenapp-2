@@ -130,6 +130,9 @@ func createStorage(ctx context.Context, db *sql.DB, input models.StorageInput, o
 	if err = recordHistory(ctx, tx, claim, operation, stamp); err != nil {
 		return 0, err
 	}
+	if err = enqueueLabel(ctx, tx, claim, operation); err != nil {
+		return 0, err
+	}
 	if err = tx.Commit(); err != nil {
 		return 0, err
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"flag"
 	"io/fs"
@@ -49,7 +50,13 @@ func main() {
 	if adminErr != nil {
 		log.Fatal(adminErr)
 	}
+	stopPrinter, err := admin.StartLabelPrinter(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stopPrinter()
 	admin.Register(mux)
+	mux.HandleFunc("GET /api/label-jobs/{id}", handlers.LabelJobStatus(db))
 	mux.HandleFunc("GET /api/search", handlers.Search(db))
 	mux.HandleFunc("GET /api/history", handlers.History(db))
 	mux.HandleFunc("GET /api/warnings", handlers.TreadWarnings(db))
