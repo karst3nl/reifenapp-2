@@ -68,6 +68,7 @@ konkrete JSON-Strukturen und Validierungen stehen in `internal/handlers/` und
 | Methode und Pfad | Zweck |
 | --- | --- |
 | `GET /api/warnings?scope=active` | Verschleißwarnungen für aktuell eingelagerte Radsätze; `scope=all` umfasst alle gespeicherten Vorgänge |
+| `GET /api/season` | Saison und Wechselstand des aktuellen Bestands; siehe [Saisonanzeige](saison.md) |
 | `GET /api/history` | Vollständige Historie mit Filtern und Seitenwechsel; siehe [Historienanleitung](historie.md) |
 | `GET /api/search?q=...` | Suche in der Vorgangshistorie nach Kunde, Kennzeichen, Platz oder Vorgangsart |
 | `GET /api/customers?q=...` | Bis zu 20 Namensvorschläge per Präfixsuche |

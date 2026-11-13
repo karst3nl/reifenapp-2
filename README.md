@@ -20,6 +20,7 @@ Historie und druckbaren DIN-A4-Belegen. Ohne Cloudpflicht.
 
 | Bereich | Was bereits funktioniert |
 | --- | --- |
+| Saisonfortschritt | Automatische Sommer-/Wintersaison und Zähler gebuchter Wechsel im aktuellen Lagerbestand. |
 | Historie | Eigene Seite mit Suche, Vorgangs-/Zeitraum-/Statusfiltern, Seitenwechsel, vollständigen Details und PDF-Nachdruck. |
 | Reifenwarnungen | Anzeige oben rechts mit aktuellem Zähler; Übersicht aller Verschleißwarnungen einschließlich Historie. |
 | Schnellsuche | Kunden, Kennzeichen, Lagerplätze und Vorgänge suchen; Karten mit allen Vorgangsdaten aufklappen. Hinweise und niedrige Profiltiefen direkt sehen – auch bei abgeschlossenen Auslagerungen. |
@@ -147,6 +148,7 @@ Automatisierte Tests verwenden temporäre Datenbanken und ausschließlich fiktiv
 
 ## Dokumentation
 
+- [Saisonanzeige und Zählweise](docs/saison.md)
 - [Historie verwenden](docs/historie.md)
 - [Betrieb, Datenbank und HTTP-API](docs/betrieb-und-api.md)
 - [Lagerorte und Nummernbereiche verwalten](docs/lagerplaetze.md)

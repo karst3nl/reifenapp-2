@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f3f3f0">
   <title>Reifenapp 2.0 – Startseite</title>
-  <link rel="stylesheet" href="/css/app.css?v=history-1">
+  <link rel="stylesheet" href="/css/app.css?v=season-1">
   <link rel="stylesheet" href="/css/storage.css?v=light-orange-1">
 </head>
 <body>
 <main>
-  <header class="top"><span class="brand">Reifenapp <span style="color:var(--accent)">2.0</span></span><button id="warnings-button" class="warnings-button" type="button" aria-haspopup="dialog" aria-controls="warnings-dialog" aria-label="Reifenwarnungen laden"><span aria-hidden="true">⚠</span> Reifenwarnungen <span id="warnings-count" class="warnings-count">…</span></button></header>
+  <header class="top"><span class="brand">Reifenapp <span style="color:var(--accent)">2.0</span></span><div class="header-indicators"><section id="season-status" class="season-status" aria-label="Saisonfortschritt" aria-live="polite"><span id="season-label">Saison wird geladen …</span><strong id="season-count">…</strong><small id="season-details">Aktueller Lagerbestand</small></section><button id="warnings-button" class="warnings-button" type="button" aria-haspopup="dialog" aria-controls="warnings-dialog" aria-label="Reifenwarnungen laden"><span aria-hidden="true">⚠</span> Reifenwarnungen <span id="warnings-count" class="warnings-count">…</span></button></div></header>
 
   <section aria-label="Vorgänge"><div class="actions">
     <button class="action" data-title="Radwechsel"><span class="iconwrap"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6m9 3h-6m-3 9v-6m-9-3h6"/></svg></span><strong>Radwechsel</strong></button>
@@ -65,5 +65,6 @@
 <script src="/js/search-card.js?v=history-1" defer></script>
 <script src="/js/app.js?v=history-1" defer></script>
 <script src="/js/warnings.js?v=warnings-1" defer></script>
+<script src="/js/season.js?v=season-1" defer></script>
 </body>
 </html>
