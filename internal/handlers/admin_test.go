@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
@@ -60,7 +61,7 @@ func TestAdminSetupAuthenticationAndEditorAPI(t *testing.T) {
 		csrf = response.CSRF
 		return response.MustChange
 	}
-	if w := call("GET", "/api/admin/areas", nil, false); w.Code != 401 {
+	if w := call("POST", "/api/admin/backup", []byte("{}"), false); w.Code != 401 {
 		t.Fatal(w.Code)
 	}
 	body, _ := json.Marshal(map[string]string{"username": "other", "password": database.DefaultAdminPassword})
@@ -76,10 +77,13 @@ func TestAdminSetupAuthenticationAndEditorAPI(t *testing.T) {
 		t.Fatal(cookie)
 	}
 	oldCookie := cookie
-	for _, path := range []string{"/api/admin/layout?operation=storage", "/api/admin/fields", "/api/admin/font", "/api/admin/areas"} {
+	for _, path := range []string{"/api/admin/layout?operation=storage", "/api/admin/fields", "/api/admin/font", "/api/admin/areas", "/api/admin/backup/info"} {
 		if w = call("GET", path, nil, false); w.Code != 403 {
 			t.Fatal("setup bypass", path, w.Code)
 		}
+	}
+	if w = call("POST", "/api/admin/backup", []byte("{}"), true); w.Code != 403 {
+		t.Fatal("backup setup bypass", w.Code)
 	}
 	change := []byte(`{"new_password":"NeuesFiktivesPasswort123!","confirm_password":"NeuesFiktivesPasswort123!"}`)
 	if w = call("POST", "/api/admin/password", change, false); w.Code != 403 {
@@ -179,6 +183,41 @@ func TestAdminSetupAuthenticationAndEditorAPI(t *testing.T) {
 	}
 	if w = call("POST", "/api/admin/password", []byte(`{"current_password":"wrong","new_password":"NochEinFiktivesPasswort123!","confirm_password":"NochEinFiktivesPasswort123!"}`), true); w.Code != 422 {
 		t.Fatal("current password not checked", w.Code)
+	}
+	if w = call("POST", "/api/admin/backup", []byte("{}"), false); w.Code != 403 {
+		t.Fatal("backup missing CSRF", w.Code)
+	}
+	if w = call("GET", "/api/admin/backup", nil, false); w.Code != 405 {
+		t.Fatal("backup GET must not create archive", w.Code)
+	}
+	if w = call("GET", "/api/admin/backup/info", nil, false); w.Code != 200 || !strings.Contains(w.Body.String(), "admin.sqlite") {
+		t.Fatal(w.Code, w.Body)
+	}
+	a.backupMu.Lock()
+	locked := call("POST", "/api/admin/backup", []byte("{}"), true)
+	a.backupMu.Unlock()
+	if locked.Code != 429 {
+		t.Fatal("concurrent backup not guarded", locked.Code)
+	}
+	if w = call("POST", "/api/admin/backup", []byte("{}"), true); w.Code != 200 {
+		t.Fatal(w.Code, w.Body)
+	}
+	if w.Header().Get("Content-Type") != "application/zip" || !strings.Contains(w.Header().Get("Content-Disposition"), "attachment;") || !strings.Contains(w.Header().Get("Cache-Control"), "no-store") {
+		t.Fatal(w.Header())
+	}
+	archive, zipErr := zip.NewReader(bytes.NewReader(w.Body.Bytes()), int64(w.Body.Len()))
+	if zipErr != nil || len(archive.File) != 7 {
+		t.Fatal("invalid backup download", zipErr)
+	}
+	request := httptest.NewRequest("POST", "/api/admin/backup", strings.NewReader("{}"))
+	request.AddCookie(cookie)
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-CSRF-Token", csrf)
+	request.Header.Set("Origin", "https://foreign.invalid")
+	denied := httptest.NewRecorder()
+	mux.ServeHTTP(denied, request)
+	if denied.Code != 403 {
+		t.Fatal("cross-origin backup allowed", denied.Code)
 	}
 	if w = call("POST", "/api/admin/logout", []byte(`{}`), true); w.Code != 200 {
 		t.Fatal(w.Body)

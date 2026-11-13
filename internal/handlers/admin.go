@@ -32,6 +32,7 @@ type Admin struct {
 	db       *sql.DB
 	header   receipts.Header
 	mu       sync.Mutex
+	backupMu sync.Mutex
 	sessions map[[32]byte]adminSession
 	attempts map[string]loginAttempts
 	now      func() time.Time
@@ -109,6 +110,8 @@ func (a *Admin) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/admin/layout", a.protect(a.save))
 	mux.HandleFunc("POST /api/admin/preview", a.protect(a.preview))
 	mux.HandleFunc("GET /api/admin/areas", a.protect(a.areas))
+	mux.HandleFunc("GET /api/admin/backup/info", a.protect(a.backupInfo))
+	mux.HandleFunc("POST /api/admin/backup", a.protect(a.backup))
 	mux.HandleFunc("POST /api/admin/areas", a.protect(a.areas))
 	mux.HandleFunc("GET /api/admin/fields", a.protect(func(w http.ResponseWriter, r *http.Request) { writeJSON(w, 200, receipts.Fields) }))
 	mux.HandleFunc("GET /api/admin/values", a.protect(func(w http.ResponseWriter, r *http.Request) {
