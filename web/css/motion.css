@@ -1,0 +1,32 @@
+/* Shared, short transitions; no timers or changes to form submission/focus. */
+:root{--motion-fast:140ms;--motion-panel:200ms;--motion-ease:cubic-bezier(.2,.7,.2,1)}
+button,a,input,select,textarea{transition:background-color var(--motion-fast) ease,border-color var(--motion-fast) ease,color var(--motion-fast) ease,box-shadow var(--motion-fast) ease}
+.action{transition:transform var(--motion-panel) var(--motion-ease),background-color var(--motion-fast) ease,border-color var(--motion-fast) ease}
+.result-chevron{transition:transform var(--motion-panel) var(--motion-ease)}
+
+/* Keep native dialog semantics, Escape handling and immediate form resets. */
+dialog{opacity:0;transform:translateY(8px);transition:opacity 180ms ease,transform var(--motion-panel) var(--motion-ease),display var(--motion-panel) allow-discrete,overlay var(--motion-panel) allow-discrete}
+dialog[open]{opacity:1;transform:translateY(0)}
+dialog::backdrop{opacity:0;transition:opacity 180ms ease,display var(--motion-panel) allow-discrete,overlay var(--motion-panel) allow-discrete}
+dialog[open]::backdrop{opacity:1}
+@starting-style{dialog[open]{opacity:0;transform:translateY(8px)}dialog[open]::backdrop{opacity:0}}
+@supports not (transition-behavior:allow-discrete){dialog[open]{animation:panel-enter var(--motion-panel) var(--motion-ease)}dialog[open]::backdrop{animation:soft-appear 180ms ease}}
+
+@keyframes soft-appear{from{opacity:0}to{opacity:1}}
+@keyframes panel-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+main{animation:soft-appear 160ms ease}
+.search-result,.results.active,#customer-names:not([hidden]){animation:soft-appear 180ms ease}
+#login-panel:not([hidden]),#password-panel:not([hidden]),#areas-panel:not([hidden]),#backup-panel:not([hidden]),#import-panel:not([hidden]),#editor:not([hidden]),#area-form:not([hidden]),#preview-panel:not([hidden]),#import-preview-panel:not([hidden]),#release-details:not([hidden]){animation:soft-appear var(--motion-panel) ease}
+.result-details[open]>.result-data,.csv-original[open]>.result-data{animation:soft-appear 180ms ease}
+
+/* Modern browsers can also ease the height of native details on open/close. */
+@supports (interpolate-size:allow-keywords){
+ .result-details,.csv-original{interpolate-size:allow-keywords}
+ .result-details::details-content,.csv-original::details-content{block-size:0;opacity:0;overflow:clip;transition:block-size var(--motion-panel) var(--motion-ease),opacity 160ms ease,content-visibility var(--motion-panel) allow-discrete}
+ .result-details[open]::details-content,.csv-original[open]::details-content{block-size:auto;opacity:1}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+ .action:hover{transform:none}
+}
+@media print{*,*::before,*::after{animation:none!important;transition:none!important}}

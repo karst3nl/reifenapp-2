@@ -80,7 +80,7 @@
  function editArea(a){
   if(areaSaving)return;if(areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;
   areaRevision=a?.revision||0;areaDirty=false;$('area-form').reset();$('area-form').hidden=false;
-  $('area-title').textContent=a?'Lagerort bearbeiten':'Lagerort anlegen';$('area-code').value=a?.code||'';$('area-code').readOnly=!!a;$('area-first').value=a?.first_number||'';$('area-last').value=a?.last_number||'';areaMessage('');areaSummary();$('area-form').scrollIntoView({behavior:'smooth'});$(a?'area-first':'area-code').focus();
+  $('area-title').textContent=a?'Lagerort bearbeiten':'Lagerort anlegen';$('area-code').value=a?.code||'';$('area-code').readOnly=!!a;$('area-first').value=a?.first_number||'';$('area-last').value=a?.last_number||'';areaMessage('');areaSummary();$('area-form').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});$(a?'area-first':'area-code').focus();
  }
  function areaSummary(){const first=Number($('area-first').value),last=Number($('area-last').value);$('area-summary').textContent=first>0&&last>=first?`${last-first+1} Plätze · ${$('area-code').value}.${first} bis ${$('area-code').value}.${last}`:'';}
  async function loadInactivitySettings(){
@@ -233,7 +233,7 @@
   catch(error){status(error.message,true)}finally{busy=false;$('editor').inert=false;$('logout').disabled=false;$('change-password').disabled=false;$('save').disabled=false;$('standard').disabled=false}
  }
  $('save').addEventListener('click',()=>persist(true));$('standard').addEventListener('click',()=>persist(false));
- $('preview').addEventListener('click',async()=>{try{const blob=await api('preview',{method:'POST',body:JSON.stringify(state),pdf:true});if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(blob);$('pdf-preview').src=previewURL;$('preview-panel').hidden=false;$('preview-panel').scrollIntoView({behavior:'smooth'});status('Echte PDF-Vorschau erzeugt. Noch nicht gespeicherte Änderungen sind enthalten.')}catch(error){status(error.message,true)}});
+ $('preview').addEventListener('click',async()=>{try{const blob=await api('preview',{method:'POST',body:JSON.stringify(state),pdf:true});if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(blob);$('pdf-preview').src=previewURL;$('preview-panel').hidden=false;$('preview-panel').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});status('Echte PDF-Vorschau erzeugt. Noch nicht gespeicherte Änderungen sind enthalten.')}catch(error){status(error.message,true)}});
  $('close-preview').addEventListener('click',()=>{$('preview-panel').hidden=true;$('pdf-preview').removeAttribute('src');if(previewURL){URL.revokeObjectURL(previewURL);previewURL=''}});
  window.addEventListener('beforeunload',event=>{if(dirty||areaDirty){event.preventDefault();event.returnValue=''}});
  (async()=>{try{const response=await fetch('/api/admin/session',{cache:'no-store'});const data=await response.json();if(response.ok){csrf=data.csrf;if(data.must_change)showPasswordChange(true);else await enter()}else if(response.status!==401){$('login-status').textContent=data.error||'Anmeldung derzeit nicht verfügbar.'}}catch{$('login-status').textContent='Verbindung zum Server nicht möglich.'}})();

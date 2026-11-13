@@ -6,7 +6,7 @@
  function dateBoundary(value,nextDay=false){if(!value)return '';const [y,m,d]=value.split('-').map(Number),date=new Date(y,m-1,d);if(nextDay)date.setDate(date.getDate()+1);return date.toISOString();}
  function params(){const q=new URLSearchParams({page:String(page),page_size:$('history-size').value});for(const [key,id]of [['q','history-query'],['operation','history-operation'],['status','history-state'],['source','history-source']]){const v=$(id).value.trim();if(v)q.set(key,v)}if($('history-from').value)q.set('from',dateBoundary($('history-from').value));if($('history-until').value)q.set('until',dateBoundary($('history-until').value,true));if($('history-warnings').checked)q.set('warnings','true');if(snapshot)q.set('snapshot',String(snapshot));return q;}
  function controls(){ $('history-prev').disabled=!loaded||page<=1;$('history-next').disabled=!loaded||page>=totalPages;}
- function filterBy(value){form.reset();$('history-query').value=value;page=1;snapshot=0;load();form.scrollIntoView({behavior:'smooth',block:'start'});}
+ function filterBy(value){form.reset();$('history-query').value=value;page=1;snapshot=0;load();form.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});}
  function card(item){const node=searchCard(item);const status=node.querySelector('.result-info small');if(item.source!=='csv')status.textContent=status.textContent.replace(' · ',' · Lagerstatus heute: ');const actions=document.createElement('div');actions.className='history-card-actions';for(const [text,value]of [['Kundenverlauf',item.name],['Fahrzeugverlauf',item.plate],['Platzverlauf',item.place]]){if(!value)continue;const button=document.createElement('button');button.type='button';button.textContent=text;button.addEventListener('click',()=>filterBy(value));actions.append(button)}node.append(actions);return node;}
  async function load(){
   clearTimeout(timer);request?.abort();const id=++generation;request=new AbortController();loaded=false;controls();$('history-list').replaceChildren();$('history-list').setAttribute('aria-busy','true');$('history-stats').replaceChildren();$('history-updated').textContent='';$('history-status').classList.remove('is-error');$('history-status').textContent='Historie wird geladen …';
@@ -29,6 +29,6 @@
  form.addEventListener('input',changed);
  $('history-reset').addEventListener('click',()=>{form.reset();page=1;snapshot=0;load()});
  $('history-reload').addEventListener('click',()=>{page=1;snapshot=0;load()});
- for(const [id,delta]of [['history-prev',-1],['history-next',1]])$(id).addEventListener('click',()=>{if(!loaded)return;page+=delta;load();$('history-status').scrollIntoView({behavior:'smooth',block:'start'});});
+ for(const [id,delta]of [['history-prev',-1],['history-next',1]])$(id).addEventListener('click',()=>{if(!loaded)return;page+=delta;load();$('history-status').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});});
  load();
 })();
