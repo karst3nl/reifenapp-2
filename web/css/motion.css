@@ -1,14 +1,15 @@
 /* Shared, short transitions; no timers or changes to form submission/focus. */
-:root{--motion-fast:140ms;--motion-panel:200ms;--motion-ease:cubic-bezier(.2,.7,.2,1)}
+:root{--motion-close:300ms;--motion-fast:140ms;--motion-panel:200ms;--motion-ease:cubic-bezier(.2,.7,.2,1)}
 button,a,input,select,textarea{transition:background-color var(--motion-fast) ease,border-color var(--motion-fast) ease,color var(--motion-fast) ease,box-shadow var(--motion-fast) ease}
 .action{transition:transform var(--motion-panel) var(--motion-ease),background-color var(--motion-fast) ease,border-color var(--motion-fast) ease}
 .result-chevron{transition:transform var(--motion-panel) var(--motion-ease)}
 
-/* Keep native dialog semantics, Escape handling and immediate form resets. */
-dialog{opacity:0;transform:translateY(8px);transition:opacity 180ms ease,transform var(--motion-panel) var(--motion-ease),display var(--motion-panel) allow-discrete,overlay var(--motion-panel) allow-discrete}
-dialog[open]{opacity:1;transform:translateY(0)}
-dialog::backdrop{opacity:0;transition:opacity 180ms ease,display var(--motion-panel) allow-discrete,overlay var(--motion-panel) allow-discrete}
-dialog[open]::backdrop{opacity:1}
+/* Native close semantics; contents are cleared after the visible fade. */
+dialog{opacity:0;transform:translateY(4px);transition:opacity var(--motion-close) ease-in-out,transform var(--motion-close) ease-in-out,display var(--motion-close) allow-discrete,overlay var(--motion-close) allow-discrete}
+dialog:not([open]){pointer-events:none}
+dialog[open]{opacity:1;transform:translateY(0);transition-duration:180ms,var(--motion-panel),var(--motion-panel),var(--motion-panel)}
+dialog::backdrop{opacity:0;transition:opacity var(--motion-close) ease-in-out,display var(--motion-close) allow-discrete,overlay var(--motion-close) allow-discrete}
+dialog[open]::backdrop{opacity:1;transition-duration:180ms,var(--motion-panel),var(--motion-panel)}
 @starting-style{dialog[open]{opacity:0;transform:translateY(8px)}dialog[open]::backdrop{opacity:0}}
 @supports not (transition-behavior:allow-discrete){dialog[open]{animation:panel-enter var(--motion-panel) var(--motion-ease)}dialog[open]::backdrop{animation:soft-appear 180ms ease}}
 

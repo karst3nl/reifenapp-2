@@ -52,7 +52,7 @@
   document.getElementById('release-check').addEventListener('click',check);
   field('confirmed').addEventListener('change',()=>{save.disabled=saving||!target||!field('confirmed').checked;});
   closeButtons.forEach(button=>button.addEventListener('click',()=>{if(!saving)dialog.close();}));
-  dialog.addEventListener('cancel',event=>{if(saving)event.preventDefault();});dialog.addEventListener('close',reset);
+  dialog.addEventListener('cancel',event=>{if(saving)event.preventDefault();});dialog.addEventListener('close',()=>afterDialogFade(dialog,reset));
   form.addEventListener('submit',async event=>{
     event.preventDefault();if(saving||!target||!field('confirmed').checked)return;
     const receipt=window.ReceiptTabs.prepare();

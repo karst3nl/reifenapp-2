@@ -117,7 +117,7 @@
     clearTimeout(nameTimer);nameRequest?.abort();nameGeneration++;suggestions.replaceChildren();
     nameHint.textContent='Vorhandenen Namen auswählen oder neuen eingeben.';
   }
-  dialog.addEventListener('close',resetForm);
+  dialog.addEventListener('close',()=>afterDialogFade(dialog,resetForm));
   function setFormMode(){
     document.getElementById('storage-title').textContent=reservationMode?'Reservierung':wheelChangeMode?'Radwechsel':'Neueinlagerung';
     document.getElementById('storage-help').textContent=wheelChangeMode?'Daten des neu eingelagerten Radsatzes eingeben. Der bisherige Satz desselben Kunden und Fahrzeugs wird auf diesem Lagerplatz getauscht. Pflichtfelder sind mit * markiert.':'Pflichtfelder sind mit * markiert. Testdaten bitte ausdrücklich als fiktiv kennzeichnen.';

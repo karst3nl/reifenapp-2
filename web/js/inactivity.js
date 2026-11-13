@@ -21,7 +21,7 @@
  }
  button.addEventListener('click',()=>{dialog.showModal();dialog.scrollTop=0;refresh();});
  $('inactivity-close').addEventListener('click',()=>dialog.close());
- dialog.addEventListener('close',()=>{$('inactivity-list').replaceChildren();});
+ dialog.addEventListener('close',()=>afterDialogFade(dialog,()=>{$('inactivity-list').replaceChildren();}));
  $('inactivity-reload').addEventListener('click',refresh);
  window.addEventListener('workshop-data-changed',refresh);
  window.addEventListener('focus',()=>{if(!document.hidden)refresh()});

@@ -27,7 +27,7 @@
  }
  button.addEventListener('click',()=>{scope='active';dialog.showModal();dialog.scrollTop=0;loadWarnings();refreshBadge();});
  $('warnings-close').addEventListener('click',()=>dialog.close());
- dialog.addEventListener('close',()=>{listGeneration++;listRequest?.abort();$('warnings-list').replaceChildren();$('warnings-list').setAttribute('aria-busy','false');});
+ dialog.addEventListener('close',()=>{listGeneration++;listRequest?.abort();afterDialogFade(dialog,()=>{$('warnings-list').replaceChildren();$('warnings-list').setAttribute('aria-busy','false');});});
  for(const [id,value] of [['warnings-active','active'],['warnings-all','all']])$(id).addEventListener('click',()=>{scope=value;loadWarnings();});
  $('warnings-reload').addEventListener('click',()=>{loadWarnings();refreshBadge();});
  function refresh(){refreshBadge();if(dialog.open)loadWarnings();}
