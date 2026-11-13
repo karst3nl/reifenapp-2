@@ -60,6 +60,9 @@ unverändert. Nach dem Upgrade genügt wieder `go run . -dev` bzw. `go run .`.
   Fettdruck, Ausrichtung, Text-/Linienfarbe und Flächenfarbe bearbeiten.
 - Duplizieren, löschen und nach vorn/hinten legen. Überlagerungen sind möglich,
   etwa ein Rahmen hinter einem Text. „Rückgängig“/„Wiederholen“ bzw. Strg+Z/Y.
+- Eine gestrichelte rosa Mittellinie markiert die vertikale Seitenmitte bei
+  **105 mm**. Sie bleibt auch bei ausgeschaltetem Raster und über Elementen sichtbar,
+  blockiert keine Mausaktionen und erscheint nicht im PDF.
 - Raster: standardmäßig 5 mm, alternativ 1/2/10 mm oder „Aus“. Beim Ziehen
   rasten X/Y am Seitenraster ein; beim Skalieren die rechte/untere Kante.
   Neue und duplizierte Elemente starten ebenfalls auf Rasterpunkten.
