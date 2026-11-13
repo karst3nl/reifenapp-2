@@ -109,6 +109,8 @@ func (a *Admin) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/admin/layout", a.protect(a.load))
 	mux.HandleFunc("POST /api/admin/layout", a.protect(a.save))
 	mux.HandleFunc("POST /api/admin/preview", a.protect(a.preview))
+	mux.HandleFunc("GET /api/admin/inactivity", a.protect(a.inactivitySettings))
+	mux.HandleFunc("POST /api/admin/inactivity", a.protect(a.inactivitySettings))
 	mux.HandleFunc("GET /api/admin/areas", a.protect(a.areas))
 	mux.HandleFunc("GET /api/admin/backup/info", a.protect(a.backupInfo))
 	mux.HandleFunc("GET /api/admin/imports", a.protect(a.csvList))

@@ -358,7 +358,7 @@ func backupText(value any) string {
 	return fmt.Sprint(value)
 }
 func tableTitle(name string) string {
-	titles := map[string]string{"csv_import_batches": "CSV-Importdateien", "csv_import_rows": "CSV-Originalzeilen", "customers": "Kunden", "vehicles": "Fahrzeuge", "tire_sets": "Radsätze", "storage_places": "Lagerplätze", "storage_areas": "Lagerorte", "storage_claims": "Belegungen und Reservierungen", "storage_details": "Reifendaten und Zubehör", "history_events": "Vorgangshistorie", "storage_releases": "Auslagerungen", "pdf_layouts": "PDF-Vorlagen und Logos", "admin_account": "Admin-Konto", "schema_migrations": "Schemaversionen"}
+	titles := map[string]string{"inactivity_settings": "Frist für fehlende Lagerbewegung", "csv_import_batches": "CSV-Importdateien", "csv_import_rows": "CSV-Originalzeilen", "customers": "Kunden", "vehicles": "Fahrzeuge", "tire_sets": "Radsätze", "storage_places": "Lagerplätze", "storage_areas": "Lagerorte", "storage_claims": "Belegungen und Reservierungen", "storage_details": "Reifendaten und Zubehör", "history_events": "Vorgangshistorie", "storage_releases": "Auslagerungen", "pdf_layouts": "PDF-Vorlagen und Logos", "admin_account": "Admin-Konto", "schema_migrations": "Schemaversionen"}
 	if title := titles[name]; title != "" {
 		return title
 	}

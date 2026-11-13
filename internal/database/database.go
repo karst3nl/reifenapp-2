@@ -16,7 +16,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const currentSchema = 9
+const currentSchema = 10
 
 // Open opens the current schema without upgrading an existing database.
 func Open(path string) (*sql.DB, error) { return OpenWithMigration(path, false) }
@@ -100,7 +100,7 @@ func migrate(db *sql.DB, version int) error {
 			return err
 		}
 	}
-	files := []string{"001_initial.sql", "002_storage_details.sql", "003_storage_operation.sql", "004_storage_releases.sql", "005_history_events.sql", "006_pdf_layouts.sql", "007_admin_account.sql", "008_storage_areas.sql", "009_csv_history.sql"}
+	files := []string{"001_initial.sql", "002_storage_details.sql", "003_storage_operation.sql", "004_storage_releases.sql", "005_history_events.sql", "006_pdf_layouts.sql", "007_admin_account.sql", "008_storage_areas.sql", "009_csv_history.sql", "010_inactivity.sql"}
 	for i := version; i < len(files); i++ {
 		script, err := migrations.Files.ReadFile(files[i])
 		if err != nil {
