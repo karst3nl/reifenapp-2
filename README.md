@@ -30,7 +30,8 @@ Historie und druckbaren DIN-A4-Belegen. Ohne Cloudpflicht.
 | Auslagerung | Belegung nach Bestätigung aufheben und den Platz wieder freigeben; Historie erhalten. |
 | Druckbelege | Nach jedem erfolgreichen Vorgang automatisch eine einseitige A4-PDF im neuen Tab öffnen; Nachdruck über die Suche. |
 | Lagerplatzverwaltung | Lagerorte anlegen, Nummernbereiche ändern und freie, belegte oder reservierte Plätze überblicken. |
-| Administration | Getrennte Bereiche für Lagerplätze und passwortgeschützten PDF-Designer mit Drag-and-drop, horizontalem und vertikalem Raster, Logoimport (PNG/JPEG/SVG) und eigenen Vorlagen je Vorgangsart. |
+| Backups | Vollständige Datenbank als ZIP herunterladen, inklusive offline lesbarer HTML-Übersicht und JSON-Export. |
+| Administration | Getrennte Bereiche für Backups, Lagerplätze und passwortgeschützten PDF-Designer mit Drag-and-drop, horizontalem und vertikalem Raster, Logoimport (PNG/JPEG/SVG) und eigenen Vorlagen je Vorgangsart. |
 
 Aktive Belegungen und Reservierungen dürfen sich nicht überschneiden. Diese Regel
 wird auch in der Datenbank abgesichert. Die Ausgangskonfiguration enthält 640 Lagerplätze in den Bereichen
@@ -80,7 +81,9 @@ Benutzernamen `admin` und dem Startpasswort `Reifenapp-Start2026!` an.
 Beim ersten Login musst du ein eigenes Passwort festlegen, bevor der Adminbereich
 freigeschaltet wird. Es wird ausschließlich als bcrypt-Hash lokal gespeichert.
 
-Nach dem Login wählst du zwischen **Lagerplätze** und **PDF-Editor**.
+Nach dem Login wählst du zwischen **Lagerplätze**, **PDF-Editor** und **Backup**.
+Unter [Backup](docs/backups.md) kannst du die komplette Datenbank herunterladen
+und die enthaltene HTML-Übersicht ohne SQLite-Software ansehen.
 Die [Lagerplatzverwaltung](docs/lagerplaetze.md) zeigt die Belegung und erlaubt neue
 Lagerorte sowie Änderungen der Nummernbereiche.
 
@@ -150,6 +153,7 @@ Automatisierte Tests verwenden temporäre Datenbanken und ausschließlich fiktiv
 
 ## Dokumentation
 
+- [Backups herunterladen, lesen und wiederherstellen](docs/backups.md)
 - [Saisonanzeige und Zählweise](docs/saison.md)
 - [Historie verwenden](docs/historie.md)
 - [Betrieb, Datenbank und HTTP-API](docs/betrieb-und-api.md)

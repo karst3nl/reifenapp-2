@@ -14,3 +14,5 @@
 @media print{#paper::before{display:none}}
 
 input,select,textarea{accent-color:var(--accent)}
+
+#backup-panel{max-width:900px;margin:auto}#backup-panel li{margin:8px 0}#backup-status{min-height:24px}#backup-status.error{padding:12px;border:1px solid #ac2634;border-radius:8px;background:#fff0f1}#backup-link{display:inline-block;margin-bottom:12px}#backup-panel .hint{margin-top:18px}

@@ -20,3 +20,7 @@
 *.pem
 *.test
 coverage*
+
+# Downloaded backup archives and their extracted customer-data folders.
+reifenapp-backup-*.zip
+reifenapp-backup-*/

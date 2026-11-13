@@ -8,10 +8,11 @@
   let response;try{response=await fetch('/api/admin/'+path,{...options,headers,cache:'no-store'})}catch{throw Error('Verbindung zum Server fehlgeschlagen. Bitte erneut versuchen.');}
   if(response.status===401&&path!=='login'){showLogin();$('login-status').textContent='Sitzung abgelaufen. Bitte neu anmelden.';throw Error('Sitzung abgelaufen. Bitte neu anmelden.');}
   if(!response.ok){let data;try{data=await response.json()}catch{}throw Error(data?.error||'Anfrage fehlgeschlagen.');}
+  if(options.download){const match=/filename="([a-zA-Z0-9._-]+)"/.exec(response.headers.get('Content-Disposition')||'');return {blob:await response.blob(),filename:match?.[1]||'reifenapp-backup.zip'};}
   return options.pdf?response.blob():response.json();
  }
- function hideSections(){for(const id of ['admin-nav','areas-panel','editor'])$(id).hidden=true;}
- function showLogin(){hideSections();loadGeneration++;csrf='';$('password-form').reset();$('password').value='';$('login-panel').hidden=false;$('editor').hidden=true;$('logout').hidden=true;$('change-password').hidden=true;$('password-panel').hidden=true;if(previewURL){URL.revokeObjectURL(previewURL);previewURL=''}$('pdf-preview').removeAttribute('src');}
+ function hideSections(){for(const id of ['admin-nav','areas-panel','backup-panel','editor'])$(id).hidden=true;}
+ function showLogin(){clearBackupLink();hideSections();loadGeneration++;csrf='';$('password-form').reset();$('password').value='';$('login-panel').hidden=false;$('editor').hidden=true;$('logout').hidden=true;$('change-password').hidden=true;$('password-panel').hidden=true;if(previewURL){URL.revokeObjectURL(previewURL);previewURL=''}$('pdf-preview').removeAttribute('src');}
  function selectedElement(){return state?.template.elements.find(e=>e.id===selected)}
  function remember(){undo.push(clone(state.template));if(undo.length>80)undo.shift();redo=[];dirty=true;}
  function round(n){return Math.round(n*100)/100}
@@ -55,15 +56,15 @@
   fields=await api('fields');for(const id of ['palette-field','prop-field']){$(id).replaceChildren();for(const f of fields)$(id).add(new Option(f.label,f.key))}
   if(state&&dirty){$('operation').value=state.operation;const [data,sample]=await Promise.all([api('layout?operation='+state.operation),api('values?operation='+state.operation)]);defaults=data.default;values=sample;paint();zoom();status('Sitzung erneuert. Ungespeicherter Entwurf bleibt geöffnet.');}else{await load();}await document.fonts.load('12px Receipt');await document.fonts.load('bold 12px Receipt');paint();await selectSection(activeSection);
  }
- let activeSection='areas',areaRevision=0,areaSaving=false,areaDirty=false,areaGeneration=0;
+ let activeSection='areas',areaRevision=0,areaSaving=false,areaDirty=false,areaGeneration=0,backupSaving=false,backupURL='';
  const areaMessage=(text,error=false)=>{$('area-status').textContent=text;$('area-status').classList.toggle('error',error)};
  async function selectSection(section){
-  if(busy||areaSaving)return;
+  if(busy||areaSaving||backupSaving)return;
   if(section!==activeSection&&areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;
   if(section!==activeSection){areaDirty=false;$('area-form').hidden=true;}
-  activeSection=section;$('editor').hidden=section!=='pdf';$('areas-panel').hidden=section!=='areas';
-  for(const [id,name] of [['nav-areas','areas'],['nav-pdf','pdf']]){$(id).setAttribute('aria-pressed',String(name===section));$(id).classList.toggle('secondary',name!==section);}
-  if(section==='areas')await loadAreas();else{zoom();paint();}
+  activeSection=section;$('editor').hidden=section!=='pdf';$('areas-panel').hidden=section!=='areas';$('backup-panel').hidden=section!=='backup';
+  for(const [id,name] of [['nav-areas','areas'],['nav-pdf','pdf'],['nav-backup','backup']]){$(id).setAttribute('aria-pressed',String(name===section));$(id).classList.toggle('secondary',name!==section);}
+  if(section==='areas')await loadAreas();else if(section==='backup')await loadBackupInfo();else{zoom();paint();}
  }
  async function loadAreas(){
   const generation=++areaGeneration;$('areas-status').textContent='Lagerorte werden geladen …';
@@ -81,7 +82,7 @@
   $('area-title').textContent=a?'Lagerort bearbeiten':'Lagerort anlegen';$('area-code').value=a?.code||'';$('area-code').readOnly=!!a;$('area-first').value=a?.first_number||'';$('area-last').value=a?.last_number||'';areaMessage('');areaSummary();$('area-form').scrollIntoView({behavior:'smooth'});$(a?'area-first':'area-code').focus();
  }
  function areaSummary(){const first=Number($('area-first').value),last=Number($('area-last').value);$('area-summary').textContent=first>0&&last>=first?`${last-first+1} Plätze · ${$('area-code').value}.${first} bis ${$('area-code').value}.${last}`:'';}
- $('nav-areas').onclick=()=>selectSection('areas');$('nav-pdf').onclick=()=>selectSection('pdf');
+ $('nav-areas').onclick=()=>selectSection('areas');$('nav-pdf').onclick=()=>selectSection('pdf');$('nav-backup').onclick=()=>selectSection('backup');
  $('area-new').onclick=()=>editArea(null);$('areas-reload').onclick=()=>{if(areaSaving)return;if(areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;areaDirty=false;$('area-form').hidden=true;loadAreas();};
  $('area-cancel').onclick=()=>{if(areaSaving)return;if(areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;areaDirty=false;$('area-form').hidden=true;};
  $('area-form').addEventListener('input',()=>{areaDirty=true;areaSummary()});
@@ -92,6 +93,21 @@
   areaSaving=true;$('area-form').inert=true;$('change-password').disabled=true;$('logout').disabled=true;areaMessage('Lagerort wird gespeichert …');
   try{await api('areas',{method:'POST',body:JSON.stringify({code:$('area-code').value,first_number:first,last_number:last,revision:areaRevision})});areaDirty=false;$('area-form').hidden=true;await loadAreas();$('areas-status').textContent+=' · Änderung gespeichert.';}
   catch(error){areaMessage(error.message,true)}finally{areaSaving=false;$('area-form').inert=false;$('change-password').disabled=false;$('logout').disabled=false;}
+ });
+ function clearBackupLink(){if(backupURL)URL.revokeObjectURL(backupURL);backupURL='';$('backup-link').hidden=true;$('backup-link').removeAttribute('href');}
+ async function loadBackupInfo(){
+  $('backup-status').textContent='';$('backup-status').classList.remove('error');
+  try{const info=await api('backup/info');if(!csrf)return;$('backup-database').textContent=info.database;$('backup-schema').textContent=info.schema_version;}
+  catch(error){$('backup-status').textContent=error.message;$('backup-status').classList.add('error');}
+ }
+ $('backup-download').addEventListener('click',async()=>{
+  if(backupSaving||busy||areaSaving)return;backupSaving=true;$('backup-download').disabled=true;$('logout').disabled=true;$('change-password').disabled=true;clearBackupLink();$('backup-status').classList.remove('error');$('backup-status').textContent='Konsistente Datenbanksicherung wird erstellt …';
+  try{
+   const result=await api('backup',{method:'POST',body:'{}',download:true});if(!csrf)return;
+   backupURL=URL.createObjectURL(result.blob);const link=$('backup-link');link.href=backupURL;link.download=result.filename;link.hidden=false;link.click();
+   $('backup-status').textContent='Backup erstellt. Der Download wurde gestartet. ZIP entpacken und uebersicht.html im Browser öffnen.';
+  }catch(error){$('backup-status').textContent=error.message;$('backup-status').classList.add('error');}
+  finally{backupSaving=false;$('backup-download').disabled=false;$('logout').disabled=false;$('change-password').disabled=false;}
  });
  $('login-form').addEventListener('submit',async event=>{event.preventDefault();const input=$('password');const password=input.value;input.value='';$('login-status').textContent='Anmeldung …';try{const data=await api('login',{method:'POST',body:JSON.stringify({username:$('username').value,password})});csrf=data.csrf;if(data.must_change)showPasswordChange(true);else await enter();$('login-status').textContent=''}catch(error){$('login-status').textContent=error.message}});
  function showPasswordChange(required){hideSections();
@@ -109,7 +125,7 @@
   try{const data=await api('password',{method:'POST',body:JSON.stringify(body)});csrf=data.csrf;$('password-form').reset();await enter();status('Neues Admin-Passwort gespeichert. Bisherige Anmeldungen wurden beendet.');}
   catch(error){$('password-status').textContent=error.message}finally{enabled.forEach(el=>el.disabled=false);$('save-password').disabled=false;$('logout').disabled=false}
  });
- $('logout').addEventListener('click',async()=>{if((dirty||areaDirty)&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;if(areaSaving||busy)return;try{await api('logout',{method:'POST',body:'{}'});dirty=false;areaDirty=false;state=null;showLogin()}catch(error){status(error.message,true)}});
+ $('logout').addEventListener('click',async()=>{if((dirty||areaDirty)&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;if(areaSaving||busy||backupSaving)return;try{await api('logout',{method:'POST',body:'{}'});dirty=false;areaDirty=false;state=null;showLogin()}catch(error){status(error.message,true)}});
  $('operation').addEventListener('change',async()=>{if(dirty&&!confirm('Ungespeicherte Änderungen verwerfen?')){$('operation').value=state.operation;return}try{await load()}catch(error){status(error.message,true)}});
  $('reload').addEventListener('click',async()=>{if(dirty&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;try{await load()}catch(error){status(error.message,true)}});
  function add(type){if(state.template.elements.length>=100){status('Maximal 100 Elemente erlaubt.',true);return}remember();let id;do{id='element-'+Date.now()+'-'+(++counter)}while(state.template.elements.some(e=>e.id===id));

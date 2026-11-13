@@ -5,6 +5,9 @@ Für Installation und Schnellstart siehe [README](../README.md).
 
 ## Lokale Daten und Migrationen
 
+Vollständige Downloads mit Offline-Leseexport sind unter **Administration → Backup**
+verfügbar: [Sichern und Wiederherstellen](backups.md).
+
 `go run .` verwendet `data/reifenapp.sqlite`, `go run . -dev` die getrennte
 `data/development.sqlite`. Nur eine neu erstellte Entwicklungsdatenbank erhält
 fiktive Beispieldaten. Vorhandene Datenbanken werden nicht neu befüllt.

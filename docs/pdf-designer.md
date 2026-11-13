@@ -1,6 +1,6 @@
 # Admin-Panel und PDF-Designer
 
-Die Administration bietet getrennte Bereiche für **Lagerplätze** und **PDF-Editor**.
+Die Administration bietet getrennte Bereiche für **Lagerplätze**, **PDF-Editor** und **Backup**.
 Nach der Anmeldung oben „PDF-Editor“ wählen. Zur Lagerplatzverwaltung siehe
 [Lagerorte und Nummernbereiche](lagerplaetze.md). Normale Werkstattvorgänge
 benötigen weiterhin keine Anmeldung. Die Startseite behält ihr bestehendes Design.
