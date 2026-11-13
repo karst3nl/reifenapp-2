@@ -200,7 +200,7 @@
     const value=name=>field(name).value;
     const input={};
     for(const key of ['area','name','brand','model'])input[key]=value(key);
-    if(!reservationMode)for(const key of ['tire_type','rim_type','front_depth','rear_depth','mechanic','notes'])input[key]=value(key);
+    if(!reservationMode)for(const key of ['tire_type','rim_type','front_depth','rear_depth','notes'])input[key]=value(key);
     input.number=Number(value('number'));
     input.plate=plateValue();
     if(!reservationMode){
