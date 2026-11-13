@@ -38,7 +38,7 @@
   }
   function validateField(el){
     if(!el.matches('input,select,textarea'))return true;
-    if(el.name==='number'&&conflictPlace===field('area').value+'.'+el.value){markError(el,'Dieser Lagerplatz ist belegt oder reserviert. Bitte einen anderen wählen.');return false;}
+    if(!wheelChangeMode&&el.name==='number'&&conflictPlace===field('area').value+'.'+el.value){markError(el,'Dieser Lagerplatz ist belegt oder reserviert. Bitte einen anderen wählen.');return false;}
     clearFieldError(el);
     if(el.disabled)return true;
     if(!el.checkValidity()||(el.required&&el.type!=='checkbox'&&!el.value.trim())){
@@ -122,6 +122,7 @@
     document.getElementById('storage-title').textContent=reservationMode?'Reservierung':wheelChangeMode?'Radwechsel':'Neueinlagerung';
     save.textContent=reservationMode?'Reservierung speichern':wheelChangeMode?'Radwechsel speichern':'Einlagerung speichern';
     dialog.classList.toggle('reservation-mode',reservationMode);
+    placeHint.hidden=wheelChangeMode;document.getElementById('place-recheck').hidden=wheelChangeMode;
     for(const key of ['tire_type','rim_type']){field(key).disabled=reservationMode;field(key).closest('label').hidden=reservationMode;}
     form.querySelectorAll('fieldset').forEach((section,index)=>{
       if(index===0)return;
@@ -149,12 +150,13 @@
       ready=true;numberRange();status.textContent='';save.disabled=false;
     }catch{status.textContent='Auswahllisten konnten nicht geladen werden. Bitte schließen und erneut öffnen.';}
   };
-  function updateSaveState(){save.disabled=!ready||saving||placePending||placeAllowed===false;}
+  function updateSaveState(){save.disabled=!ready||saving||(!wheelChangeMode&&(placePending||placeAllowed===false));}
   function plateValue(){return field('plate_district').value+'-'+field('plate_letters').value.trim().toUpperCase()+' '+field('plate_number').value.trim().toUpperCase();}
   function schedulePlaceCheck(){
     clearTimeout(placeTimer);placeRequest?.abort();const generation=++placeGeneration;
     if(conflictPlace){conflictPlace='';clearFieldError(field('number'));status.textContent='';status.classList.remove('is-error');}
     placeAllowed=null;placePending=false;placeHint.textContent='';placeHint.className='place-check';
+    if(wheelChangeMode){updateSaveState();return;}
     const area=field('area').value, number=Number(field('number').value);
     if(!dialog.open||!area||!field('number').value||!field('number').validity.valid){updateSaveState();return;}
     placePending=true;placeHint.textContent='Lagerplatz wird geprüft …';updateSaveState();
@@ -190,7 +192,7 @@
   close.addEventListener('click',()=>{if(!saving)dialog.close();});
   dialog.addEventListener('cancel',event=>{if(saving)event.preventDefault();});
   form.addEventListener('submit',async event=>{
-    event.preventDefault();if(saving||!ready||placePending||placeAllowed===false)return;clearErrors();
+    event.preventDefault();if(saving||!ready||(!wheelChangeMode&&(placePending||placeAllowed===false)))return;clearErrors();
     let valid=true;
     form.querySelectorAll('input,select,textarea').forEach(el=>{if(!validateField(el))valid=false;});
     if(!valid){status.classList.add('is-error');status.textContent='Bitte die rot markierten Pflichtfelder prüfen.';form.querySelector('[aria-invalid=true]')?.focus();return;}
@@ -215,7 +217,8 @@
       const data=await response.json();
       if(!response.ok){
         receipt.cancel();status.classList.add('is-error');
-        if(response.status===409){placeAllowed=false;placeHint.textContent='Belegung oder Reservierung hat sich geändert. Bitte Eingaben prüfen und erneut prüfen.';placeHint.className='place-check is-unavailable';conflictPlace=input.area+'.'+input.number;markError(field('number'),'Lagerplatz '+conflictPlace+' ist belegt oder reserviert. Bitte einen anderen wählen.');}
+        if(response.status===409&&wheelChangeMode){markError(field('number'),data.error||'Dieser Lagerplatz ist bereits vergeben.');}
+        if(response.status===409&&!wheelChangeMode){placeAllowed=false;placeHint.textContent='Belegung oder Reservierung hat sich geändert. Bitte Eingaben prüfen und erneut prüfen.';placeHint.className='place-check is-unavailable';conflictPlace=input.area+'.'+input.number;markError(field('number'),'Lagerplatz '+conflictPlace+' ist belegt oder reserviert. Bitte einen anderen wählen.');}
         status.textContent=data.error||'Speichern fehlgeschlagen.';
         for(const [name,message] of Object.entries(data.fields||{})){
           const el=field(name==='plate'?'plate_district':name);if(!el)continue;

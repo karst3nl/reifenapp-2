@@ -115,7 +115,11 @@ Reservierungen benötigen nur Platz, Kunde, Kennzeichen, Marke und Modell.
 
 `/api/storage/check` unterscheidet über `purpose` zwischen `storage` und
 `reservation` und meldet freie, belegte oder reservierte Plätze. Eine Vorprüfung
-ersetzt nicht die transaktionale Kontrolle beim Speichern.
+ersetzt nicht die transaktionale Kontrolle beim Speichern. Im Radwechselformular
+entfällt die laufende Vorabprüfung einschließlich „Erneut prüfen“. Die bestehenden
+serverseitigen Regeln gegen doppelte Belegung und fremde Reservierungen gelten
+beim Speichern weiterhin; ein automatischer Austausch belegter Radsätze ist
+damit nicht verbunden.
 Bei einer Auslagerung müssen `claim_id` der zuvor ermittelten Belegung und
 `confirmed: true` mitgesendet werden. So wird keine inzwischen geänderte Belegung
 versehentlich freigegeben. Reservierungen werden darüber nicht storniert.
