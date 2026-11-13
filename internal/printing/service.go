@@ -21,12 +21,14 @@ func (s *Service) Printers(ctx context.Context) ([]Printer, error) { return USBP
 func (s *Service) Check(ctx context.Context, queue string) error {
 	return checkQueue(ctx, s.Run, queue)
 }
-func (s *Service) Start(ctx context.Context) (context.CancelFunc, error) {
+func (s *Service) Start(ctx context.Context) (func(), error) {
 	if err := database.RecoverLabelJobs(ctx, s.DB); err != nil {
 		return nil, err
 	}
 	ctx, cancel := context.WithCancel(ctx)
+	done := make(chan struct{})
 	go func() {
+		defer close(done)
 		ticker := time.NewTicker(2 * time.Second)
 		defer ticker.Stop()
 		for {
@@ -40,7 +42,7 @@ func (s *Service) Start(ctx context.Context) (context.CancelFunc, error) {
 			}
 		}
 	}()
-	return cancel, nil
+	return func() { cancel(); <-done }, nil
 }
 func (s *Service) ProcessOne(ctx context.Context) error {
 	j, err := database.ClaimLabelJob(ctx, s.DB)

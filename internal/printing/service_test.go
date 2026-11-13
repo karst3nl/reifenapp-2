@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/karst3nl/reifenapp-2/internal/database"
 	"github.com/karst3nl/reifenapp-2/internal/models"
@@ -99,5 +100,47 @@ func TestMissingPrinterDoesNotSubmit(t *testing.T) {
 	j, err := database.LabelJobStatus(ctx, db, id)
 	if err != nil || j.Status != "failed" {
 		t.Fatal(j, err)
+	}
+}
+
+func TestStopWaitsForInFlightPrintStatus(t *testing.T) {
+	ctx := context.Background()
+	db, err := database.Open(filepath.Join(t.TempDir(), "stop.sqlite"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	settings := models.DefaultLabelSettings()
+	settings.Queue = "Argox_USB"
+	id, err := database.TestLabelJob(ctx, db, settings, receipts.ExampleReceipt("storage"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	started := make(chan struct{})
+	service := &Service{DB: db, Run: func(ctx context.Context, name string, _ []byte, args ...string) ([]byte, error) {
+		if name == "lpstat" {
+			if strings.Contains(strings.Join(args, " "), "-v") {
+				return []byte("device for Argox_USB: usb://Argox/Test\n"), nil
+			}
+			return []byte("printer Argox_USB is idle. enabled since today"), nil
+		}
+		close(started)
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}}
+	stop, err := service.Start(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stop()
+	select {
+	case <-started:
+	case <-time.After(5 * time.Second):
+		t.Fatal("worker did not start")
+	}
+	stop()
+	job, err := database.LabelJobStatus(ctx, db, id)
+	if err != nil || job.Status != "uncertain" {
+		t.Fatal("stop returned before persistent status", job, err)
 	}
 }

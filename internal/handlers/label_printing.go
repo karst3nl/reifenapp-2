@@ -13,7 +13,7 @@ import (
 	"github.com/karst3nl/reifenapp-2/internal/receipts"
 )
 
-func (a *Admin) StartLabelPrinter(ctx context.Context) (context.CancelFunc, error) {
+func (a *Admin) StartLabelPrinter(ctx context.Context) (func(), error) {
 	return a.printer.Start(ctx)
 }
 func (a *Admin) labelConfig(w http.ResponseWriter, r *http.Request) {
