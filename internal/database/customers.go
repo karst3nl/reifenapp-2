@@ -13,7 +13,7 @@ func CustomerNames(ctx context.Context, db *sql.DB, query string) ([]string, err
 	if query == "" {
 		return result, nil
 	}
-	rows, err := db.QueryContext(ctx, "SELECT DISTINCT name FROM customers ORDER BY name")
+	rows, err := db.QueryContext(ctx, "SELECT name FROM customers UNION SELECT name FROM history_events WHERE source='csv' AND name!='' ORDER BY name")
 	if err != nil {
 		return nil, err
 	}

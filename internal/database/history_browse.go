@@ -32,14 +32,14 @@ type HistoryPage struct {
 
 // The event-id boundary keeps pagination stable while new events are recorded.
 func BrowseHistory(ctx context.Context, db *sql.DB, f HistoryFilter) (HistoryPage, error) {
-	result := HistoryPage{Items: []models.SearchResult{}, Page: f.Page, PageSize: f.PageSize, Snapshot: f.Snapshot, Operations: map[string]int{"storage": 0, "wheel_change": 0, "reservation": 0, "release": 0}}
+	result := HistoryPage{Items: []models.SearchResult{}, Page: f.Page, PageSize: f.PageSize, Snapshot: f.Snapshot, Operations: map[string]int{"storage": 0, "wheel_change": 0, "reservation": 0, "release": 0, "imported": 0}}
 	if f.Page < 1 || f.Page > 1000000 || f.PageSize < 1 || f.PageSize > 100 {
 		return result, ErrInvalidHistoryFilter
 	}
 	rows, err := db.QueryContext(ctx, `WITH boundary AS (SELECT CASE WHEN ?=0 THEN COALESCE(MAX(id),0) ELSE ? END AS id FROM history_events)
- SELECT h.id,h.claim_id,h.operation,h.occurred_at,h.place,h.name,h.plate,h.car,h.source,h.payload,s.status,
- (s.status='active' AND h.operation!='release'),b.id
- FROM history_events h JOIN storage_claims s ON s.id=h.claim_id CROSS JOIN boundary b
+ SELECT h.id,COALESCE(h.claim_id,0),h.operation,h.occurred_at,h.place,h.name,h.plate,h.car,h.source,h.payload,COALESCE(s.status,'archived'),
+ COALESCE((s.status='active' AND h.operation!='release'),0),b.id
+ FROM history_events h LEFT JOIN storage_claims s ON s.id=h.claim_id CROSS JOIN boundary b
  WHERE h.id<=b.id AND (?='' OR h.operation=?) AND (?='' OR h.source=?)
  ORDER BY julianday(h.occurred_at) DESC,h.id DESC`, f.Snapshot, f.Snapshot, f.Operation, f.Operation, f.Source, f.Source)
 	if err != nil {
@@ -62,7 +62,7 @@ func BrowseHistory(ctx context.Context, db *sql.DB, f HistoryFilter) (HistoryPag
 				continue
 			}
 		}
-		if f.Status == "active" && !r.Active || f.Status == "closed" && r.Active {
+		if f.Status == "active" && !r.Active || f.Status == "closed" && (r.Active || r.Source == "csv") || f.Status == "archived" && r.Source != "csv" {
 			continue
 		}
 		if err = json.Unmarshal([]byte(payload), &r.Details); err != nil {
@@ -72,10 +72,16 @@ func BrowseHistory(ctx context.Context, db *sql.DB, f HistoryFilter) (HistoryPag
 		if f.WarningsOnly && len(r.TreadWarnings) == 0 {
 			continue
 		}
-		label := map[string]string{"storage": "Neueinlagerung", "wheel_change": "Radwechsel", "reservation": "Reservierung", "release": "Auslagerung"}[r.Operation]
+		label := map[string]string{"storage": "Neueinlagerung", "wheel_change": "Radwechsel", "reservation": "Reservierung", "release": "Auslagerung", "imported": "Altvorgang"}[r.Operation]
 		if q != "" {
 			match := false
-			for _, value := range []string{r.Name, r.Plate, r.Place, r.Car, label, r.Details.Notes, r.Details.Mechanic} {
+			values := []string{r.Name, r.Plate, r.Place, r.Car, label, r.Details.Notes, r.Details.Mechanic}
+			if r.Details.Import != nil {
+				for _, field := range r.Details.Import.Fields {
+					values = append(values, field.Value)
+				}
+			}
+			for _, value := range values {
 				if strings.Contains(normalize(value), q) {
 					match = true
 					break
@@ -95,7 +101,12 @@ func BrowseHistory(ctx context.Context, db *sql.DB, f HistoryFilter) (HistoryPag
 			if r.Operation == "release" {
 				r.Kind = "release"
 			}
-			r.ReceiptURL = models.ReceiptPath(claimID, r.Operation)
+			if r.Source == "csv" {
+				r.Kind = "archive"
+			}
+			if claimID > 0 {
+				r.ReceiptURL = models.ReceiptPath(claimID, r.Operation)
+			}
 			result.Items = append(result.Items, r)
 		}
 	}

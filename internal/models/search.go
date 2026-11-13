@@ -1,7 +1,22 @@
 package models
 
+type CSVField struct {
+	Column  string `json:"column"`
+	Value   string `json:"value"`
+	Missing bool   `json:"missing,omitempty"`
+}
+type CSVOrigin struct {
+	Filename   string     `json:"filename"`
+	Line       int        `json:"line"`
+	ImportedAt string     `json:"imported_at"`
+	Operation  string     `json:"operation"`
+	Fields     []CSVField `json:"fields"`
+	Warnings   []string   `json:"warnings"`
+}
+
 // SearchDetails contains the immutable data captured for this particular event.
 type SearchDetails struct {
+	Import      *CSVOrigin           `json:"import,omitempty"`
 	Brand       string               `json:"brand"`
 	Model       string               `json:"model"`
 	TireType    string               `json:"tire_type"`

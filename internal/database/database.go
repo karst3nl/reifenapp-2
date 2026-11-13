@@ -16,7 +16,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const currentSchema = 8
+const currentSchema = 9
 
 // Open opens the current schema without upgrading an existing database.
 func Open(path string) (*sql.DB, error) { return OpenWithMigration(path, false) }
@@ -100,7 +100,7 @@ func migrate(db *sql.DB, version int) error {
 			return err
 		}
 	}
-	files := []string{"001_initial.sql", "002_storage_details.sql", "003_storage_operation.sql", "004_storage_releases.sql", "005_history_events.sql", "006_pdf_layouts.sql", "007_admin_account.sql", "008_storage_areas.sql"}
+	files := []string{"001_initial.sql", "002_storage_details.sql", "003_storage_operation.sql", "004_storage_releases.sql", "005_history_events.sql", "006_pdf_layouts.sql", "007_admin_account.sql", "008_storage_areas.sql", "009_csv_history.sql"}
 	for i := version; i < len(files); i++ {
 		script, err := migrations.Files.ReadFile(files[i])
 		if err != nil {
@@ -147,10 +147,10 @@ func TreadWarnings(ctx context.Context, db *sql.DB, activeOnly bool) ([]models.S
 
 func historyResults(ctx context.Context, db *sql.DB, q string, onlyWarnings, activeOnly bool) ([]models.SearchResult, error) {
 	result := []models.SearchResult{}
-	rows, err := db.QueryContext(ctx, `SELECT h.id,h.claim_id,h.place,h.name,h.plate,h.car,h.occurred_at,h.operation,
+	rows, err := db.QueryContext(ctx, `SELECT h.id,COALESCE(h.claim_id,0),h.place,h.name,h.plate,h.car,h.occurred_at,h.operation,
  CASE h.operation WHEN 'reservation' THEN 'reservation' WHEN 'release' THEN 'release' ELSE 'occupancy' END,
- s.status,(s.status='active' AND h.operation!='release'),h.source,h.payload
- FROM history_events h JOIN storage_claims s ON s.id=h.claim_id
+ COALESCE(s.status,'archived'),COALESCE((s.status='active' AND h.operation!='release'),0),h.source,h.payload
+ FROM history_events h LEFT JOIN storage_claims s ON s.id=h.claim_id
  WHERE (?=0 OR (s.status='active' AND s.kind='occupancy' AND h.operation IN ('storage','wheel_change')))
  ORDER BY julianday(h.occurred_at) DESC,h.id DESC`, activeOnly)
 	if err != nil {
@@ -164,12 +164,23 @@ func historyResults(ctx context.Context, db *sql.DB, q string, onlyWarnings, act
 		if err = rows.Scan(&r.EventID, &claimID, &r.Place, &r.Name, &r.Plate, &r.Car, &r.Date, &r.Operation, &r.Kind, &r.Status, &r.Active, &r.Source, &payload); err != nil {
 			return nil, err
 		}
-		r.ReceiptURL = models.ReceiptPath(claimID, r.Operation)
-		label := map[string]string{"storage": "Neueinlagerung", "wheel_change": "Radwechsel", "reservation": "Reservierung", "release": "Auslagerung"}[r.Operation]
-		if onlyWarnings || strings.Contains(normalize(label), q) || strings.Contains(normalize(r.Name), q) || strings.Contains(normalize(r.Plate), q) || strings.Contains(normalize(r.Place), q) {
-			if err = json.Unmarshal([]byte(payload), &r.Details); err != nil {
-				return nil, err
+		if r.Source == "csv" {
+			r.Kind = "archive"
+		}
+		if claimID > 0 {
+			r.ReceiptURL = models.ReceiptPath(claimID, r.Operation)
+		}
+		label := map[string]string{"storage": "Neueinlagerung", "wheel_change": "Radwechsel", "reservation": "Reservierung", "release": "Auslagerung", "imported": "Altvorgang"}[r.Operation]
+		if err = json.Unmarshal([]byte(payload), &r.Details); err != nil {
+			return nil, err
+		}
+		extra := ""
+		if r.Details.Import != nil {
+			for _, field := range r.Details.Import.Fields {
+				extra += " " + field.Value
 			}
+		}
+		if onlyWarnings || strings.Contains(normalize(label), q) || strings.Contains(normalize(r.Name), q) || strings.Contains(normalize(r.Plate), q) || strings.Contains(normalize(r.Place), q) || strings.Contains(normalize(r.Car), q) || strings.Contains(normalize(extra), q) {
 			r.TreadWarnings = r.Details.TreadWarnings()
 			if onlyWarnings && (len(r.TreadWarnings) == 0 || (activeOnly && (!r.Active || r.Kind != "occupancy"))) {
 				continue

@@ -18,7 +18,7 @@ func History(db *sql.DB) http.HandlerFunc {
 		invalid := func() {
 			writeJSON(w, 400, map[string]string{"error": "Ungültige Historienfilter. Bitte Suchtext, Zeitraum und Seitenauswahl prüfen."})
 		}
-		if utf8.RuneCountInString(f.Query) > 200 || (f.Operation != "" && !receipts.ValidOperation(f.Operation)) || (f.Status != "" && f.Status != "active" && f.Status != "closed") || (f.Source != "" && f.Source != "recorded" && f.Source != "legacy") {
+		if utf8.RuneCountInString(f.Query) > 200 || (f.Operation != "" && !receipts.ValidOperation(f.Operation) && f.Operation != "imported") || (f.Status != "" && f.Status != "active" && f.Status != "closed" && f.Status != "archived") || (f.Source != "" && f.Source != "recorded" && f.Source != "legacy" && f.Source != "csv") {
 			invalid()
 			return
 		}
