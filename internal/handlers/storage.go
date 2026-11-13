@@ -66,6 +66,14 @@ func storageHandler(db *sql.DB, wheelChange bool) http.HandlerFunc {
 			writeJSON(w, 422, map[string]any{"error": err.Error(), "fields": map[string]string{"number": err.Error()}})
 			return
 		}
+		if errors.Is(err, database.ErrWheelChangeOwner) {
+			writeJSON(w, 409, map[string]any{"error": database.ErrWheelChangeOwner.Error(), "fields": map[string]string{"name": database.ErrWheelChangeOwner.Error(), "plate": database.ErrWheelChangeOwner.Error()}})
+			return
+		}
+		if errors.Is(err, database.ErrWheelChangeSameType) {
+			writeJSON(w, 409, map[string]any{"error": database.ErrWheelChangeSameType.Error(), "fields": map[string]string{"tire_type": database.ErrWheelChangeSameType.Error()}})
+			return
+		}
 		if errors.Is(err, database.ErrPlaceUnavailable) {
 			writeJSON(w, 409, map[string]string{"error": err.Error()})
 			return

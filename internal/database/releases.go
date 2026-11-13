@@ -68,6 +68,14 @@ func ReleaseStorage(ctx context.Context, db *sql.DB, area string, number int, cl
 	if target.Status != "occupied" || claimID <= 0 || target.ClaimID != claimID {
 		return ErrReleaseChanged
 	}
+	if err = releaseClaim(ctx, tx, claimID, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// releaseClaim participates in its caller's transaction, including wheel swaps.
+func releaseClaim(ctx context.Context, tx *sql.Tx, claimID int64, stamp string) error {
 	result, err := tx.ExecContext(ctx, "UPDATE storage_claims SET status='released' WHERE id=? AND kind='occupancy' AND status='active'", claimID)
 	if err != nil {
 		return err
@@ -79,12 +87,11 @@ func ReleaseStorage(ctx context.Context, db *sql.DB, area string, number int, cl
 	if n != 1 {
 		return ErrReleaseChanged
 	}
-	stamp := time.Now().UTC().Format(time.RFC3339Nano)
 	if _, err = tx.ExecContext(ctx, "INSERT INTO storage_releases(claim_id,released_at) VALUES(?,?)", claimID, stamp); err != nil {
 		return err
 	}
 	if err = recordHistory(ctx, tx, claimID, "release", stamp); err != nil {
 		return err
 	}
-	return tx.Commit()
+	return nil
 }

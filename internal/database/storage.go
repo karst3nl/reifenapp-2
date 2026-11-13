@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/karst3nl/reifenapp-2/internal/models"
@@ -13,6 +14,8 @@ import (
 
 var ErrPlaceUnavailable = errors.New("Lagerplatz ist bereits belegt oder aktiv reserviert.")
 var ErrInvalidStorage = errors.New("Ungültige Einlagerungsdaten.")
+var ErrWheelChangeOwner = errors.New("Kundenname und Kennzeichen müssen zur bestehenden Belegung dieses Lagerplatzes passen.")
+var ErrWheelChangeSameType = errors.New("Dieser Reifentyp ist bereits eingelagert. Bitte die Daten des anderen Radsatzes eingeben.")
 
 func CreateStorage(ctx context.Context, db *sql.DB, input models.StorageInput) (int64, error) {
 	return createStorage(ctx, db, input, "storage")
@@ -40,20 +43,47 @@ func createStorage(ctx context.Context, db *sql.DB, input models.StorageInput, o
 	if err != nil {
 		return 0, err
 	}
-	if !checked.Allowed {
+	swap := operation == "wheel_change" && checked.Status == "occupied"
+	if swap && !checked.Matches {
+		return 0, fmt.Errorf("%w: %w", ErrPlaceUnavailable, ErrWheelChangeOwner)
+	}
+	if !checked.Allowed && !swap {
 		return 0, ErrPlaceUnavailable
 	}
+	stamp := time.Now().UTC().Format(time.RFC3339Nano)
 	var tire int64
+	if swap {
+		var previousType string
+		err = tx.QueryRowContext(ctx, "SELECT tire_type FROM storage_details WHERE claim_id=?", checked.claimID).Scan(&previousType)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return 0, err
+		}
+		if previousType != "" && previousType == input.TireType {
+			return 0, fmt.Errorf("%w: %w", ErrPlaceUnavailable, ErrWheelChangeSameType)
+		}
+		if err = releaseClaim(ctx, tx, checked.claimID, stamp); err != nil {
+			return 0, err
+		}
+		// Reuse the returning seasonal set for this vehicle and place when known.
+		err = tx.QueryRowContext(ctx, `SELECT t.id FROM tire_sets t
+   JOIN storage_claims c ON c.tire_set_id=t.id JOIN storage_details d ON d.claim_id=c.id
+   WHERE t.vehicle_id=? AND c.place_id=? AND c.status='released' AND d.tire_type=? AND t.id!=?
+   AND NOT EXISTS(SELECT 1 FROM storage_claims active WHERE active.tire_set_id=t.id AND active.status='active')
+   ORDER BY c.id DESC LIMIT 1`, checked.vehicleID.Int64, input.Place(), input.TireType, checked.tireID.Int64).Scan(&tire)
+		if errors.Is(err, sql.ErrNoRows) {
+			tire, err = insertID("INSERT INTO tire_sets(vehicle_id) VALUES(?)", checked.vehicleID.Int64)
+		}
+		if err != nil {
+			return 0, err
+		}
+	}
 	if checked.Status == "reserved" {
 		// The immediate transaction serializes the identity check, conversion and insert.
-		if _, err = tx.ExecContext(ctx, "UPDATE storage_claims SET status='converted',updated_at=? WHERE id=? AND status='active'", time.Now().UTC().Format(time.RFC3339Nano), checked.claimID); err != nil {
+		if _, err = tx.ExecContext(ctx, "UPDATE storage_claims SET status='converted',updated_at=? WHERE id=? AND status='active'", stamp, checked.claimID); err != nil {
 			return 0, err
 		}
 		tire = checked.tireID.Int64
-		if _, err = tx.ExecContext(ctx, "UPDATE vehicles SET car=?,brand=?,model=? WHERE id=?", input.Brand+" "+input.Model, input.Brand, input.Model, checked.vehicleID.Int64); err != nil {
-			return 0, err
-		}
-	} else {
+	} else if !swap {
 		customer, err := insertID("INSERT INTO customers(name) VALUES(?)", input.Name)
 		if err != nil {
 			return 0, err
@@ -67,7 +97,11 @@ func createStorage(ctx context.Context, db *sql.DB, input models.StorageInput, o
 			return 0, err
 		}
 	}
-	stamp := time.Now().UTC().Format(time.RFC3339Nano)
+	if swap || checked.Status == "reserved" {
+		if _, err = tx.ExecContext(ctx, "UPDATE vehicles SET car=?,brand=?,model=? WHERE id=?", input.Brand+" "+input.Model, input.Brand, input.Model, checked.vehicleID.Int64); err != nil {
+			return 0, err
+		}
+	}
 	claim, err := insertID("INSERT INTO storage_claims(place_id,tire_set_id,kind,status,updated_at) VALUES(?,?,'occupancy','active',?)", input.Place(), tire, stamp)
 	if err != nil {
 		var se sqlite3.Error

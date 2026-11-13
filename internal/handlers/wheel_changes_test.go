@@ -48,6 +48,29 @@ func TestWheelChangesHTTP(t *testing.T) {
 	if w = call(string(body)); w.Code != 409 {
 		t.Fatal(w.Body)
 	}
+	input.TireType = "Sommer"
+	body, _ = json.Marshal(input)
+	w = call(string(body))
+	if w.Code != 201 {
+		t.Fatal("occupied own place must swap", w.Code, w.Body)
+	}
+	var count int
+	if err = db.QueryRow("SELECT count(*) FROM storage_claims WHERE status='active' AND place_id='C1.2'").Scan(&count); err != nil || count != 1 {
+		t.Fatal(count, err)
+	}
+	w = call(string(body))
+	var duplicate struct{ Fields map[string]string }
+	if err = json.Unmarshal(w.Body.Bytes(), &duplicate); err != nil || w.Code != 409 || duplicate.Fields["tire_type"] == "" {
+		t.Fatal(w.Code, w.Body, err)
+	}
+	input.Name = "Fremder Kunde (fiktiv)"
+	input.TireType = "Winter"
+	body, _ = json.Marshal(input)
+	w = call(string(body))
+	var owner struct{ Fields map[string]string }
+	if err = json.Unmarshal(w.Body.Bytes(), &owner); err != nil || w.Code != 409 || owner.Fields["name"] == "" || owner.Fields["plate"] == "" {
+		t.Fatal(w.Code, w.Body, err)
+	}
 	w = httptest.NewRecorder()
 	mux.ServeHTTP(w, httptest.NewRequest("GET", "/api/wheel-changes", nil))
 	if w.Code != 405 {

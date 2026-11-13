@@ -48,14 +48,15 @@ func checkPlace(ctx context.Context, q rowQuerier, area string, number int, name
 		return result, nil
 	}
 	result.claimID = claim.Int64
+	cleanName := func(s string) string { return strings.ToLower(strings.Join(strings.Fields(s), " ")) }
+	result.Matches = customer.Valid && registration.Valid && cleanName(name) != "" && normalize(plate) != "" && cleanName(name) == cleanName(customer.String) && normalize(plate) == normalize(registration.String)
 	if kind.String == "occupancy" {
 		result.Status = "occupied"
 		result.Message = "Lagerplatz " + result.Place + " ist bereits belegt."
 		return result, nil
 	}
 	result.Status = "reserved"
-	cleanName := func(s string) string { return strings.ToLower(strings.Join(strings.Fields(s), " ")) }
-	result.Matches = customer.Valid && registration.Valid && cleanName(name) != "" && normalize(plate) != "" && cleanName(name) == cleanName(customer.String) && normalize(plate) == normalize(registration.String)
+
 	result.Allowed = result.Matches
 	if result.Matches {
 		result.Message = "Reservierung für " + result.Place + " passt zu Kundenname und Kennzeichen. Einlagerung möglich."
