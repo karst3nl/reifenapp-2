@@ -16,7 +16,8 @@ type SearchDetails struct {
 }
 
 type SearchResult struct {
-	Details SearchDetails `json:"details"`
+	Details       SearchDetails  `json:"details"`
+	TreadWarnings []TreadWarning `json:"tread_warnings"`
 
 	ReceiptURL string `json:"pdf_url"`
 	EventID    int64  `json:"event_id"`

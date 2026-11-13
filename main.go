@@ -51,6 +51,7 @@ func main() {
 	}
 	admin.Register(mux)
 	mux.HandleFunc("GET /api/search", handlers.Search(db))
+	mux.HandleFunc("GET /api/warnings", handlers.TreadWarnings(db))
 	mux.HandleFunc("GET /api/receipts/{claim}/{operation}", handlers.Receipts(db, header))
 	mux.HandleFunc("GET /api/customers", handlers.Customers(db))
 	mux.HandleFunc("POST /api/storage", handlers.Storage(db))

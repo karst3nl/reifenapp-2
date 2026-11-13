@@ -134,16 +134,25 @@ func normalize(s string) string {
 }
 
 func Search(ctx context.Context, db *sql.DB, q string) ([]models.SearchResult, error) {
-	result := []models.SearchResult{}
 	q = normalize(strings.TrimSpace(q))
 	if q == "" {
-		return result, nil
+		return []models.SearchResult{}, nil
 	}
+	return historyResults(ctx, db, q, false, false)
+}
+
+func TreadWarnings(ctx context.Context, db *sql.DB, activeOnly bool) ([]models.SearchResult, error) {
+	return historyResults(ctx, db, "", true, activeOnly)
+}
+
+func historyResults(ctx context.Context, db *sql.DB, q string, onlyWarnings, activeOnly bool) ([]models.SearchResult, error) {
+	result := []models.SearchResult{}
 	rows, err := db.QueryContext(ctx, `SELECT h.id,h.claim_id,h.place,h.name,h.plate,h.car,h.occurred_at,h.operation,
  CASE h.operation WHEN 'reservation' THEN 'reservation' WHEN 'release' THEN 'release' ELSE 'occupancy' END,
  s.status,(s.status='active' AND h.operation!='release'),h.source,h.payload
  FROM history_events h JOIN storage_claims s ON s.id=h.claim_id
- ORDER BY julianday(h.occurred_at) DESC,h.id DESC`)
+ WHERE (?=0 OR (s.status='active' AND s.kind='occupancy' AND h.operation IN ('storage','wheel_change')))
+ ORDER BY julianday(h.occurred_at) DESC,h.id DESC`, activeOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -157,9 +166,13 @@ func Search(ctx context.Context, db *sql.DB, q string) ([]models.SearchResult, e
 		}
 		r.ReceiptURL = models.ReceiptPath(claimID, r.Operation)
 		label := map[string]string{"storage": "Neueinlagerung", "wheel_change": "Radwechsel", "reservation": "Reservierung", "release": "Auslagerung"}[r.Operation]
-		if strings.Contains(normalize(label), q) || strings.Contains(normalize(r.Name), q) || strings.Contains(normalize(r.Plate), q) || strings.Contains(normalize(r.Place), q) {
+		if onlyWarnings || strings.Contains(normalize(label), q) || strings.Contains(normalize(r.Name), q) || strings.Contains(normalize(r.Plate), q) || strings.Contains(normalize(r.Place), q) {
 			if err = json.Unmarshal([]byte(payload), &r.Details); err != nil {
 				return nil, err
+			}
+			r.TreadWarnings = r.Details.TreadWarnings()
+			if onlyWarnings && (len(r.TreadWarnings) == 0 || (activeOnly && (!r.Active || r.Kind != "occupancy"))) {
+				continue
 			}
 			result = append(result, r)
 		}
