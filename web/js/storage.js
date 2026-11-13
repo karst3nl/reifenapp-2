@@ -228,6 +228,7 @@
       status.textContent=`${reservationMode?'Reservierung':wheelChangeMode?'Radwechsel':'Neueinlagerung'} auf ${data.place} gespeichert. Über die Schnellsuche auffindbar.`;
       const confirmation=document.getElementById('storage-confirmation');
       confirmation.textContent=status.textContent;confirmation.hidden=false;
+      window.dispatchEvent(new Event("workshop-data-changed"));
       receipt.complete(data.pdf_url,confirmation);
       dialog.close();
       const search=document.getElementById('search');if(search.value.trim())search.dispatchEvent(new Event('input'));

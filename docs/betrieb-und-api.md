@@ -67,6 +67,7 @@ konkrete JSON-Strukturen und Validierungen stehen in `internal/handlers/` und
 
 | Methode und Pfad | Zweck |
 | --- | --- |
+| `GET /api/warnings?scope=active` | Verschleißwarnungen für aktuell eingelagerte Radsätze; `scope=all` umfasst alle gespeicherten Vorgänge |
 | `GET /api/search?q=...` | Suche in der Vorgangshistorie nach Kunde, Kennzeichen, Platz oder Vorgangsart |
 | `GET /api/customers?q=...` | Bis zu 20 Namensvorschläge per Präfixsuche |
 | `GET /api/storage/options` | Auswahlwerte und aktueller Lagerkatalog (`area`, `storage_areas`) |
@@ -160,3 +161,37 @@ TLS bereit. Für den lokalen Standardstart ist diese Option nicht erforderlich.
 Auf dem Raspberry Pi werden Go und eine C-Toolchain benötigt. Zunächst direkt
 auf dem Zielgerät bauen; Cross-Compiling mit CGO benötigt eine passende
 Cross-Toolchain. Ein Hardwaretest auf dem Pi steht noch aus.
+
+## Warnungsanzeige auf der Startseite
+
+Oben rechts öffnet **Reifenwarnungen** eine Übersicht unabhängig von der Suche.
+Der Zähler zählt aktuell eingelagerte Radsätze mit mindestens einer betroffenen
+Achse, nicht die Anzahl der Achsen. Zwei kritische Achsen desselben Radsatzes
+zählen deshalb als ein Radsatz. Die Übersicht nennt zusätzlich die Achsenzahl.
+
+**Aktuell eingelagert** zeigt aktive Einlagerungen und Radwechsel. Nach einer
+Auslagerung entfällt der Vorgang im aktuellen Zähler. **Alle Vorgänge inkl.
+Historie** zeigt sämtliche gespeicherten Vorgangsschnappschüsse mit kritischen
+Messwerten, auch frühere Einlagerungen und Auslagerungen. Dort können mehrere
+Vorgänge desselben Radsatzes erscheinen; sie sind mit Vorgangsart, Status und
+Zeitpunkt gekennzeichnet. Eine erneute gesunde Belegung desselben Platzes übernimmt
+keine alten Warnungen. Alle Karten lassen sich aufklappen und bieten den PDF-Beleg.
+
+Die Warnschwellen bleiben Sommer ≤ 3 mm und Winter/Ganzjahr ≤ 4 mm. Suchkarten und
+Warnungsübersicht verwenden dieselbe serverseitige Auswertung. Fehlende oder
+ungültige Messwerte und unbekannte Reifenarten erzeugen keine Bewertung.
+Ein bloßer Freitexthinweis wird nicht als Reifenverschleiß gezählt.
+
+Der Zähler lädt beim Seitenstart, nach erfolgreichen Formularvorgängen, bei
+Rückkehr zum Browserfenster und auf sichtbaren Seiten jede Minute neu. Öffnen und
+„Aktualisieren“ laden die Übersicht erneut. Bei Abruffehlern erscheint `?` statt
+einer falschen Null; die Übersicht bietet eine Fehlermeldung und erneutes Laden.
+Es werden keine neuen Warnungsdatensätze erzeugt und keine Kundendaten verändert.
+
+`GET /api/warnings` verwendet standardmäßig `scope=active`. Die JSON-Antwort enthält
+`scope`, `count` (Radsätze bzw. historische Vorgänge), `axle_count` und `items`.
+Jeder Eintrag enthält die bekannten Suchergebnisfelder sowie `tread_warnings`
+mit `axle` (`VA`/`HA`), `depth` und `threshold`. `scope=all` liefert alle passenden
+Historienvorgänge ohne stillschweigende Kürzung. Ungültige Ansichten liefern HTTP 400,
+Datenbankfehler HTTP 500. Antworten verwenden `Cache-Control: no-store`.
+Für dieses Feature ist keine weitere Datenbankmigration nötig.

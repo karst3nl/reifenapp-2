@@ -33,10 +33,8 @@ function searchCard(item){
   const data=item.details||{},warnings=document.createElement('div');warnings.className='result-warnings';
   const warn=(text,kind)=>{const row=document.createElement('p');row.className='result-warning '+kind;const label=document.createElement('span');label.textContent=text;row.append(warningIcon(),label);warnings.append(row)};
   if(data.notes?.trim())warn('Hinweis: '+data.notes,'notes-warning');
-  const threshold={Sommer:3,Winter:4,Ganzjahr:4}[data.tire_type];
-  for(const [key,axle] of [['front_depth','VA'],['rear_depth','HA']]){
-    const raw=data[key],depth=typeof raw==='string'&&raw.trim()!==''?Number(raw.replace(',','.')):NaN;
-    if(threshold!==undefined&&Number.isFinite(depth)&&depth>=0&&depth<=threshold)warn(`Profiltiefe ${axle}: ${depth.toLocaleString('de-DE')} mm – niedrig (Warnschwelle ≤ ${threshold} mm für ${data.tire_type}).`,'depth-warning');
+  for(const warning of item.tread_warnings||[]){
+    warn(`Profiltiefe ${warning.axle}: ${warning.depth.toLocaleString('de-DE')} mm – niedrig (Warnschwelle ≤ ${warning.threshold} mm für ${data.tire_type}).`,'depth-warning');
   }
   if(warnings.childElementCount)card.append(warnings);
   const details=document.createElement('details');details.className='result-details';

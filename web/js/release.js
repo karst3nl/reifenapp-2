@@ -63,6 +63,7 @@
       const data=await response.json();
       if(!response.ok)throw Error(data.error||'Auslagerung fehlgeschlagen.');
       const confirmation=document.getElementById('storage-confirmation');confirmation.textContent='Auslagerung auf '+data.place+' gespeichert. Der Lagerplatz ist wieder frei.';confirmation.hidden=false;
+      window.dispatchEvent(new Event("workshop-data-changed"));
       receipt.complete(data.pdf_url,confirmation);
       dialog.close();
       const search=document.getElementById('search');if(search.value.trim())search.dispatchEvent(new Event('input'));
