@@ -130,7 +130,7 @@
       section.hidden=reservationMode;
       section.querySelectorAll('input,select,textarea,button').forEach(el=>{el.disabled=reservationMode;});
     });
-    for(const key of ['hubcaps','bolts','lock'])field(key+'.location').disabled=reservationMode||!field(key+'.present').checked;
+    for(const key of ['hubcaps','bolts','lock']){const present=field(key+'.present').value==='Vorhanden';field(key+'.location').disabled=reservationMode||!present;field(key+'.location').required=!reservationMode&&present;}
   }
   window.openReservation=()=>window.openStorage(true);
   window.openWheelChange=()=>window.openStorage(false,true);
@@ -145,8 +145,8 @@
       const options=await response.json();storageAreas=options.storage_areas;
       form.querySelectorAll('select').forEach(select=>{
         const key=select.dataset.options||select.name;
-        select.replaceChildren(new Option(select.required?'Bitte wählen':'Keine Angabe',''));
-        for(const value of options[key])select.add(new Option(value,value));
+        select.replaceChildren(new Option(select.required||select.name.endsWith('.location')?'Bitte wählen':'Keine Angabe',''));
+        for(const value of options[key]||[])select.add(new Option(value,value));
       });
       ready=true;numberRange();status.textContent='';save.disabled=false;
     }catch{status.textContent='Auswahllisten konnten nicht geladen werden. Bitte schließen und erneut öffnen.';}
@@ -185,9 +185,11 @@
   document.getElementById('place-recheck').addEventListener('click',schedulePlaceCheck);
   for(const key of ['hubcaps','bolts','lock']){
     field(key+'.present').addEventListener('change',()=>{
-      const present=field(key+'.present').checked;
+      const present=field(key+'.present').value==='Vorhanden';
       field(key+'.location').disabled=!present;
       field(key+'.location').required=present;
+      if(!present)field(key+'.location').value='';
+      clearFieldError(field(key+'.location'));
     });
   }
   close.addEventListener('click',()=>{if(!saving)dialog.close();});
@@ -207,7 +209,7 @@
     for(const axle of ['front','rear']){
       input[axle]={};for(const key of ['width','ratio','inches','load','speed'])input[axle][key]=value(axle+'.'+key);
     }
-    for(const key of ['hubcaps','bolts','lock'])input[key]={present:field(key+'.present').checked,location:value(key+'.location')};
+    for(const key of ['hubcaps','bolts','lock'])input[key]={present:field(key+'.present').value==='Vorhanden',location:value(key+'.location')};
     }
     const receipt=window.ReceiptTabs.prepare();
     clearTimeout(placeTimer);placeRequest?.abort();placeGeneration++;hideNames();status.classList.remove('is-error');saving=true;save.disabled=true;close.disabled=true;nav.forEach(button=>button.disabled=true);status.textContent='Wird gespeichert …';
@@ -218,6 +220,7 @@
       const data=await response.json();
       if(!response.ok){
         receipt.cancel();status.classList.add('is-error');
+        for(const [key,values]of Object.entries(data.accessory_options||{})){const select=field(key+'.location'),previous=select.value;select.replaceChildren(new Option('Bitte wählen',''));for(const value of values)select.add(new Option(value,value));select.value=values.includes(previous)?previous:'';}
         if(response.status===409&&wheelChangeMode&&!data.fields){markError(field('number'),data.error||'Dieser Lagerplatz ist bereits vergeben.');}
         if(response.status===409&&!wheelChangeMode){placeAllowed=false;placeHint.textContent='Belegung oder Reservierung hat sich geändert. Bitte Eingaben prüfen und erneut prüfen.';placeHint.className='place-check is-unavailable';conflictPlace=input.area+'.'+input.number;markError(field('number'),'Lagerplatz '+conflictPlace+' ist belegt oder reserviert. Bitte einen anderen wählen.');}
         status.textContent=data.error||'Speichern fehlgeschlagen.';
@@ -240,7 +243,7 @@
     }catch{receipt.cancel();status.classList.add('is-error');status.textContent='Keine Speicherbestätigung erhalten. Bitte zuerst in der Schnellsuche prüfen, ob die Einlagerung gespeichert wurde. Ihre Eingaben bleiben erhalten.';}
     finally{
       enabled.forEach(el=>el.disabled=false);saving=false;updateSaveState();close.disabled=false;nav.forEach(button=>button.disabled=false);
-      for(const key of ['hubcaps','bolts','lock'])field(key+'.location').disabled=!field(key+'.present').checked;
+      for(const key of ['hubcaps','bolts','lock'])field(key+'.location').disabled=field(key+'.present').value!=='Vorhanden';
       if(dialog.open){if(conflictPlace)field('number').focus();else status.focus();}
     }
   });

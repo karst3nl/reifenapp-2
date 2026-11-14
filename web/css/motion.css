@@ -17,7 +17,7 @@ dialog[open]::backdrop{opacity:1;transition-duration:180ms,var(--motion-panel),v
 @keyframes panel-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 main{animation:soft-appear 160ms ease}
 .search-result,.results.active,#customer-names:not([hidden]){animation:soft-appear 180ms ease}
-#login-panel:not([hidden]),#password-panel:not([hidden]),#areas-panel:not([hidden]),#backup-panel:not([hidden]),#import-panel:not([hidden]),#labels-panel:not([hidden]),#editor:not([hidden]),#area-form:not([hidden]),#preview-panel:not([hidden]),#import-preview-panel:not([hidden]),#release-details:not([hidden]){animation:soft-appear var(--motion-panel) ease}
+#login-panel:not([hidden]),#password-panel:not([hidden]),#areas-panel:not([hidden]),#backup-panel:not([hidden]),#import-panel:not([hidden]),#labels-panel:not([hidden]),#accessories-panel:not([hidden]),#editor:not([hidden]),#area-form:not([hidden]),#preview-panel:not([hidden]),#import-preview-panel:not([hidden]),#release-details:not([hidden]){animation:soft-appear var(--motion-panel) ease}
 .result-details[open]>.result-data,.csv-original[open]>.result-data{animation:soft-appear 180ms ease}
 
 /* Modern browsers can also ease the height of native details on open/close. */

@@ -11,7 +11,7 @@
   if(options.download){const match=/filename="([a-zA-Z0-9._-]+)"/.exec(response.headers.get('Content-Disposition')||'');return {blob:await response.blob(),filename:match?.[1]||'reifenapp-backup.zip'};}
   return options.pdf?response.blob():response.json();
  }
- function hideSections(){for(const id of ['admin-nav','areas-panel','backup-panel','import-panel','labels-panel','editor'])$(id).hidden=true;}
+ function hideSections(){for(const id of ['admin-nav','areas-panel','backup-panel','import-panel','labels-panel','accessories-panel','editor'])$(id).hidden=true;}
  function showLogin(){if(labelURL){URL.revokeObjectURL(labelURL);labelURL=''}$('label-preview-frame').removeAttribute('src');$('label-preview-frame').hidden=true;clearCSVImport();clearBackupLink();hideSections();loadGeneration++;csrf='';$('password-form').reset();$('password').value='';$('login-panel').hidden=false;$('editor').hidden=true;$('logout').hidden=true;$('change-password').hidden=true;$('password-panel').hidden=true;if(previewURL){URL.revokeObjectURL(previewURL);previewURL=''}$('pdf-preview').removeAttribute('src');}
  function selectedElement(){return state?.template.elements.find(e=>e.id===selected)}
  function remember(){undo.push(clone(state.template));if(undo.length>80)undo.shift();redo=[];dirty=true;}
@@ -56,16 +56,17 @@
   fields=await api('fields');for(const id of ['palette-field','prop-field']){$(id).replaceChildren();for(const f of fields)$(id).add(new Option(f.label,f.key))}
   if(state&&dirty){$('operation').value=state.operation;const [data,sample]=await Promise.all([api('layout?operation='+state.operation),api('values?operation='+state.operation)]);defaults=data.default;values=sample;paint();zoom();status('Sitzung erneuert. Ungespeicherter Entwurf bleibt geöffnet.');}else{await load();}await document.fonts.load('12px Receipt');await document.fonts.load('bold 12px Receipt');paint();await selectSection(activeSection);
  }
- let activeSection='areas',areaRevision=0,areaSaving=false,areaDirty=false,areaGeneration=0,backupSaving=false,backupURL='',importBusy=false,importHash='',labelConfig=null,labelFields={},labelDefault=null,labelDirty=false,labelBusy=false,labelURL='';
+ let activeSection='areas',areaRevision=0,areaSaving=false,areaDirty=false,areaGeneration=0,backupSaving=false,backupURL='',importBusy=false,importHash='',labelConfig=null,labelFields={},labelDefault=null,labelDirty=false,labelBusy=false,labelURL='',accessorySaving=false,accessoryDirty=false,accessoryRevision=0;
  const areaMessage=(text,error=false)=>{$('area-status').textContent=text;$('area-status').classList.toggle('error',error)};
  async function selectSection(section){
-  if(busy||areaSaving||backupSaving||importBusy||labelBusy)return;
+  if(busy||areaSaving||backupSaving||importBusy||labelBusy||accessorySaving)return;
+  if(section!==activeSection&&accessoryDirty&&!confirm('Ungespeicherte Zubehörlisten verwerfen?'))return;
   if(section!==activeSection&&labelDirty&&!confirm('Ungespeicherte Etikettenänderungen verwerfen?'))return;
   if(section!==activeSection&&areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;
-  if(section!==activeSection){labelDirty=false;areaDirty=false;$('area-form').hidden=true;}
-  activeSection=section;$('editor').hidden=section!=='pdf';$('areas-panel').hidden=section!=='areas';$('backup-panel').hidden=section!=='backup';$('import-panel').hidden=section!=='import';$('labels-panel').hidden=section!=='labels';
-  for(const [id,name] of [['nav-areas','areas'],['nav-pdf','pdf'],['nav-backup','backup'],['nav-import','import'],['nav-labels','labels']]){$(id).setAttribute('aria-pressed',String(name===section));$(id).classList.toggle('secondary',name!==section);}
-  if(section==='areas')await loadAreas();else if(section==='backup')await loadBackupInfo();else if(section==='import')await loadCSVImports();else if(section==='labels')await loadLabels();else{zoom();paint();}
+  if(section!==activeSection){accessoryDirty=false;labelDirty=false;areaDirty=false;$('area-form').hidden=true;}
+  activeSection=section;$('editor').hidden=section!=='pdf';$('areas-panel').hidden=section!=='areas';$('backup-panel').hidden=section!=='backup';$('import-panel').hidden=section!=='import';$('labels-panel').hidden=section!=='labels';$('accessories-panel').hidden=section!=='accessories';
+  for(const [id,name] of [['nav-areas','areas'],['nav-pdf','pdf'],['nav-backup','backup'],['nav-import','import'],['nav-labels','labels'],['nav-accessories','accessories']]){$(id).setAttribute('aria-pressed',String(name===section));$(id).classList.toggle('secondary',name!==section);}
+  if(section==='areas')await loadAreas();else if(section==='backup')await loadBackupInfo();else if(section==='import')await loadCSVImports();else if(section==='labels')await loadLabels();else if(section==='accessories')await loadAccessories();else{zoom();paint();}
  }
  async function loadAreas(){
   loadInactivitySettings();
@@ -90,13 +91,13 @@
   catch(error){$('inactivity-settings-status').textContent=error.message;}
  }
  $('inactivity-settings').addEventListener('submit',async event=>{
-  event.preventDefault();if(areaSaving||busy||backupSaving||importBusy||labelBusy)return;
+  event.preventDefault();if(areaSaving||busy||backupSaving||importBusy||labelBusy||accessorySaving)return;
   areaSaving=true;$('inactivity-save').disabled=true;$('inactivity-months').disabled=true;
   try{const settings=await api('inactivity',{method:'POST',body:JSON.stringify({months:Number($('inactivity-months').value)})});if(!csrf)return;$('inactivity-months').value=settings.months;$('inactivity-settings-status').textContent='Gespeichert. Die Anzeige auf der Startseite wird automatisch aktualisiert.';}
   catch(error){$('inactivity-settings-status').textContent=error.message;}
   finally{areaSaving=false;$('inactivity-save').disabled=false;$('inactivity-months').disabled=false;}
  });
- $('nav-labels').onclick=()=>selectSection('labels');$('nav-areas').onclick=()=>selectSection('areas');$('nav-pdf').onclick=()=>selectSection('pdf');$('nav-backup').onclick=()=>selectSection('backup');$('nav-import').onclick=()=>selectSection('import');
+ $('nav-accessories').onclick=()=>selectSection('accessories');$('nav-labels').onclick=()=>selectSection('labels');$('nav-areas').onclick=()=>selectSection('areas');$('nav-pdf').onclick=()=>selectSection('pdf');$('nav-backup').onclick=()=>selectSection('backup');$('nav-import').onclick=()=>selectSection('import');
  $('area-new').onclick=()=>editArea(null);$('areas-reload').onclick=()=>{if(areaSaving)return;if(areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;areaDirty=false;$('area-form').hidden=true;loadAreas();};
  $('area-cancel').onclick=()=>{if(areaSaving)return;if(areaDirty&&!confirm('Ungespeicherte Lagerplatzänderungen verwerfen?'))return;areaDirty=false;$('area-form').hidden=true;};
  $('area-form').addEventListener('input',()=>{areaDirty=true;areaSummary()});
@@ -191,12 +192,30 @@
  $('label-config-form').addEventListener('input',()=>{labelDirty=true;$('label-preview-frame').hidden=true;labelMessage('Ungespeicherte Änderungen. Vorschau prüfen und Einstellungen speichern.');});
  $('label-add').onclick=()=>{if(!labelConfig)return;const s=labelValues();if(s.elements.length>=20){labelMessage('Höchstens 20 Felder.',true);return}s.elements.push({field:'text',text:'Eigener Text',x:3,y:43,width:72,height:5,size:9,bold:false});labelDirty=true;renderLabelElements()};
  $('label-default').onclick=()=>{if(!labelConfig||!confirm('Etikettenlayout durch Standard ersetzen?'))return;labelValues().elements=clone(labelDefault.elements);labelDirty=true;renderLabelElements()};
- $('label-config-form').addEventListener('submit',async event=>{event.preventDefault();if(!labelConfig||labelBusy)return;labelValues();setLabelBusy(true);$('label-config-form').inert=true;try{const data=await api('labels/config',{method:'POST',body:JSON.stringify(labelConfig)});if(!csrf)return;labelConfig=data.config;labelDirty=false;labelMessage('Drucker und Etikettenvorlage gespeichert.');}catch(error){labelMessage(error.message,true)}finally{setLabelBusy(false);$('label-config-form').inert=false;}});
- $('label-preview').onclick=async()=>{if(!labelConfig||labelBusy)return;setLabelBusy(true);try{const blob=await api('labels/preview',{method:'POST',body:JSON.stringify(labelValues()),pdf:true});if(!csrf)return;if(labelURL)URL.revokeObjectURL(labelURL);labelURL=URL.createObjectURL(blob);$('label-preview-frame').src=labelURL;$('label-preview-frame').hidden=false;labelMessage('PDF-Vorschau mit fiktiven Daten. Noch nicht gespeicherte Änderungen sind enthalten.');}catch(error){labelMessage(error.message,true)}finally{setLabelBusy(false);}};
+ $('label-config-form').addEventListener('submit',async event=>{event.preventDefault();if(!labelConfig||labelBusy||accessorySaving)return;labelValues();setLabelBusy(true);$('label-config-form').inert=true;try{const data=await api('labels/config',{method:'POST',body:JSON.stringify(labelConfig)});if(!csrf)return;labelConfig=data.config;labelDirty=false;labelMessage('Drucker und Etikettenvorlage gespeichert.');}catch(error){labelMessage(error.message,true)}finally{setLabelBusy(false);$('label-config-form').inert=false;}});
+ $('label-preview').onclick=async()=>{if(!labelConfig||labelBusy||accessorySaving)return;setLabelBusy(true);try{const blob=await api('labels/preview',{method:'POST',body:JSON.stringify(labelValues()),pdf:true});if(!csrf)return;if(labelURL)URL.revokeObjectURL(labelURL);labelURL=URL.createObjectURL(blob);$('label-preview-frame').src=labelURL;$('label-preview-frame').hidden=false;labelMessage('PDF-Vorschau mit fiktiven Daten. Noch nicht gespeicherte Änderungen sind enthalten.');}catch(error){labelMessage(error.message,true)}finally{setLabelBusy(false);}};
  $('label-printers-refresh').onclick=async()=>{try{await loadLabelPrinters()}catch(error){labelMessage(error.message,true)}};
  $('label-jobs-refresh').onclick=async()=>{try{await loadLabelJobs()}catch(error){$('label-jobs-status').textContent=error.message}};
  $('label-test').onclick=async()=>{if(labelDirty){labelMessage('Bitte zuerst Einstellungen speichern.',true);return}if(labelBusy||!confirm('Genau ein Testetikett mit fiktiven Daten auf dem gespeicherten USB-Drucker drucken?'))return;setLabelBusy(true);$('label-test').disabled=true;try{const result=await api('labels/test',{method:'POST',body:'{"confirmed":true}'});labelMessage('Testdruck #'+result.id+' vorgemerkt. Auftragsstatus unten aktualisieren.');await loadLabelJobs()}catch(error){labelMessage(error.message,true)}finally{setLabelBusy(false);$('label-test').disabled=false;}};
  setInterval(()=>{if(csrf&&activeSection==='labels'&&!document.hidden&&!labelBusy)loadLabelJobs().catch(()=>{$('label-jobs-status').textContent='Auftragsstatus derzeit nicht verfügbar.'})},5000);
+
+
+ async function loadAccessories(){
+  accessoryRevision=0;$('accessory-save').disabled=true;$('accessory-form').inert=true;$('accessory-status').textContent='Zubehörlisten werden geladen …';
+  try{const config=await api('accessory-options');if(!csrf)return;accessoryRevision=config.revision;for(const key of ['hubcaps','bolts','lock'])$('accessory-'+key).value=config.locations[key].join('\n');accessoryDirty=false;$('accessory-status').textContent='Gespeicherte Listen · Revision '+accessoryRevision;$('accessory-save').disabled=false;}
+  catch(error){$('accessory-status').textContent=error.message;}
+  finally{$('accessory-form').inert=false;}
+ }
+ $('accessory-form').addEventListener('input',()=>{accessoryDirty=true;$('accessory-status').textContent='Ungespeicherte Änderungen.';});
+ $('accessory-reload').onclick=()=>{if(accessorySaving||accessoryDirty&&!confirm('Ungespeicherte Zubehörlisten verwerfen?'))return;loadAccessories()};
+ $('accessory-form').addEventListener('submit',async event=>{
+  event.preventDefault();if(accessoryRevision<1||accessorySaving||busy||areaSaving||labelBusy||backupSaving||importBusy)return;
+  const locations=Object.fromEntries(['hubcaps','bolts','lock'].map(key=>[key,$('accessory-'+key).value.split(/\r?\n/).map(v=>v.trim()).filter(Boolean)]));
+  accessorySaving=true;$('accessory-form').inert=true;$('logout').disabled=true;$('change-password').disabled=true;
+  try{const config=await api('accessory-options',{method:'POST',body:JSON.stringify({revision:accessoryRevision,locations})});if(!csrf)return;accessoryRevision=config.revision;for(const key of ['hubcaps','bolts','lock'])$('accessory-'+key).value=config.locations[key].join('\n');accessoryDirty=false;$('accessory-status').textContent='Gespeichert. Die Listen gelten beim nächsten Öffnen der Vorgangsformulare. Bereits gespeicherte Daten bleiben erhalten.';}
+  catch(error){$('accessory-status').textContent=error.message;}
+  finally{accessorySaving=false;$('accessory-form').inert=false;$('logout').disabled=false;$('change-password').disabled=false;}
+ });
 
  $('login-form').addEventListener('submit',async event=>{event.preventDefault();const input=$('password');const password=input.value;input.value='';$('login-status').textContent='Anmeldung …';try{const data=await api('login',{method:'POST',body:JSON.stringify({username:$('username').value,password})});csrf=data.csrf;if(data.must_change)showPasswordChange(true);else await enter();$('login-status').textContent=''}catch(error){$('login-status').textContent=error.message}});
  function showPasswordChange(required){hideSections();
@@ -214,7 +233,7 @@
   try{const data=await api('password',{method:'POST',body:JSON.stringify(body)});csrf=data.csrf;$('password-form').reset();await enter();status('Neues Admin-Passwort gespeichert. Bisherige Anmeldungen wurden beendet.');}
   catch(error){$('password-status').textContent=error.message}finally{enabled.forEach(el=>el.disabled=false);$('save-password').disabled=false;$('logout').disabled=false}
  });
- $('logout').addEventListener('click',async()=>{if((dirty||areaDirty||labelDirty)&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;if(areaSaving||busy||backupSaving||importBusy||labelBusy)return;try{await api('logout',{method:'POST',body:'{}'});dirty=false;areaDirty=false;labelDirty=false;state=null;showLogin()}catch(error){status(error.message,true)}});
+ $('logout').addEventListener('click',async()=>{if((dirty||areaDirty||labelDirty||accessoryDirty)&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;if(areaSaving||busy||backupSaving||importBusy||labelBusy||accessorySaving)return;try{await api('logout',{method:'POST',body:'{}'});dirty=false;areaDirty=false;labelDirty=false;accessoryDirty=false;state=null;showLogin()}catch(error){status(error.message,true)}});
  $('operation').addEventListener('change',async()=>{if(dirty&&!confirm('Ungespeicherte Änderungen verwerfen?')){$('operation').value=state.operation;return}try{await load()}catch(error){status(error.message,true)}});
  $('reload').addEventListener('click',async()=>{if(dirty&&!confirm('Ungespeicherte Änderungen verwerfen?'))return;try{await load()}catch(error){status(error.message,true)}});
  function add(type){if(state.template.elements.length>=100){status('Maximal 100 Elemente erlaubt.',true);return}remember();let id;do{id='element-'+Date.now()+'-'+(++counter)}while(state.template.elements.some(e=>e.id===id));

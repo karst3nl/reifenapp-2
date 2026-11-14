@@ -40,7 +40,8 @@ Aktive Belegungen und Reservierungen dürfen sich nicht überschneiden. Diese Re
 wird auch in der Datenbank abgesichert. Die Ausgangskonfiguration enthält 640 Lagerplätze in den Bereichen
 **C1, C2, C3, C4, OL und OR**. Weitere Lagerorte und Zahlenbereiche sind im Adminbereich verwaltbar.
 
-Noch offen ist unter anderem die Pflege von Auswahllisten im Adminbereich.
+Die Aufbewahrungsorte für Zubehör sind unter **Administration → Zubehör** bearbeitbar.
+Weitere Auswahllisten, etwa Fahrzeugmarken, sind weiterhin fest vorgegeben.
 Beim Radwechsel bleibt der Lagerplatz dem Kunden zugeordnet. Der bisher gelagerte
 Satz wird abgelöst und der andere Satz auf demselben Platz eingelagert. Der
 Tausch erzeugt nur einen Radwechsel-Eintrag, keine Auslagerung. Frühere Angaben
@@ -84,7 +85,7 @@ Benutzernamen `admin` und dem Startpasswort `Reifenapp-Start2026!` an.
 Beim ersten Login musst du ein eigenes Passwort festlegen, bevor der Adminbereich
 freigeschaltet wird. Es wird ausschließlich als bcrypt-Hash lokal gespeichert.
 
-Nach dem Login wählst du zwischen **Lagerplätze**, **PDF-Editor**, **Backup**, **CSV-Import** und **Etikettendrucker**.
+Nach dem Login wählst du zwischen **Lagerplätze**, **PDF-Editor**, **Backup**, **CSV-Import**, **Zubehör** und **Etikettendrucker**.
 Unter [Backup](docs/backups.md) kannst du die komplette Datenbank herunterladen
 und die enthaltene HTML-Übersicht ohne SQLite-Software ansehen.
 Die [Lagerplatzverwaltung](docs/lagerplaetze.md) zeigt die Belegung und erlaubt neue
@@ -121,6 +122,12 @@ Für den Betrieb ohne Bildschirm gibt es eine [vollständige SSH-Anleitung](docs
 mit systemd-Autostart, stabiler LAN-Adresse, getrenntem Datenverzeichnis, GitHub-Updates,
 Backups und kontrolliertem Rückfall. Dienstvorlage und Update-Skript liegen unter
 [`deploy/`](deploy/). Der Dienst läuft auch nach dem Abmelden und startet beim Pi-Neustart.
+
+Bei **Neueinlagerung und Radwechsel** sind die Zubehörangaben Pflicht: Für Radkappen,
+Radschrauben und Felgenschloss jeweils ausdrücklich „Vorhanden“ oder „Nicht vorhanden“
+auswählen. Bei vorhandenem Zubehör ist ein Aufbewahrungsort aus dem Dropdown nötig.
+Die Listen lassen sich unter **Administration → Zubehör** bearbeiten.
+[Zubehörlisten und Pflichtangaben](docs/zubehoer.md).
 
 ## Aktualisieren
 
