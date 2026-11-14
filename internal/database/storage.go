@@ -32,6 +32,9 @@ func createStorage(ctx context.Context, db *sql.DB, input models.StorageInput, o
 		return 0, err
 	}
 	defer tx.Rollback()
+	if err = validateAccessoryLocations(ctx, tx, input); err != nil {
+		return 0, err
+	}
 	insertID := func(query string, args ...any) (int64, error) {
 		r, e := tx.ExecContext(ctx, query, args...)
 		if e != nil {

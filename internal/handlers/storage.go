@@ -38,6 +38,15 @@ func StorageOptions(db *sql.DB) http.HandlerFunc {
 		}
 		options["area"] = codes
 		options["storage_areas"] = areas
+		accessories, err := database.LoadAccessoryOptions(r.Context(), db)
+		if err != nil {
+			writeJSON(w, 500, map[string]string{"error": "Zubehörlisten nicht verfügbar."})
+			return
+		}
+		options["accessory_presence"] = []string{"Vorhanden", "Nicht vorhanden"}
+		for key, values := range accessories.Locations {
+			options[key+".location"] = values
+		}
 		writeJSON(w, 200, options)
 	}
 }
@@ -46,11 +55,18 @@ func Storage(db *sql.DB) http.HandlerFunc      { return storageHandler(db, false
 func WheelChanges(db *sql.DB) http.HandlerFunc { return storageHandler(db, true) }
 func storageHandler(db *sql.DB, wheelChange bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var input models.StorageInput
-		if !readStorageJSON(w, r, &input) {
+		var request storageRequest
+		if !readStorageJSON(w, r, &request) {
 			return
 		}
-		if fields := input.Validate(); len(fields) > 0 {
+		input := request.Input
+		fields := input.Validate()
+		for _, key := range []string{"hubcaps", "bolts", "lock"} {
+			if !request.Answers[key] {
+				fields[key+".present"] = "Bitte ausdrücklich vorhanden oder nicht vorhanden auswählen."
+			}
+		}
+		if len(fields) > 0 {
 			writeJSON(w, 422, map[string]any{"error": "Bitte die markierten Felder prüfen.", "fields": fields})
 			return
 		}
@@ -62,6 +78,15 @@ func storageHandler(db *sql.DB, wheelChange bool) http.HandlerFunc {
 			message = "Radwechsel gespeichert."
 		}
 		id, err := create(r.Context(), db, input)
+		var accessoryFields *database.AccessoryFieldsError
+		if errors.As(err, &accessoryFields) {
+			response := map[string]any{"error": accessoryFields.Error(), "fields": accessoryFields.Fields}
+			if options, readErr := database.LoadAccessoryOptions(r.Context(), db); readErr == nil {
+				response["accessory_options"] = options.Locations
+			}
+			writeJSON(w, 422, response)
+			return
+		}
 		if errors.Is(err, database.ErrInvalidPlace) {
 			writeJSON(w, 422, map[string]any{"error": err.Error(), "fields": map[string]string{"number": err.Error()}})
 			return

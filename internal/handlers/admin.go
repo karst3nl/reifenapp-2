@@ -98,6 +98,8 @@ func (a *Admin) authorize(next func(http.ResponseWriter, *http.Request), allowSe
 	}
 }
 func (a *Admin) Register(mux *http.ServeMux) {
+	mux.HandleFunc("GET /api/admin/accessory-options", a.protect(a.accessoryOptions))
+	mux.HandleFunc("POST /api/admin/accessory-options", a.protect(a.accessoryOptions))
 	mux.HandleFunc("GET /api/admin/labels/config", a.protect(a.labelConfig))
 	mux.HandleFunc("POST /api/admin/labels/config", a.protect(a.labelConfig))
 	mux.HandleFunc("GET /api/admin/labels/printers", a.protect(a.labelPrinters))

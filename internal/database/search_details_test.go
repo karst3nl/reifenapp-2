@@ -15,6 +15,14 @@ func TestSearchDetailsPreserveHistoryAfterReleaseAndReuse(t *testing.T) {
 	input.RearDepth = "4.0"
 	input.Notes = "Fiktiver Hinweis: <script>kein HTML</script>\nSeitenwand prüfen."
 	input.Mechanic = "Testmonteur (fiktiv)"
+	options, err := LoadAccessoryOptions(ctx, db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	options.Locations["hubcaps"] = append(options.Locations["hubcaps"], "Fiktive Zubehörbox")
+	if err = SaveAccessoryOptions(ctx, db, options); err != nil {
+		t.Fatal(err)
+	}
 	input.Hubcaps = models.Accessory{Present: true, Location: "Fiktive Zubehörbox"}
 	input.Bolts = models.Accessory{Present: false}
 	claim, err := CreateStorage(ctx, db, input)
