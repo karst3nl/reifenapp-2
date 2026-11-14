@@ -3,7 +3,7 @@
 Diese Anleitung installiert die App als systemd-Dienst: Sie startet nach dem
 Einschalten automatisch, läuft unabhängig von einer SSH-Sitzung und ist im lokalen
 Werkstattnetz erreichbar. Updates erfolgen bewusst per SSH aus dem GitHub-Branch
-**beta**, mit Tests, Datenbanksicherung und anschließender Versionsprüfung.
+**main**, mit Tests, Datenbanksicherung und anschließender Versionsprüfung.
 
 Die Dateien sind für Raspberry Pi OS Lite mit systemd vorbereitet. Ein tatsächlicher
 Pi-Neustart, die ARM64-Hardware und der USB-Drucker müssen vor Ort geprüft werden;
@@ -95,7 +95,7 @@ Aufbau prüfen. Insbesondere keine bestehende Datenbank löschen oder mit Beispi
 sudo useradd --system --user-group --home-dir /var/lib/reifenapp --shell /usr/sbin/nologin reifenapp
 sudo install -d -m 0755 /opt/reifenapp
 sudo install -d -m 0755 -o "$(id -un)" -g "$(id -gn)" /opt/reifenapp/source
-git clone --branch beta https://github.com/karst3nl/reifenapp-2.git /opt/reifenapp/source
+git clone --branch main https://github.com/karst3nl/reifenapp-2.git /opt/reifenapp/source
 cd /opt/reifenapp/source
 export CGO_ENABLED=1
 go mod download
@@ -223,8 +223,8 @@ Eine öffentliche GitHub-Adresse benötigt keinen Token und kein GitHub-Passwort
 
 Das Update:
 
-1. Prüft Repo-Adresse, Branch `beta`, unveränderten Checkout und vorhandene Produktivdaten.
-2. Holt `origin/beta` und aktualisiert ausschließlich per Fast-forward. Lokale Änderungen
+1. Prüft Repo-Adresse, Branch `main`, unveränderten Checkout und vorhandene Produktivdaten.
+2. Holt `origin/main` und aktualisiert ausschließlich per Fast-forward. Lokale Änderungen
    oder abweichende Historien werden nicht zurückgesetzt oder überschrieben.
 3. Führt Go-Tests und `go vet` aus und baut nativ eine Binärdatei mit Commit-Kennung.
    Bis dahin bleibt der bisherige Dienst aktiv. Go-Abhängigkeiten benötigen ggf. Internet.
@@ -250,6 +250,27 @@ diese Dateien künftig ändern müssen, die Änderungen im Repo prüfen und gezi
 Sicherungen werden nicht automatisch gelöscht. Freien Speicher mit `df -h` kontrollieren
 und Sicherungen zusätzlich auf einen anderen Datenträger übertragen. Ein Backup nur
 auf derselben SD-Karte schützt nicht vor deren Ausfall.
+
+### Bestehende Beta-Installation auf main umstellen
+
+Eine bereits nach dieser Anleitung eingerichtete Beta-Installation behält ihre
+Daten unter `/var/lib/reifenapp`. Zuerst prüfen, dass der Code-Checkout keine
+ungesicherten Änderungen enthält. Danach als SSH-Benutzer:
+
+```bash
+cd /opt/reifenapp/source
+git status --short
+git fetch origin
+git switch main
+git merge --ff-only origin/main
+bash deploy/update.sh
+```
+
+Bei lokalen Änderungen oder Git-Konflikten stoppen und diese klären; kein
+`reset --hard` verwenden. Der bisherige Dienst läuft bis zur vorgesehenen
+Update-Unterbrechung weiter. Für bewusste Entwicklung auf `beta` ist weiterhin
+`REIFENAPP_BRANCH=beta bash deploy/update.sh` möglich, wenn auch `beta`
+ausgecheckt ist. Für den Werkstattbetrieb bleibt `main` der Standard.
 
 ## 6. Betrieb, Logs und Portänderung
 

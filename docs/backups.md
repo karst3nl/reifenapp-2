@@ -63,7 +63,7 @@ keine Datenbank vorhanden sein.
 Beispiel für ein Backup der normalen Datenbank:
 
 ```sh
-git clone --branch beta https://github.com/karst3nl/reifenapp-2.git Reifenapp-Wiederherstellung
+git clone --branch main https://github.com/karst3nl/reifenapp-2.git Reifenapp-Wiederherstellung
 cd Reifenapp-Wiederherstellung
 mkdir -p data local
 cp -n /pfad/zum/entpackten-backup/datenbank.sqlite data/reifenapp.sqlite

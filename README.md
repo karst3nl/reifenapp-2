@@ -10,11 +10,11 @@ Historie und druckbaren DIN-A4-Belegen. Ohne Cloudpflicht.
 
 **MIT-Lizenz** · **Go ≥ 1.23** · **SQLite** · **HTML, CSS & Vanilla JavaScript**
 
-![Startseite der Reifenapp mit Schnellsuche und sechs Aktionsschaltflächen](docs/images/startseite.png)
+![Aktuelle Startseite mit fiktiven Testdaten, Zählern, Schnellsuche und sechs Aktionsschaltflächen](docs/images/startseite.png)
 
-> **Entwicklungsstand: Beta.** Die aktuelle Entwicklung findet auf
-> [`beta`](https://github.com/karst3nl/reifenapp-2/tree/beta) statt. Verwende diesen
-> Branch für die unten beschriebenen Funktionen. `main` kann einen älteren Stand enthalten.
+> **Veröffentlichter Stand:** [`main`](https://github.com/karst3nl/reifenapp-2/tree/main).
+> Weitere Entwicklung findet auf `beta` statt. Den Umfang der Prüfung und noch offene
+> Punkte beschreibt der [Abnahmebericht](docs/pruefung-main.md).
 
 ## Funktionen
 
@@ -57,7 +57,7 @@ Benötigt werden Git, Go ab Version 1.23 und ein C-Compiler für den SQLite-Trei
 sudo pacman -S --needed git go base-devel
 git clone https://github.com/karst3nl/reifenapp-2.git
 cd reifenapp-2
-git switch beta
+git switch main
 go mod download
 go run . -dev
 ```
@@ -139,8 +139,8 @@ Beende den laufenden Server mit **Strg+C** und prüfe eigene Codeänderungen mit
 
 ```sh
 git fetch origin
-git switch beta
-git pull --ff-only origin beta
+git switch main
+git pull --ff-only origin main
 go run . -dev -migrate
 ```
 
@@ -195,6 +195,8 @@ go build -o bin/reifenapp .
 Automatisierte Tests verwenden temporäre Datenbanken und ausschließlich fiktive Daten.
 
 ## Dokumentation
+
+- [Anforderungsabgleich und Prüfung vor main-Übernahme](docs/pruefung-main.md)
 
 - [Raspberry Pi: SSH, Autostart, LAN und GitHub-Updates](docs/raspberry-pi.md)
 - [USB-Etikettendrucker einrichten](docs/etikettendrucker.md)

@@ -1,6 +1,6 @@
 # Betrieb und HTTP-API
 
-Diese Anleitung beschreibt den aktuellen Entwicklungsstand auf `beta`.
+Diese Anleitung beschreibt den veröffentlichten Stand auf `main`; weitere Entwicklung erfolgt auf `beta`.
 Für Installation und Schnellstart siehe [README](../README.md).
 
 ## Lokale Daten und Migrationen

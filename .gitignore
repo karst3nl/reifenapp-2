@@ -24,3 +24,17 @@ coverage*
 # Downloaded backup archives and their extracted customer-data folders.
 reifenapp-backup-*.zip
 reifenapp-backup-*/
+
+# Timestamped SQLite copies and migrations backups, including outside data/.
+*.db.*
+*.sqlite.*
+*.sqlite3.*
+*.backup-*
+
+# Default binaries created by go build in the repository root.
+/reifenapp
+/reifenapp-2
+
+# Common SSH private keys must not be committed.
+id_rsa
+id_ed25519

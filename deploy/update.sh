@@ -15,6 +15,8 @@ main() {
     service_user=${REIFENAPP_SERVICE_USER:-reifenapp}
     service_name=${REIFENAPP_SERVICE:-reifenapp.service}
     health_url=${REIFENAPP_HEALTH_URL:-http://127.0.0.1:8080/api/health}
+    branch=${REIFENAPP_BRANCH:-main}
+    [[ $branch == main || $branch == beta ]] || { echo "Nur main oder beta als Update-Branch erlaubt." >&2; return 1; }
     expected_remote=https://github.com/karst3nl/reifenapp-2.git
     stage=''
     target=''
@@ -28,16 +30,16 @@ main() {
     done
     cd "$source_dir"
     [[ $(git remote get-url origin) == "$expected_remote" ]] || { echo "Abbruch: origin ist nicht ReifenApp-2." >&2; return 1; }
-    [[ $(git branch --show-current) == beta ]] || { echo "Abbruch: Für dieses Verfahren muss beta ausgecheckt sein." >&2; return 1; }
+    [[ $(git branch --show-current) == "$branch" ]] || { echo "Abbruch: Für dieses Verfahren muss $branch ausgecheckt sein." >&2; return 1; }
     [[ -z $(git status --porcelain) ]] || { echo "Abbruch: Lokale Codeänderungen zuerst sichern und klären." >&2; return 1; }
     exec 9>"$(git rev-parse --git-path reifenapp-update.lock)"
     flock -n 9 || { echo "Ein Update läuft bereits." >&2; return 1; }
     sudo -v
     sudo test -f "$state_dir/data/reifenapp.sqlite" || { echo "Keine bestehende Produktionsdatenbank. Zuerst die Ersteinrichtung durchführen." >&2; return 1; }
     [[ -x "$bin_dir/reifenapp" ]] || { echo "Installierte Binärdatei fehlt." >&2; return 1; }
-    git fetch origin beta
-    git merge-base --is-ancestor HEAD origin/beta || { echo "Abbruch: Lokale Commits weichen von origin/beta ab. Nicht automatisch zurücksetzen." >&2; return 1; }
-    git merge --ff-only origin/beta
+    git fetch origin "$branch"
+    git merge-base --is-ancestor HEAD "origin/$branch" || { echo "Abbruch: Lokale Commits weichen von origin/$branch ab. Nicht automatisch zurücksetzen." >&2; return 1; }
+    git merge --ff-only "origin/$branch"
     target=$(git rev-parse HEAD)
     stage=$(mktemp -d)
     stamp=$(date -u +%Y%m%dT%H%M%S)-$$
